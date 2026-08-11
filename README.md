@@ -54,6 +54,8 @@ AI 可以提出變更，但 repository policy 決定它能否進入系統：
 <details>
 <summary><strong>工程師驗證方式</strong></summary>
 
+Windows 可直接雙擊根目錄的 `START_DEMO.cmd`；它會啟動 Web／API，通過健康檢查後自動開啟瀏覽器。
+
 ```bash
 pnpm install
 pnpm verify
