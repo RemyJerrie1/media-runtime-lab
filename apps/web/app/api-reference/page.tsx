@@ -1,2 +1,28 @@
-const endpoints=[{method:'POST',path:'/v1/render-jobs',purpose:'建立具冪等鍵的算圖任務',contract:'CreateRenderJob → RenderJob'},{method:'GET',path:'/v1/render-jobs/:id',purpose:'取得權威任務狀態',contract:'RenderJob | JOB_NOT_FOUND'},{method:'SSE',path:'/v1/render-jobs/:id/events',purpose:'串流狀態遷移與處理進度',contract:'render.progress<RenderJob>'}];
-export default function ApiReference(){return <main><header className="nav"><a className="brand" href="/">MEDIA RUNTIME LAB</a><nav><a href="/">Back to system</a></nav></header><section className="docs"><p className="eyebrow">STATIC API REFERENCE</p><h1>Render Control Plane</h1><p className="lede">同一套契約同時約束 NestJS controller、Next.js client、Bruno 驗收案例與回歸測試。API 的價值不在端點數量，而在失敗語意、冪等與狀態可追蹤。</p><div className="endpoint-list">{endpoints.map(e=><article key={e.path}><code className={e.method.toLowerCase()}>{e.method}</code><div><h2>{e.path}</h2><p>{e.purpose}</p><small>{e.contract}</small></div></article>)}</div><section className="contract"><h2>狀態契約</h2><pre>{`accepted → composing → encoding → packaging → ready\n          ↘ failed     ↘ failed     ↘ failed\n\nRetry policy: same idempotency key returns the original job.\nEvent recovery: client re-fetches the authoritative resource after reconnect.`}</pre></section></section></main>}
+const endpoints = [
+  { method: 'POST', path: '/v1/render-jobs', purpose: 'Create an idempotent render job', contract: 'CreateRenderJob → RenderJob' },
+  { method: 'GET', path: '/v1/render-jobs/:id', purpose: 'Read the authoritative job state', contract: 'RenderJob | JOB_NOT_FOUND' },
+  { method: 'SSE', path: '/v1/render-jobs/:id/events', purpose: 'Stream state transitions and progress', contract: 'render.progress<RenderJob>' },
+];
+
+export default function ApiReference() {
+  return <main>
+    <header className="nav"><a className="brand" href="/">MEDIA RUNTIME LAB</a><nav><a href="/">Back to system</a></nav></header>
+    <section className="docs">
+      <p className="eyebrow">STATIC API REFERENCE</p>
+      <h1>Render Control Plane</h1>
+      <p className="lede">One contract governs the NestJS API, Next.js client, Bruno collection, and regression suite.</p>
+      <div className="endpoint-list">{endpoints.map((endpoint) => <article key={endpoint.path}>
+        <code className={endpoint.method.toLowerCase()}>{endpoint.method}</code>
+        <div><h2>{endpoint.path}</h2><p>{endpoint.purpose}</p><small>{endpoint.contract}</small></div>
+      </article>)}</div>
+      <section className="contract">
+        <h2>State Contract</h2>
+        <pre>{`accepted → composing → encoding → packaging → ready
+          ↘ failed     ↘ failed     ↘ failed
+
+Retry: same idempotency key returns the original job.
+Recovery: re-fetch the authoritative resource after reconnect.`}</pre>
+      </section>
+    </section>
+  </main>;
+}

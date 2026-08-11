@@ -6,5 +6,7 @@ coverage
 *.tsbuildinfo
 docs/media/product-frames/
 docs/media/bruno-frames/
+docs/media/lifecycle-frames/
+docs/media/api-contract-frames/
 .env*
 !.env.example

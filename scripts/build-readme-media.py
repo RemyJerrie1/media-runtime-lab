@@ -53,6 +53,64 @@ def build_product_media() -> None:
     images[0].save(MEDIA / "product-demo.gif", save_all=True, append_images=images[1:], duration=250, loop=0, optimize=True)
     encode_video(frames, MEDIA / "product-demo.mp4", fps=4)
 
+    lifecycle_dir = MEDIA / "lifecycle-frames"
+    lifecycle_dir.mkdir(parents=True, exist_ok=True)
+    lifecycle_frames: list[Path] = []
+    for index, path in enumerate(frames):
+        source = Image.open(path).convert("RGB")
+        width, height = source.size
+        crop = source.crop((width * 0.42, height * 0.26, width * 0.98, height * 0.78))
+        crop = crop.resize((1120, 680), Image.Resampling.LANCZOS)
+        target = lifecycle_dir / f"frame-{index:02d}.png"
+        crop.save(target, optimize=True)
+        lifecycle_frames.append(target)
+    lifecycle_images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in lifecycle_frames]
+    lifecycle_images[0].save(MEDIA / "render-lifecycle.gif", save_all=True, append_images=lifecycle_images[1:], duration=250, loop=0, optimize=True)
+    encode_video(lifecycle_frames, MEDIA / "render-lifecycle.mp4", fps=4)
+
+
+def api_contract_frame(step: int, target: Path) -> None:
+    width, height = 1440, 820
+    image = Image.new("RGB", (width, height), "#080b12")
+    draw = ImageDraw.Draw(image)
+    draw.text((72, 64), "RENDER CONTROL PLANE", font=font(23, True), fill="#5bd7e8")
+    draw.text((72, 108), "One contract · four verification surfaces", font=font(38, True), fill="#f3eee8")
+    endpoints = [
+        ("POST", "/v1/render-jobs", "Idempotent command", "#79d29d"),
+        ("GET", "/v1/render-jobs/:id", "Authoritative state", "#5bd7e8"),
+        ("SSE", "/v1/render-jobs/:id/events", "Progress + recovery", "#f1ae79"),
+    ]
+    for index, (method, path, purpose, color) in enumerate(endpoints):
+        y = 205 + index * 150
+        active = index <= step
+        outline = color if active else "#26364a"
+        text_color = "#f3eee8" if active else "#657487"
+        draw.rounded_rectangle((72, y, 1368, y + 112), radius=18, fill="#0e1623", outline=outline, width=3 if active else 2)
+        draw.rounded_rectangle((98, y + 28, 220, y + 83), radius=12, fill=outline if active else "#172232")
+        draw.text((120, y + 43), method, font=font(20, True), fill="#081018" if active else "#657487")
+        draw.text((258, y + 26), path, font=font(24, True), fill=text_color)
+        draw.text((258, y + 65), purpose, font=font(18), fill="#9eacba" if active else "#657487")
+    labels = ["ZOD SCHEMA", "NESTJS", "NEXT.JS", "BRUNO"]
+    for index, label in enumerate(labels):
+        x = 72 + index * 322
+        enabled = step >= 3 + index
+        draw.rounded_rectangle((x, 690, x + 280, 752), radius=14, fill="#122131" if enabled else "#0e1623", outline="#b993e8" if enabled else "#26364a", width=2)
+        draw.text((x + 24, 710), label, font=font(18, True), fill="#e8d9ff" if enabled else "#657487")
+    image.save(target, optimize=True)
+
+
+def build_api_contract_media() -> None:
+    frame_dir = MEDIA / "api-contract-frames"
+    frame_dir.mkdir(parents=True, exist_ok=True)
+    frames: list[Path] = []
+    for index in range(7):
+        target = frame_dir / f"frame-{index:02d}.png"
+        api_contract_frame(index, target)
+        frames.append(target)
+    images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
+    images[0].save(MEDIA / "api-contract.gif", save_all=True, append_images=images[1:], duration=520, loop=0, optimize=True)
+    encode_video(frames, MEDIA / "api-contract.mp4", fps=2)
+
 
 def bruno_output() -> str:
     command = [str(ROOT / "node_modules" / ".bin" / "bru.cmd"), "run", "render-jobs", "--env", "local"]
@@ -105,6 +163,7 @@ def build_bruno_media() -> None:
 
 if __name__ == "__main__":
     build_product_media()
+    build_api_contract_media()
     build_bruno_media()
     for artifact in sorted(MEDIA.glob("*")):
         if artifact.is_file():
