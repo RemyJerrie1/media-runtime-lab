@@ -1,11 +1,10 @@
 # Media Runtime Lab
 
-**Governed full-stack media runtime** · Chloe · Senior Full-Stack Media Engineer
+An executable reference implementation for reliable media job orchestration.
 
-- **Experience** — Next.js · TypeScript · SSE
-- **Control** — NestJS · Idempotency · State Machine
-- **Execution** — Canvas · FFmpeg-ready Port
-- **Evidence** — Artifact · Token · Cost Ledger
+- **Render Workflow** — Create → Process → Deliver
+- **Runtime Guarantees** — Idempotency · SSE Recovery · State Machine
+- **Operational Evidence** — Artifact · Token Usage · Cost Attribution
 
 ## Product Flow
 
