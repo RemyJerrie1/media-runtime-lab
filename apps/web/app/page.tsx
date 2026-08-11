@@ -1,5 +1,6 @@
 import { RenderLab } from './features/render-lab/render-lab';
 import { CompositionShowcase } from './features/composition-showcase/composition-showcase';
+import { CostGovernance } from './features/cost-governance/cost-governance';
 import { NAVIGATION } from './shared/constants/navigation';
 
 export default function Page() {
@@ -21,6 +22,7 @@ export default function Page() {
     </section>
     <RenderLab/>
     <CompositionShowcase />
+    <CostGovernance />
     <section id="architecture" className="architecture">
       <p className="eyebrow">SYSTEM BOUNDARIES</p>
       <h2>Product flow, engineering boundaries, and operational evidence.</h2>

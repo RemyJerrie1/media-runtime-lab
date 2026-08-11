@@ -27,6 +27,15 @@
 - **Canvas 2D** — Deterministic Composition Fallback
 - **CSS 3D** — 立體 Layer；保留 WebGL／Three.js Adapter 邊界
 
+## 💰 AI Token Usage & Cost Governance
+
+<a href="./docs/media/ai-cost-governance.mp4"><img src="./docs/media/ai-cost-governance.gif" width="760" alt="AI token usage attribution and budget governance" /></a>
+
+- **Usage Receipt** — Provider · Model · Prompt／Completion Token
+- **Attribution** — Tenant · Workspace · Project · Feature
+- **Usage Ledger** — Append-only Event 作為成本與額度的事實來源
+- **Budget Gate** — Alert · Throttle · Model Fallback
+
 ## 🔌 API Contract
 
 <a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API contract walkthrough" /></a>

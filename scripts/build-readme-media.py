@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MEDIA = ROOT / "docs" / "media"
 FRAMES = MEDIA / "product-frames"
 COMPOSITION_FRAMES = MEDIA / "composition-frames"
+COST_FRAMES = MEDIA / "cost-frames"
 
 
 def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -75,6 +76,13 @@ def build_composition_media() -> None:
     images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
     images[0].save(MEDIA / "composition-showcase.gif", save_all=True, append_images=images[1:], duration=300, loop=0, optimize=True)
     encode_video(frames, MEDIA / "composition-showcase.mp4", fps=4)
+
+
+def build_cost_media() -> None:
+    frames = sorted(COST_FRAMES.glob("frame-*.png"))
+    images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
+    images[0].save(MEDIA / "ai-cost-governance.gif", save_all=True, append_images=images[1:], duration=360, loop=0, optimize=True)
+    encode_video(frames, MEDIA / "ai-cost-governance.mp4", fps=3)
 
 
 def api_contract_frame(step: int, target: Path) -> None:
@@ -172,6 +180,7 @@ def build_bruno_media() -> None:
 if __name__ == "__main__":
     build_product_media()
     build_composition_media()
+    build_cost_media()
     build_api_contract_media()
     build_bruno_media()
     for artifact in sorted(MEDIA.glob("*")):
