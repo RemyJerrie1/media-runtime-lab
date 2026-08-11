@@ -39,7 +39,7 @@ An executable reference implementation for reliable media job orchestration.
 ## Governance
 
 - **Fitness Functions** — dependency boundaries + contract drift
-- **AI Guardrails** — skills + hooks + change policy
+- **Codex Guardrails** — [`AGENTS.md`](./AGENTS.md) + [project skill](./.agents/skills/safe-media-change/SKILL.md)
 - **Regression** — domain tests + HTTP contract tests
 - **Decision Record** — [ADR 0001](./docs/adr/0001-modular-control-plane.md)
 
