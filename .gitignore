@@ -10,5 +10,6 @@ docs/media/lifecycle-frames/
 docs/media/api-contract-frames/
 docs/media/composition-frames/
 docs/media/cost-frames/
+docs/media/reliability-frames/
 .env*
 !.env.example

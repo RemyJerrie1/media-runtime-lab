@@ -1,14 +1,14 @@
 # Media Runtime Lab
 
-以 **Next.js、TypeScript 與 NestJS** 實作影音 SaaS 的核心工作流程，涵蓋任務建立、即時進度、字幕與動畫合成、成品交付，以及 Token 用量與成本紀錄。
+A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It covers render-job creation, live progress, subtitle and motion composition, artifact delivery, AI token attribution, and cost governance.
 
-## 🎬 Executable Media Flow
+## 🎬 Media Job Workflow
 
 <a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="Media render workflow" /></a>
 
 - **Frontend** — Next.js App Router · SSE Progress · Canvas Timeline
 - **Backend** — NestJS · Idempotency · State Machine · Artifact Registry
-- **Media** — CJK Subtitle · Sprite Sheet · 2D／3D Composition · FFmpeg-ready Adapter
+- **Media** — CJK Subtitle · Sprite Sheet · 2D/3D Composition · FFmpeg-ready Adapter
 - **Operations** — Retry & Recovery · Token Usage · Cost Attribution
 
 ## 🎞️ Composition Timeline
@@ -16,25 +16,34 @@
 <a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="Deterministic composition timeline" /></a>
 
 - Scene Clips · CJK Subtitle Cues · Audio Envelope
-- 18s Timeline · 30fps Frame Identity · Render Playhead
+- 18-second Timeline · 30 fps Frame Identity · Render Playhead
 
-## ✨ Subtitle · Sprite · 2D／3D Composition
+## ✨ Subtitle · Sprite · 2D/3D Composition
 
 <a href="./docs/media/composition-showcase.mp4"><img src="./docs/media/composition-showcase.gif" width="760" alt="Subtitle sprite and 2D 3D media composition" /></a>
 
-- **CJK Subtitle** — Cue 切換與 Media Clock 對齊
-- **Sprite Sheet** — Frame Index 與播放進度可追蹤
-- **Canvas 2D** — Deterministic Composition Fallback
-- **CSS 3D** — 立體 Layer；保留 WebGL／Three.js Adapter 邊界
+- **CJK Subtitle** — Cue changes aligned with the media clock
+- **Sprite Sheet** — Traceable frame index and playback progress
+- **Canvas 2D** — Deterministic composition fallback
+- **CSS 3D** — Layered motion with an explicit WebGL/Three.js adapter boundary
 
 ## 💰 AI Token Usage & Cost Governance
 
 <a href="./docs/media/ai-cost-governance.mp4"><img src="./docs/media/ai-cost-governance.gif" width="760" alt="AI token usage attribution and budget governance" /></a>
 
-- **Usage Receipt** — Provider · Model · Prompt／Completion Token
+- **Usage Receipt** — Provider · Model · Prompt/Completion Token
 - **Attribution** — Tenant · Workspace · Project · Feature
-- **Usage Ledger** — Append-only Event 作為成本與額度的事實來源
+- **Usage Ledger** — Append-only events as the source of truth for cost and quota
 - **Budget Gate** — Alert · Throttle · Model Fallback
+- **Execution Note** — Provider receipts are simulated; no external model or API key is used
+
+## 🛡️ Reliability & Recovery
+
+<a href="./docs/media/reliability-recovery.mp4"><img src="./docs/media/reliability-recovery.gif" width="760" alt="Idempotency SSE recovery and artifact delivery" /></a>
+
+- Duplicate commands return the same Job Identity instead of creating duplicate work
+- SSE progress can recover through an authoritative `GET` after interruption
+- State transitions remain explicit until the artifact reaches `ready`
 
 ## 🔌 API Contract
 
@@ -42,7 +51,7 @@
 
 - `POST /v1/render-jobs` — Idempotent Command
 - `GET /v1/render-jobs/:id` — Authoritative State
-- `SSE /v1/render-jobs/:id/events` — Progress & Recovery
+- `SSE /v1/render-jobs/:id/events` — Progress and Recovery
 
 ## 🧪 Bruno Regression
 
@@ -65,7 +74,8 @@ apps/
 │  │  └─ ui/                     # Shared Presentation
 │  └─ features/
 │     ├─ render-lab/             # Job Lifecycle · Media Timeline
-│     └─ composition-showcase/   # CJK Cue · Sprite · Canvas 2D · CSS 3D
+│     ├─ composition-showcase/   # CJK Cue · Sprite · Canvas 2D · CSS 3D
+│     └─ cost-governance/        # Usage Receipt · Attribution · Budget Gate
 └─ api/src/render/
    ├─ domain/                    # State Machine · Invariants · Ports
    ├─ application/               # Use Cases · Job Orchestration
@@ -80,13 +90,13 @@ bruno/                           # Executable HTTP Regression
 scripts/                         # Architecture Fitness Functions
 ```
 
-- **Frontend Three Layers** — Route (RSC) → Feature (Client Island) → Shared／Design System
+- **Frontend Three Layers** — Route (RSC) → Feature (Client Island) → Shared/Design System
 - **Backend Boundary** — Interface → Application → Domain ← Infrastructure
-- **Design System** — Tokens 與 Primitive Components 集中管理視覺與互動規則
-- **State Ownership** — Server State 由 `useRenderJob` 管理；Canvas Timeline 保持純展示責任
-- **App Router** — `layout/page/loading/error/not-found` 採官方 File Conventions；互動範圍才建立 Client Boundary
+- **Design System** — Centralized tokens and primitive interaction rules
+- **State Ownership** — `useRenderJob` owns server state; media canvases own transient render state
+- **App Router** — `layout`, `page`, `loading`, `error`, and `not-found` follow official file conventions
 
-## 🛡️ Codex Engineering Governance
+## ⚙️ Codex Engineering Governance
 
 - **Project Config** — [`.codex/config.toml`](./.codex/config.toml) · [Lifecycle Hooks](./.codex/hooks.json)
 - **Codex Hooks** — [PreTool Policy](./.codex/hooks/pre-tool-governance.mjs) · [Stop Gate](./.codex/hooks/governance-gate.mjs)
@@ -97,6 +107,7 @@ scripts/                         # Architecture Fitness Functions
 
 - Contract Tests · Domain Tests · Application Tests
 - Timeline Mapping · Subtitle Cue · Sprite Frame · Playhead Boundary · Frame Identity
+- AI Usage Aggregation · Cost Attribution · Budget Threshold
 - Bruno HTTP Regression · Typecheck · Production Build
 - Husky Pre-commit · Architecture Fitness Functions
 

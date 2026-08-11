@@ -14,6 +14,7 @@ MEDIA = ROOT / "docs" / "media"
 FRAMES = MEDIA / "product-frames"
 COMPOSITION_FRAMES = MEDIA / "composition-frames"
 COST_FRAMES = MEDIA / "cost-frames"
+RELIABILITY_FRAMES = MEDIA / "reliability-frames"
 
 
 def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -83,6 +84,76 @@ def build_cost_media() -> None:
     images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
     images[0].save(MEDIA / "ai-cost-governance.gif", save_all=True, append_images=images[1:], duration=360, loop=0, optimize=True)
     encode_video(frames, MEDIA / "ai-cost-governance.mp4", fps=3)
+
+
+def reliability_frame(step: int, target: Path) -> None:
+    width, height = 1440, 820
+    image = Image.new("RGB", (width, height), "#080b12")
+    draw = ImageDraw.Draw(image)
+    draw.text((66, 55), "RELIABILITY & RECOVERY", font=font(20, True), fill="#5bd7e8")
+    draw.text((66, 94), "One job identity across retries and reconnects", font=font(35, True), fill="#f3eee8")
+    stages = [
+        ("COMMAND", "POST + Idempotency-Key"),
+        ("DEDUPLICATION", "same key -> same job"),
+        ("JOB STATE", "accepted -> processing"),
+        ("LIVE PROGRESS", "SSE stream"),
+        ("RECOVERY", "authoritative GET"),
+        ("ARTIFACT", "ready + checksum"),
+    ]
+    active = min(step // 2, len(stages) - 1)
+    card_width = 196
+    gap = 24
+    start_x = 66
+    y = 235
+    for index, (title, detail) in enumerate(stages):
+        x = start_x + index * (card_width + gap)
+        color = "#5bd7e8" if index == active else "#2c3e53"
+        fill = "#102532" if index == active else "#101724"
+        draw.rounded_rectangle((x, y, x + card_width, y + 150), radius=16, fill=fill, outline=color, width=3 if index == active else 2)
+        draw.text((x + 18, y + 26), f"0{index + 1}", font=font(14, True), fill=color)
+        draw.text((x + 18, y + 56), title, font=font(16, True), fill="#f3eee8")
+        draw.text((x + 18, y + 98), detail, font=font(12), fill="#9eacba")
+        if index < len(stages) - 1:
+            arrow_x = x + card_width + 5
+            draw.line((arrow_x, y + 75, arrow_x + gap - 10, y + 75), fill="#5bd7e8", width=3)
+            draw.polygon([(arrow_x + gap - 10, y + 69), (arrow_x + gap - 10, y + 81), (arrow_x + gap - 2, y + 75)], fill="#5bd7e8")
+
+    captions = [
+        ("ORIGINAL COMMAND", "Render request accepted with job_72C1"),
+        ("RETRY-SAFE COMMAND", "A repeated POST carries the same Idempotency-Key"),
+        ("NO DUPLICATE WORK", "The existing Job Identity is returned"),
+        ("STATE TRANSITION", "The worker advances persisted job state"),
+        ("LIVE DELIVERY", "Progress is streamed to the client over SSE"),
+        ("CONNECTION INTERRUPTION", "The UI does not invent replacement state"),
+        ("AUTHORITATIVE READ", "GET /render-jobs/job_72C1 restores server truth"),
+        ("STREAM CONTINUES", "The same Job Identity resumes progress"),
+        ("ARTIFACT REGISTRATION", "Checksum and delivery metadata are recorded"),
+        ("READY", "One command, one job, one delivery receipt"),
+        ("OBSERVABLE RESULT", "Retries and reconnects remain traceable"),
+        ("RECOVERY COMPLETE", "No duplicate execution and no lost progress"),
+    ]
+    label, message = captions[step]
+    draw.rounded_rectangle((66, 455, 1374, 650), radius=20, fill="#0e1623", outline="#31465e", width=2)
+    draw.text((96, 490), label, font=font(17, True), fill="#f1ae79" if step == 5 else "#5bd7e8")
+    draw.text((96, 535), message, font=font(25, True), fill="#f3eee8")
+    badges = ["IDEMPOTENCY", "PERSISTED STATE", "SSE + GET RECOVERY", "ARTIFACT RECEIPT"]
+    for index, badge in enumerate(badges):
+        x = 66 + index * 325
+        draw.rounded_rectangle((x, 700, x + 290, 756), radius=12, fill="#111c2a", outline="#38516b", width=2)
+        draw.text((x + 22, 718), badge, font=font(15, True), fill="#b9c8d8")
+    image.save(target, optimize=True)
+
+
+def build_reliability_media() -> None:
+    RELIABILITY_FRAMES.mkdir(parents=True, exist_ok=True)
+    frames: list[Path] = []
+    for index in range(12):
+        target = RELIABILITY_FRAMES / f"frame-{index:02d}.png"
+        reliability_frame(index, target)
+        frames.append(target)
+    images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
+    images[0].save(MEDIA / "reliability-recovery.gif", save_all=True, append_images=images[1:], duration=650, loop=0, optimize=True)
+    encode_video(frames, MEDIA / "reliability-recovery.mp4", fps=2)
 
 
 def api_contract_frame(step: int, target: Path) -> None:
@@ -181,6 +252,7 @@ if __name__ == "__main__":
     build_product_media()
     build_composition_media()
     build_cost_media()
+    build_reliability_media()
     build_api_contract_media()
     build_bruno_media()
     for artifact in sorted(MEDIA.glob("*")):
