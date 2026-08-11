@@ -1,0 +1,20 @@
+meta {
+  name: Create render job
+  type: http
+  seq: 1
+}
+post {
+  url: {{baseUrl}}/v1/render-jobs
+  body: json
+  auth: none
+}
+body:json {
+  {"projectId":"bruno-proof","template":"landscape","durationSeconds":18,"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
+}
+script:post-response {
+  bru.setVar("jobId", res.body.id);
+}
+tests {
+  test("command is accepted or idempotently replayed", function () { expect(res.status).to.equal(201); expect(["accepted", "composing", "encoding", "packaging", "ready"]).to.include(res.body.status); });
+  test("cost is attributed", function () { expect(res.body.estimatedCostUsd).to.be.a("number"); });
+}

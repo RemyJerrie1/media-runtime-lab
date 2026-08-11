@@ -1,0 +1,18 @@
+meta {
+  name: Idempotency replay
+  type: http
+  seq: 3
+}
+post {
+  url: {{baseUrl}}/v1/render-jobs
+  body: json
+  auth: none
+}
+body:json {
+  {"projectId":"bruno-proof","template":"landscape","durationSeconds":18,"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
+}
+tests {
+  test("same command returns the same identity", function () {
+    expect(res.body.id).to.equal(bru.getVar("jobId"));
+  });
+}
