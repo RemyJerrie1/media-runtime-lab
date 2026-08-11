@@ -4,12 +4,12 @@ Set-Location $repoRoot
 
 $pnpm = Get-Command pnpm -ErrorAction SilentlyContinue
 if (-not $pnpm) {
-  throw '找不到 pnpm。請先安裝 Node.js 20+，再執行：corepack enable'
+  throw 'pnpm was not found. Install Node.js 20+, then run: corepack enable'
 }
 
 if (-not (Test-Path (Join-Path $repoRoot 'node_modules'))) {
   & $pnpm.Source install
-  if ($LASTEXITCODE -ne 0) { throw '依賴安裝失敗。' }
+  if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
 }
 
 $apiCommand = "Set-Location -LiteralPath '$repoRoot'; pnpm --filter @media-lab/api dev"
@@ -27,10 +27,10 @@ do {
     catch { $apiReady = $_.Exception.Response.StatusCode -eq 404 }
     if ($web.StatusCode -eq 200 -and $apiReady) {
       Start-Process 'http://localhost:3000'
-      Write-Host 'Media Runtime Lab 已啟動：http://localhost:3000' -ForegroundColor Cyan
+      Write-Host 'Media Runtime Lab is ready: http://localhost:3000' -ForegroundColor Cyan
       exit 0
     }
   } catch {}
 } while ((Get-Date) -lt $deadline)
 
-throw '啟動逾時。請確認 3000 與 4000 ports 未被其他程式占用。'
+throw 'Startup timed out. Check whether ports 3000 and 4000 are already in use.'
