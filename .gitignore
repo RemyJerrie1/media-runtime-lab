@@ -4,5 +4,7 @@ dist
 .turbo
 coverage
 *.tsbuildinfo
+docs/media/product-frames/
+docs/media/bruno-frames/
 .env*
 !.env.example
