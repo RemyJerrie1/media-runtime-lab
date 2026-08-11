@@ -45,13 +45,13 @@ def encode_video(frames: list[Path], target: Path, fps: int = 4) -> None:
 def build_product_media() -> None:
     frames = sorted(FRAMES.glob("frame-*.png"))
     overview = MEDIA / "product-overview.png"
-    overview_image = Image.open(overview).convert("RGB")
+    overview_image = Image.open(frames[-1]).convert("RGB")
     frame_width, frame_height = Image.open(frames[0]).size
     overview_image = overview_image.crop((0, 0, frame_width, frame_height))
     overview_image.save(overview, format="PNG", optimize=True)
     images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
-    images[0].save(MEDIA / "product-demo.gif", save_all=True, append_images=images[1:], duration=250, loop=0, optimize=True)
-    encode_video(frames, MEDIA / "product-demo.mp4", fps=4)
+    images[0].save(MEDIA / "product-demo.gif", save_all=True, append_images=images[1:], duration=160, loop=0, optimize=True)
+    encode_video(frames, MEDIA / "product-demo.mp4", fps=6)
 
     lifecycle_dir = MEDIA / "lifecycle-frames"
     lifecycle_dir.mkdir(parents=True, exist_ok=True)
@@ -65,8 +65,8 @@ def build_product_media() -> None:
         crop.save(target, optimize=True)
         lifecycle_frames.append(target)
     lifecycle_images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in lifecycle_frames]
-    lifecycle_images[0].save(MEDIA / "render-lifecycle.gif", save_all=True, append_images=lifecycle_images[1:], duration=250, loop=0, optimize=True)
-    encode_video(lifecycle_frames, MEDIA / "render-lifecycle.mp4", fps=4)
+    lifecycle_images[0].save(MEDIA / "render-lifecycle.gif", save_all=True, append_images=lifecycle_images[1:], duration=160, loop=0, optimize=True)
+    encode_video(lifecycle_frames, MEDIA / "render-lifecycle.mp4", fps=6)
 
 
 def api_contract_frame(step: int, target: Path) -> None:

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { RenderJob } from '@media-lab/contracts';
+import { playheadX, waveformY } from './media-animation';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -13,23 +14,53 @@ export function RenderLab() {
   useEffect(() => {
     const ctx = canvas.current?.getContext('2d');
     if (!ctx) return;
-    const gradient = ctx.createLinearGradient(0, 0, 600, 320);
-    gradient.addColorStop(0, '#102c3b');
-    gradient.addColorStop(.55, '#281e39');
-    gradient.addColorStop(1, '#523046');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 600, 320);
-    ctx.fillStyle = '#f3e9df';
-    ctx.font = '600 26px system-ui';
-    ctx.fillText('AI × Deterministic Media', 38, 75);
-    ctx.font = '16px system-ui';
-    ctx.fillStyle = '#a9bac6';
-    ctx.fillText('Canvas scene · subtitle-safe composition', 38, 106);
-    ctx.strokeStyle = '#f1ae79';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    for (let x = 38; x < 550; x += 8) ctx.lineTo(x, 225 + Math.sin(x / 21) * 18);
-    ctx.stroke();
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let animationFrame = 0;
+
+    const draw = (elapsedMs: number) => {
+      const phase = reducedMotion ? 0 : elapsedMs / 520;
+      const gradient = ctx.createLinearGradient(0, 0, 600, 320);
+      gradient.addColorStop(0, '#102c3b');
+      gradient.addColorStop(.55, '#281e39');
+      gradient.addColorStop(1, '#523046');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 600, 320);
+      ctx.fillStyle = '#f3e9df';
+      ctx.font = '600 26px system-ui';
+      ctx.fillText('AI × Deterministic Media', 38, 75);
+      ctx.font = '16px system-ui';
+      ctx.fillStyle = '#a9bac6';
+      ctx.fillText('Canvas scene · subtitle-safe composition', 38, 106);
+
+      ctx.strokeStyle = '#f1ae79';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let x = 38; x < 550; x += 6) {
+        const y = waveformY(x, phase);
+        if (x === 38) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      const playhead = reducedMotion ? 294 : playheadX(elapsedMs);
+      const glow = ctx.createLinearGradient(playhead - 24, 0, playhead + 24, 0);
+      glow.addColorStop(0, 'rgba(91,215,232,0)');
+      glow.addColorStop(.5, 'rgba(91,215,232,.28)');
+      glow.addColorStop(1, 'rgba(91,215,232,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(playhead - 24, 132, 48, 130);
+      ctx.strokeStyle = '#5bd7e8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(playhead, 132);
+      ctx.lineTo(playhead, 262);
+      ctx.stroke();
+
+      if (!reducedMotion) animationFrame = requestAnimationFrame(draw);
+    };
+
+    draw(0);
+    return () => cancelAnimationFrame(animationFrame);
   }, []);
 
   async function create() {
