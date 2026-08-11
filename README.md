@@ -1,85 +1,82 @@
 # Media Runtime Lab
 
-> 一個可執行、可驗證、可治理的全端影音任務系統。
+小而完整的 **Media SaaS Full-Stack Reference Implementation**：以同一個 Render Job Identity 串起 API、SSE Progress、Deterministic Composition、Artifact Delivery、Token Usage 與 Cost Attribution。
 
-- 🎬 **Media Pipeline** — 建立任務 → 非同步處理 → 成品交付
-- 🛡️ **Runtime Reliability** — Idempotency · State Machine · SSE Recovery
-- 📊 **Operational Evidence** — Artifact · Token Usage · Cost Attribution
+## 🎬 Executable Media Flow
 
-## 🎬 影音任務全流程
+<a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="Media render workflow" /></a>
 
-<a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="Render job lifecycle" /></a>
+- **Control Plane** — NestJS · Idempotency · State Machine
+- **Execution** — Canvas Timeline · FFmpeg-ready Port · Deterministic Fallback
+- **Evidence** — Artifact · Token Usage · Cost Ledger
 
-- 同一個 `Job Identity` 串起 API、SSE Progress 與 Artifact Delivery
-- AI Provider 可替換；Canvas／FFmpeg 保留 Deterministic Fallback
+## 🎞️ Composition Timeline
 
-## ⚙️ Render Job Lifecycle
+<a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="Deterministic composition timeline" /></a>
 
-<a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="Animated render lifecycle" /></a>
-
-- `accepted → composing → encoding → packaging → ready`
-- Retry-safe · Recoverable · Observable
+- Scene Clips · CJK Subtitle Cues · Audio Envelope
+- 18s Timeline · 30fps Frame Identity · Render Playhead
 
 ## 🔌 API Contract
 
 <a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API contract walkthrough" /></a>
 
-- `POST /v1/render-jobs` — 建立具 Idempotency Key 的任務
-- `GET /v1/render-jobs/:id` — 讀取 Authoritative State
-- `SSE /v1/render-jobs/:id/events` — 接收進度並支援斷線恢復
+- `POST /v1/render-jobs` — Idempotent Command
+- `GET /v1/render-jobs/:id` — Authoritative State
+- `SSE /v1/render-jobs/:id/events` — Progress & Recovery
 
-## ✅ Bruno Regression
+## 🧪 Bruno Regression
 
 <a href="./docs/media/bruno-contract-tests.mp4"><img src="./docs/media/bruno-contract-tests.gif" width="760" alt="Bruno contract verification" /></a>
 
 - 4 Requests · 5 Assertions
-- 驗證 Idempotency、Boundary Rejection 與 State Recovery
+- Idempotency · Boundary Rejection · State Recovery
 
-## 🧭 Codex Engineering Governance
-
-- **Project Config** — [`.codex/config.toml`](./.codex/config.toml) + [Lifecycle Hooks](./.codex/hooks.json)
-- **Codex Hooks** — [PreToolUse Policy](./.codex/hooks/pre-tool-governance.mjs) + [Stop Governance Gate](./.codex/hooks/governance-gate.mjs)
-- **Codex Skills** — [Development](./.agents/skills/development/SKILL.md) · [Frontend](./.agents/skills/frontend/SKILL.md) · [Backend](./.agents/skills/backend/SKILL.md) · [E2E](./.agents/skills/test-e2e/SKILL.md)
-- **Engineering Policy** — [`AGENTS.md`](./AGENTS.md) + [Safe Media Change](./.agents/skills/safe-media-change/SKILL.md)
-- **Automated Gates** — Dependency Boundary · Contract Drift · Typecheck · Tests · Production Build
-- **Decision Record** — [ADR 0001](./docs/adr/0001-modular-control-plane.md)
-
-## 🗂️ 專案結構與治理邊界
+## 🧱 Architecture & Ownership
 
 ```text
-media-runtime-lab/
-├── apps/
-│   ├── web/                     # Next.js · TypeScript · Canvas · SSE UI
-│   │   └── app/features/        # Feature-first frontend modules
-│   └── api/                     # NestJS Media Control Plane
-│       └── src/render/
-│           ├── domain/          # State Machine · Invariants · Ports
-│           ├── application/     # Use Cases · Job Orchestration
-│           ├── interfaces/      # HTTP · SSE · Contract Validation
-│           └── infrastructure/  # Repository · Worker Adapters
-├── packages/contracts/          # Shared Zod Contract · No DTO Drift
-├── bruno/                       # Executable HTTP Regression
-├── .agents/skills/              # Development · Frontend · Backend · E2E
-├── .codex/                      # Hooks · Governance Gate · Project Config
-├── .husky/pre-commit            # Governance · Typecheck · Tests
-└── scripts/                     # Architecture Fitness Functions
+apps/
+├─ web/app/
+│  ├─ design-system/             # Design Tokens · UI Primitives
+│  ├─ shared/
+│  │  ├─ api/                    # Typed API Adapters
+│  │  └─ hooks/                  # SSE Lifecycle · Recovery
+│  └─ features/render-lab/       # Feature Composition · Media Timeline
+└─ api/src/render/
+   ├─ domain/                    # State Machine · Invariants · Ports
+   ├─ application/               # Use Cases · Job Orchestration
+   ├─ interfaces/                # HTTP · SSE · Contract Validation
+   └─ infrastructure/            # Repository · Worker Adapters
+
+packages/contracts/              # Shared Zod Contract · No DTO Drift
+bruno/                           # Executable HTTP Regression
+.agents/skills/                  # Development · Frontend · Backend · E2E
+.codex/                          # Hooks · Governance Gate · Project Config
+.husky/pre-commit                # Governance · Typecheck · Tests
+scripts/                         # Architecture Fitness Functions
 ```
 
-- **Frontend** 採 Feature-first ownership，網路與狀態邏輯不散落在畫面元件。
-- **Backend** 採 Domain → Application → Interface／Infrastructure 的依賴方向。
-- **Contract** 由 Zod、NestJS、Next.js、Bruno 與 Regression Tests 共用並交叉驗證。
+- **Frontend Boundary** — Page → Feature → Shared Hook/API → Contract
+- **Backend Boundary** — Interface → Application → Domain ← Infrastructure
+- **Design System** — Tokens 與 Primitive Components 集中管理視覺與互動規則
+- **State Ownership** — Server State 由 `useRenderJob` 管理；Canvas Timeline 保持純展示責任
 
-## 🧪 Test & Quality Gates
+## 🛡️ Codex Engineering Governance
 
-- **Domain Tests** — 合法／非法 State Transition
-- **Application Tests** — Idempotency · Job Completion · Artifact Receipt
-- **Frontend Tests** — Waveform Motion · Playhead Loop Boundary
-- **Contract Tests** — Payload Boundary · Token／Cost Receipt
-- **HTTP Regression** — Bruno 4 Requests · 5 Assertions
-- **Pre-commit** — Husky → Governance → Typecheck → Tests
+- **Project Config** — [`.codex/config.toml`](./.codex/config.toml) · [Lifecycle Hooks](./.codex/hooks.json)
+- **Codex Hooks** — [PreTool Policy](./.codex/hooks/pre-tool-governance.mjs) · [Stop Gate](./.codex/hooks/governance-gate.mjs)
+- **Codex Skills** — [Development](./.agents/skills/development/SKILL.md) · [Frontend](./.agents/skills/frontend/SKILL.md) · [Backend](./.agents/skills/backend/SKILL.md) · [E2E](./.agents/skills/test-e2e/SKILL.md)
+- **Architecture Decision** — [ADR 0001](./docs/adr/0001-modular-control-plane.md)
+
+## ✅ Verification
+
+- Contract Tests · Domain Tests · Application Tests
+- Timeline Mapping · Playhead Boundary · Frame Identity
+- Bruno HTTP Regression · Typecheck · Production Build
+- Husky Pre-commit · Architecture Fitness Functions
 
 <details>
-<summary><strong>🧪 Local Verification</strong></summary>
+<summary><strong>Local Verification</strong></summary>
 
 ```bash
 pnpm install

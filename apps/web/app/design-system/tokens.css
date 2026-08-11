@@ -1,0 +1,17 @@
+:root {
+  --bg: #080b12;
+  --panel: #101724;
+  --line: #29384b;
+  --ink: #f3eee8;
+  --muted: #9eacba;
+  --cyan: #5bd7e8;
+  --amber: #f1ae79;
+  --color-action: var(--amber);
+  --radius-control: 999px;
+  --space-control-y: 14px;
+  --space-control-x: 22px;
+}
+
+.ds-button { background: var(--color-action); border-radius: var(--radius-control); padding: var(--space-control-y) var(--space-control-x); }
+.metric-card { min-width: 0; }
+.error { color: #ff8fa3; margin-top: 14px; }
