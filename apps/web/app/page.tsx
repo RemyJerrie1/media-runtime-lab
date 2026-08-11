@@ -1,10 +1,12 @@
 import { RenderLab } from './features/render-lab/render-lab';
+import { CompositionShowcase } from './features/composition-showcase/composition-showcase';
+import { NAVIGATION } from './shared/constants/navigation';
 
 export default function Page() {
   return <main>
     <header className="nav">
       <a className="brand" href="/">MEDIA RUNTIME LAB</a>
-      <nav><a href="#architecture">Architecture</a><a href="/api-reference">API Reference</a></nav>
+      <nav>{NAVIGATION.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}</nav>
     </header>
     <section className="hero">
       <div>
@@ -18,6 +20,7 @@ export default function Page() {
       </div>
     </section>
     <RenderLab/>
+    <CompositionShowcase />
     <section id="architecture" className="architecture">
       <p className="eyebrow">SYSTEM BOUNDARIES</p>
       <h2>Small surface. Complete engineering semantics.</h2>

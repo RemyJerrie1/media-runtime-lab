@@ -8,5 +8,6 @@ docs/media/product-frames/
 docs/media/bruno-frames/
 docs/media/lifecycle-frames/
 docs/media/api-contract-frames/
+docs/media/composition-frames/
 .env*
 !.env.example

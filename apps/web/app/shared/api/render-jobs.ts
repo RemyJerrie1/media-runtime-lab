@@ -1,6 +1,7 @@
 import type { RenderJob } from '@media-lab/contracts';
+import { MEDIA_RUNTIME } from '../../config/media';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = MEDIA_RUNTIME.apiBaseUrl;
 
 export async function createRenderJob(): Promise<RenderJob> {
   const response = await fetch(`${API}/v1/render-jobs`, {
@@ -9,7 +10,7 @@ export async function createRenderJob(): Promise<RenderJob> {
     body: JSON.stringify({
       projectId: 'portfolio-reel',
       template: 'landscape',
-      durationSeconds: 18,
+      durationSeconds: MEDIA_RUNTIME.durationSeconds,
       narration: 'A deterministic media runtime governed by explicit contracts.',
       idempotencyKey: `portfolio-${Date.now()}`,
     }),

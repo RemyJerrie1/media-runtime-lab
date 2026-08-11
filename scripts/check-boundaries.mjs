@@ -8,5 +8,11 @@ walk(root);
 const rules=[['domain',['application','interfaces','infrastructure']],['application',['interfaces']],['infrastructure',['interfaces']]];
 const errors=[];
 for(const file of files){const rel=relative(root,file).replaceAll('\\','/');const layer=rel.split('/')[0];const source=readFileSync(file,'utf8');for(const[owner,forbidden]of rules)if(layer===owner)for(const target of forbidden)if(source.includes(`../${target}`)||source.includes(`/${target}/`))errors.push(`${rel} imports ${target}`)}
+const webRoot=fileURLToPath(new URL('../apps/web/app/',import.meta.url));
+const webFiles=[];
+function walkWeb(dir){for(const name of readdirSync(dir)){const path=join(dir,name);statSync(path).isDirectory()?walkWeb(path):/\.tsx?$/.test(path)&&webFiles.push(path)}}
+walkWeb(webRoot);
+const webRules=[['design-system',['features','shared']],['shared',['features']]];
+for(const file of webFiles){const rel=relative(webRoot,file).replaceAll('\\','/');const layer=rel.split('/')[0];const source=readFileSync(file,'utf8');for(const[owner,forbidden]of webRules)if(layer===owner)for(const target of forbidden)if(source.includes(`../${target}`)||source.includes(`/${target}/`))errors.push(`web/${rel} imports ${target}`)}
 if(errors.length){console.error(errors.join('\n'));process.exit(1)}
-console.log(`Boundary gate: ${files.length} files checked`);
+console.log(`Boundary gate: ${files.length} backend + ${webFiles.length} frontend files checked`);

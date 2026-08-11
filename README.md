@@ -17,6 +17,15 @@
 - Scene Clips · CJK Subtitle Cues · Audio Envelope
 - 18s Timeline · 30fps Frame Identity · Render Playhead
 
+## ✨ Subtitle · Sprite · 2D／3D Composition
+
+<a href="./docs/media/composition-showcase.mp4"><img src="./docs/media/composition-showcase.gif" width="760" alt="Subtitle sprite and 2D 3D media composition" /></a>
+
+- **CJK Subtitle** — Cue 切換與 Media Clock 對齊
+- **Sprite Sheet** — Frame Index 與播放進度可追蹤
+- **Canvas 2D** — Deterministic Composition Fallback
+- **CSS 3D** — 立體 Layer；保留 WebGL／Three.js Adapter 邊界
+
 ## 🔌 API Contract
 
 <a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API contract walkthrough" /></a>
@@ -38,10 +47,15 @@
 apps/
 ├─ web/app/
 │  ├─ design-system/             # Design Tokens · UI Primitives
+│  ├─ config/                    # Environment · Media Runtime Constants
 │  ├─ shared/
 │  │  ├─ api/                    # Typed API Adapters
-│  │  └─ hooks/                  # SSE Lifecycle · Recovery
-│  └─ features/render-lab/       # Feature Composition · Media Timeline
+│  │  ├─ constants/              # Navigation · Shared Policies
+│  │  ├─ hooks/                  # SSE Lifecycle · Recovery
+│  │  └─ ui/                     # Shared Presentation
+│  └─ features/
+│     ├─ render-lab/             # Job Lifecycle · Media Timeline
+│     └─ composition-showcase/   # CJK Cue · Sprite · Canvas 2D · CSS 3D
 └─ api/src/render/
    ├─ domain/                    # State Machine · Invariants · Ports
    ├─ application/               # Use Cases · Job Orchestration
@@ -56,10 +70,11 @@ bruno/                           # Executable HTTP Regression
 scripts/                         # Architecture Fitness Functions
 ```
 
-- **Frontend Boundary** — Page → Feature → Shared Hook/API → Contract
+- **Frontend Three Layers** — Route (RSC) → Feature (Client Island) → Shared／Design System
 - **Backend Boundary** — Interface → Application → Domain ← Infrastructure
 - **Design System** — Tokens 與 Primitive Components 集中管理視覺與互動規則
 - **State Ownership** — Server State 由 `useRenderJob` 管理；Canvas Timeline 保持純展示責任
+- **App Router** — `layout/page/loading/error/not-found` 採官方 File Conventions；互動範圍才建立 Client Boundary
 
 ## 🛡️ Codex Engineering Governance
 
@@ -71,7 +86,7 @@ scripts/                         # Architecture Fitness Functions
 ## ✅ Verification
 
 - Contract Tests · Domain Tests · Application Tests
-- Timeline Mapping · Playhead Boundary · Frame Identity
+- Timeline Mapping · Subtitle Cue · Sprite Frame · Playhead Boundary · Frame Identity
 - Bruno HTTP Regression · Typecheck · Production Build
 - Husky Pre-commit · Architecture Fitness Functions
 
