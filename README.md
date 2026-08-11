@@ -1,50 +1,51 @@
 # Media Runtime Lab
 
-An executable reference implementation for reliable media job orchestration.
+> 一個可執行、可驗證、可治理的全端影音任務系統。
 
-- **Render Workflow** — Create → Process → Deliver
-- **Runtime Guarantees** — Idempotency · SSE Recovery · State Machine
-- **Operational Evidence** — Artifact · Token Usage · Cost Attribution
+- 🎬 **Media Pipeline** — 建立任務 → 非同步處理 → 成品交付
+- 🛡️ **Runtime Reliability** — Idempotency · State Machine · SSE Recovery
+- 📊 **Operational Evidence** — Artifact · Token Usage · Cost Attribution
 
-## Product Flow
+## 🎬 影音任務全流程
 
 [![Render job lifecycle](./docs/media/product-demo.gif)](./docs/media/product-demo.mp4)
 
-- Command → Job → Progress → Artifact
-- One identity across API, SSE, and delivery
-- AI is replaceable; deterministic media stays available
+- 同一個 `Job Identity` 串起 API、SSE Progress 與 Artifact Delivery
+- AI Provider 可替換；Canvas／FFmpeg 保留 Deterministic Fallback
 
-## Render Lifecycle
+## ⚙️ Render Job Lifecycle
 
 [![Render lifecycle close-up](./docs/media/render-lifecycle.gif)](./docs/media/render-lifecycle.mp4)
 
 - `accepted → composing → encoding → packaging → ready`
 - Retry-safe · Recoverable · Observable
 
-## API Contract
+## 🔌 API Contract
 
 [![API contract walkthrough](./docs/media/api-contract.gif)](./docs/media/api-contract.mp4)
 
-- `POST /v1/render-jobs`
-- `GET /v1/render-jobs/:id`
-- `SSE /v1/render-jobs/:id/events`
+- `POST /v1/render-jobs` — 建立具 Idempotency Key 的任務
+- `GET /v1/render-jobs/:id` — 讀取 Authoritative State
+- `SSE /v1/render-jobs/:id/events` — 接收進度並支援斷線恢復
 
-## Bruno Regression
+## ✅ Bruno Regression
 
 [![Bruno contract verification](./docs/media/bruno-contract-tests.gif)](./docs/media/bruno-contract-tests.mp4)
 
-- 4 requests · 5 assertions
-- Idempotency · Boundary rejection · State recovery
+- 4 Requests · 5 Assertions
+- 驗證 Idempotency、Boundary Rejection 與 State Recovery
 
-## Governance
+## 🧭 Codex Engineering Governance
 
-- **Fitness Functions** — dependency boundaries + contract drift
-- **Codex Guardrails** — [`AGENTS.md`](./AGENTS.md) + [project skill](./.agents/skills/safe-media-change/SKILL.md)
-- **Regression** — domain tests + HTTP contract tests
+- **Project Config** — [`.codex/config.toml`](./.codex/config.toml) + [Lifecycle Hooks](./.codex/hooks.json)
+- **Codex Hooks** — [PreToolUse Policy](./.codex/hooks/pre-tool-governance.mjs) + [Stop Governance Gate](./.codex/hooks/governance-gate.mjs)
+- **Codex Skills** — [Development](./.agents/skills/development/SKILL.md) · [Frontend](./.agents/skills/frontend/SKILL.md) · [Backend](./.agents/skills/backend/SKILL.md) · [E2E](./.agents/skills/test-e2e/SKILL.md)
+- **Engineering Policy** — [`AGENTS.md`](./AGENTS.md) + [Safe Media Change](./.agents/skills/safe-media-change/SKILL.md)
+- **Automated Gates** — Dependency Boundary · Contract Drift · Typecheck · Tests · Production Build
 - **Decision Record** — [ADR 0001](./docs/adr/0001-modular-control-plane.md)
 
 <details>
-<summary><strong>Run locally</strong></summary>
+<summary><strong>🧪 Local Verification</strong></summary>
 
 ```bash
 pnpm install
