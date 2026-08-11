@@ -70,7 +70,7 @@ export function CompositionShowcase() {
 
   return <section id="composition" className={styles.section}>
     <SectionHeading
-      eyebrow="MEDIA COMPOSITION PROOF"
+      eyebrow="MEDIA COMPOSITION"
       title="字幕、Sprite 與 2D／3D Layer 共用一條媒體時間軸"
       description="AI 負責生成候選內容；確定性的前端預覽與後端算圖管線，負責可重播、可驗證的交付結果。"
     />

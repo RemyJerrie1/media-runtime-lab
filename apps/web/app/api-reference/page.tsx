@@ -9,7 +9,7 @@ export default function ApiReference() {
     <header className="nav"><a className="brand" href="/">MEDIA RUNTIME LAB</a><nav><a href="/">Back to system</a></nav></header>
     <section className="docs">
       <p className="eyebrow">STATIC API REFERENCE</p>
-      <h1>Render Control Plane</h1>
+      <h1>Render Job API</h1>
       <p className="lede">One contract governs the NestJS API, Next.js client, Bruno collection, and regression suite.</p>
       <div className="endpoint-list">{endpoints.map((endpoint) => <article key={endpoint.path}>
         <code className={endpoint.method.toLowerCase()}>{endpoint.method}</code>

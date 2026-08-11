@@ -1,14 +1,15 @@
 # Media Runtime Lab
 
-小而完整的 **Media SaaS Full-Stack Reference Implementation**：以同一個 Render Job Identity 串起 API、SSE Progress、Deterministic Composition、Artifact Delivery、Token Usage 與 Cost Attribution。
+以 **Next.js、TypeScript 與 NestJS** 實作影音 SaaS 的核心工作流程，涵蓋任務建立、即時進度、字幕與動畫合成、成品交付，以及 Token 用量與成本紀錄。
 
 ## 🎬 Executable Media Flow
 
 <a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="Media render workflow" /></a>
 
-- **Control Plane** — NestJS · Idempotency · State Machine
-- **Execution** — Canvas Timeline · FFmpeg-ready Port · Deterministic Fallback
-- **Evidence** — Artifact · Token Usage · Cost Ledger
+- **Frontend** — Next.js App Router · SSE Progress · Canvas Timeline
+- **Backend** — NestJS · Idempotency · State Machine · Artifact Registry
+- **Media** — CJK Subtitle · Sprite Sheet · 2D／3D Composition · FFmpeg-ready Adapter
+- **Operations** — Retry & Recovery · Token Usage · Cost Attribution
 
 ## 🎞️ Composition Timeline
 

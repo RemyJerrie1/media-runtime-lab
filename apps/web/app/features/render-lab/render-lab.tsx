@@ -9,7 +9,7 @@ export function RenderLab() {
   const { job, busy, error, run } = useRenderJob();
   return <section className="lab">
     <div className="lab-copy">
-      <p className="eyebrow">EXECUTABLE PROOF</p>
+      <p className="eyebrow">LIVE RENDER WORKFLOW</p>
       <h2>One job identity. End-to-end evidence.</h2>
       <ul>
         <li>Create a governed render command</li>
