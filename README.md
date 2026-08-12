@@ -7,35 +7,15 @@ Durable control plane for reliable, cost-governed AI media execution.
 ## The high-risk problem
 
 - Duplicate commands waste render and AI cost
-- Restarts can lose jobs; SSE disconnects can miss progress
+- Restarts and SSE disconnects can lose workflow state
 - Untraced artifacts cannot be governed
-- This lab adds a durable, tenant-scoped control plane
 
 ## Runtime guarantees
 
 - **One command, one job** — database-backed idempotency
-- **Restart-safe** — persisted jobs, events, leases, and artifacts
-- **Recoverable SSE** — replay from `Last-Event-ID`
+- **Restart-safe** — persisted jobs, events, leases, and SSE replay
 - **Atomic completion** — artifact and `ready` state commit together
-- **Tenant controls** — isolation, rate limits, and token quotas
-- **End-to-end trace** — command → job → artifact → usage
-
-## Engineering evidence
-
-- **Verified** — duplicate prevention, contract drift gate, trace fields
-- **Targets** — 99.9% render success, ≤ 2s reconnect recovery
-
-### Measured evidence
-
-- 100 concurrent commands → 1 job
-- Reconnect replay → no missing sequences
-- Worker lease expiry → attempt 2 resumes
-
-## Delivery status
-
-- **Built** — PostgreSQL workflow, crash recovery, SSE replay, tenancy, tracing, CI
-- **Simulated** — FFmpeg/provider work, local credentials, in-process metrics
-- **Next** — object storage, external identity, verified provider receipts, OpenTelemetry alerts
+- **Governed execution** — tenant controls, quotas, and end-to-end trace
 
 ## 🎬 Media Job Workflow
 
@@ -46,7 +26,7 @@ Durable control plane for reliable, cost-governed AI media execution.
 - **Media** — CJK Subtitle · Sprite Sheet · 2D/3D Composition · FFmpeg-ready Adapter
 - **Operations** — Retry & Recovery · Token Usage · Cost Attribution
 
-## Design System & Product Adoption
+## 🎨 Design System & Product Adoption
 
 <a href="./docs/media/design-system-showcase.mp4"><img src="./docs/media/design-system-showcase.gif" width="760" alt="Design tokens production component states and product usage mapping" /></a>
 
@@ -89,6 +69,14 @@ Durable control plane for reliable, cost-governed AI media execution.
 - Persisted event sequences replay after `Last-Event-ID`, including after job completion
 - Expired outbox leases let another worker resume after process interruption
 - Artifact checksum, ready state, event, and work completion commit atomically
+
+## 📊 Evidence & Production Boundary
+
+- **Verified** — duplicate prevention, contract drift gate, trace fields
+- **Measured** — 100 concurrent commands → 1 job; replay → no missing sequences; expired lease → attempt 2
+- **Targets** — 99.9% render success; ≤ 2s reconnect recovery
+- **Simulated** — FFmpeg/provider work, local credentials, in-process metrics
+- **Next** — object storage, external identity, provider receipts, OpenTelemetry alerts
 
 ## 🔌 API Contract
 
