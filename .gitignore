@@ -13,3 +13,4 @@ docs/media/cost-frames/
 docs/media/reliability-frames/
 .env*
 !.env.example
+docs/media/design-system-frames/

@@ -2,6 +2,7 @@
 
 import { Button } from '../../design-system/button';
 import { MetricCard } from '../../design-system/metric-card';
+import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
 import { MediaTimeline } from './media-timeline';
 
@@ -22,11 +23,11 @@ export function RenderLab() {
     <div className="console">
       <MediaTimeline />
       <div className="job">
-        <MetricCard label="JOB STATUS" value={job?.status.toUpperCase() ?? 'NOT STARTED'} />
+        <MetricCard label="JOB STATUS" value={job?.status.toUpperCase() ?? 'NOT STARTED'} tone={job?.status === 'ready' ? 'success' : 'accent'} />
         <MetricCard label="STAGE" value={job?.stage ?? 'Awaiting command'} />
         <MetricCard label="COST / TOKEN" value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'} />
       </div>
-      <div className="meter"><i style={{ width: `${job?.progress ?? 0}%` }} /></div>
+      <ProgressBar label="RENDER PROGRESS" value={job?.progress ?? 0} tone={job?.status === 'ready' ? 'success' : 'accent'} />
     </div>
   </section>;
 }

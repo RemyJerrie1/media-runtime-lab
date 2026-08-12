@@ -11,6 +11,15 @@ A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It c
 - **Media** — CJK Subtitle · Sprite Sheet · 2D/3D Composition · FFmpeg-ready Adapter
 - **Operations** — Retry & Recovery · Token Usage · Cost Attribution
 
+## Design System & Product Adoption
+
+<a href="./docs/media/design-system-showcase.mp4"><img src="./docs/media/design-system-showcase.gif" width="760" alt="Design tokens production component states and product usage mapping" /></a>
+
+- **Semantic Tokens** — Color · Spacing · Type · Radius
+- **Production Primitives** — Button · Metric Card · Status Badge · Progress Bar
+- **Interaction States** — Default · Hover · Loading · Disabled · Success · Warning · Failure
+- **Traceable Adoption** — Every primitive maps back to Render, Composition, or Governance surfaces
+
 ## 🎞️ Composition Timeline
 
 <a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="Deterministic composition timeline" /></a>
