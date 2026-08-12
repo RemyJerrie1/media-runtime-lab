@@ -38,7 +38,7 @@ def main() -> None:
     if not frames:
         raise RuntimeError("No design-system frames were captured")
     images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
-    durations = [650, 450, 450, 700, 450, 450, 450, 700, 500, 500, 500, 850]
+    durations = [650 if index in {0, 4, 8, 9, 13, 17, 18, 22, 26} else 300 for index in range(len(images))]
     images[0].save(
         MEDIA / "design-system-showcase.gif", save_all=True, append_images=images[1:],
         duration=durations[:len(images)], loop=0, optimize=True,
