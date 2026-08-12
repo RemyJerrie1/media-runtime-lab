@@ -2,10 +2,11 @@
 
 AI may propose code; repository policy decides whether it enters the system. The controls are executable:
 
-- Architecture fitness function rejects reversed dependencies.
-- Contract gate keeps Zod schema, static API reference and Bruno examples aligned.
-- Domain tests lock legal and illegal media-job transitions.
-- Bruno verifies HTTP behavior, idempotency and validation from outside the process.
-- The change skill forces cost attribution and deterministic fallback to remain part of provider changes.
+- Architecture fitness functions reject reversed dependency direction and concrete infrastructure imports from application policy.
+- Contract drift checks keep Zod schema, API reference, and Bruno examples aligned.
+- Domain tests lock legal transitions and atomic artifact evidence.
+- Application tests cover concurrent idempotency, tenant isolation, quota, work leases, and event replay.
+- PostgreSQL integration tests run in CI against a real service and cover cross-instance deduplication, restart persistence, and expired-lease recovery.
+- GitHub Actions blocks merge on governance, typecheck, tests, production build, and high-severity dependency audit.
 
-The next production adapter replaces the in-memory repository with Prisma/PostgreSQL and adds an outbox before a queue. That evolution is deliberately visible rather than disguised as production readiness.
+The in-memory store is an explicit local fallback. Setting `DATABASE_URL` activates the durable PostgreSQL workflow. External identity, object storage, provider receipt verification, and OpenTelemetry export remain deliberate next milestones; the repository does not claim those controls are already production services.

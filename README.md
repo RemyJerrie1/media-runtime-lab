@@ -1,6 +1,45 @@
 # Media Runtime Lab
 
+[![verify](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml/badge.svg?branch=dev)](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml)
+
 A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It covers render-job creation, live progress, subtitle and motion composition, artifact delivery, AI token attribution, and cost governance.
+
+## The high-risk problem
+
+AI media execution is slow, expensive, and failure-prone. A duplicate command can double cost; a process restart can lose progress; a disconnected client can miss completion; and an artifact without usage and trace evidence cannot be governed. This repository demonstrates how to put that unstable work behind a durable, tenant-scoped control plane.
+
+## Runtime guarantees
+
+| Risk | Implemented control | Executable evidence |
+| --- | --- | --- |
+| Duplicate execution across API instances | PostgreSQL tenant advisory lock + unique `(tenant_id, idempotency_key)` constraint | Concurrent two-store integration test |
+| API or worker process restart | Persisted job, event, outbox lease, and artifact tables | Repository restart + expired lease recovery test |
+| Missed SSE progress | Monotonic event sequence + `Last-Event-ID` replay | Replay-after-sequence application test |
+| Partial artifact completion | Job `ready`, checksum, event, and outbox completion in one transaction | Domain invariant + PostgreSQL transaction |
+| Cross-tenant data access | Authenticated tenant context on commands and reads | Tenant-isolation test |
+| Unbounded usage | Per-tenant rate policy + daily attributed-token quota | Quota regression test |
+| Untraceable execution | `traceId -> jobId -> transition -> artifact -> usage` structured logs | Operations endpoint + JSON log fields |
+
+## Engineering targets
+
+| Measure | Target | Current proof |
+| --- | ---: | --- |
+| Duplicate execution rate | 0% | Database uniqueness, not process memory |
+| Reconnect recovery | <= 2 seconds | 250 ms persisted-event polling, 1 s SSE retry |
+| Render success SLO | 99.9% | Declared in `/v1/operations`; production alerting is next |
+| Cost attribution coverage | 100% | Token and estimated cost on every job receipt |
+| Trace completeness | 100% | Tenant, project, trace, job, sequence, attempt, artifact checksum |
+| Contract drift | 0 accepted | CI-blocking fitness function |
+
+## Delivery status
+
+| Implemented | Deliberately simulated | Next production milestone |
+| --- | --- | --- |
+| PostgreSQL persistence and migrations | FFmpeg worker payload | Object storage + signed artifact URLs |
+| Atomic idempotency and quota gate | Provider token receipt | Provider receipt verification |
+| Transactional outbox lease and crash recovery | Local demo credential | External identity and policy service |
+| Persisted SSE replay | Process-local metrics window | OpenTelemetry export + SLO alerts |
+| Tenant isolation, structured trace logs, CI | In-memory fallback when no `DATABASE_URL` | Managed queue only when scale signals require it |
 
 ## 🎬 Media Job Workflow
 
@@ -50,9 +89,10 @@ A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It c
 
 <a href="./docs/media/reliability-recovery.mp4"><img src="./docs/media/reliability-recovery.gif" width="760" alt="Idempotency SSE recovery and artifact delivery" /></a>
 
-- Duplicate commands return the same Job Identity instead of creating duplicate work
-- SSE progress can recover through an authoritative `GET` after interruption
-- State transitions remain explicit until the artifact reaches `ready`
+- Database-enforced idempotency returns one Job Identity across concurrent API instances
+- Persisted event sequences replay after `Last-Event-ID`, including after job completion
+- Expired outbox leases let another worker resume after process interruption
+- Artifact checksum, ready state, event, and work completion commit atomically
 
 ## 🔌 API Contract
 
@@ -66,7 +106,7 @@ A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It c
 
 <a href="./docs/media/bruno-contract-tests.mp4"><img src="./docs/media/bruno-contract-tests.gif" width="760" alt="Bruno contract verification" /></a>
 
-- 4 Requests · 5 Assertions
+- 5 Requests · 7 Tests
 - Idempotency · Boundary Rejection · State Recovery
 
 ## 🧱 Architecture & Ownership
@@ -89,7 +129,7 @@ apps/
    ├─ domain/                    # State Machine · Invariants · Ports
    ├─ application/               # Use Cases · Job Orchestration
    ├─ interfaces/                # HTTP · SSE · Contract Validation
-   └─ infrastructure/            # Repository · Worker Adapters
+   └─ infrastructure/            # PostgreSQL · Outbox · Worker Adapters
 
 packages/contracts/              # Shared Zod Contract · No DTO Drift
 bruno/                           # Executable HTTP Regression
@@ -110,7 +150,8 @@ scripts/                         # Architecture Fitness Functions
 - **Project Config** — [`.codex/config.toml`](./.codex/config.toml) · [Lifecycle Hooks](./.codex/hooks.json)
 - **Codex Hooks** — [PreTool Policy](./.codex/hooks/pre-tool-governance.mjs) · [Stop Gate](./.codex/hooks/governance-gate.mjs)
 - **Codex Skills** — [Development](./.agents/skills/development/SKILL.md) · [Frontend](./.agents/skills/frontend/SKILL.md) · [Backend](./.agents/skills/backend/SKILL.md) · [E2E](./.agents/skills/test-e2e/SKILL.md)
-- **Architecture Decision** — [ADR 0001](./docs/adr/0001-modular-control-plane.md)
+- **Architecture Decisions** — [ADR 0001](./docs/adr/0001-modular-control-plane.md) · [ADR 0002](./docs/adr/0002-durable-workflow-and-replay.md)
+- **Operations Model** — [SLOs, failure modes, and trace evidence](./docs/architecture/operations.md)
 
 ## ✅ Verification
 
@@ -125,6 +166,8 @@ scripts/                         # Architecture Fitness Functions
 
 ```bash
 pnpm install
+Copy-Item .env.example .env
+docker compose up -d postgres
 pnpm verify
 pnpm dev
 ```

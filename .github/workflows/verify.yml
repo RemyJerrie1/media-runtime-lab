@@ -1,0 +1,38 @@
+name: verify
+on:
+  push:
+    branches: [dev]
+  pull_request:
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: media
+          POSTGRES_PASSWORD: media
+          POSTGRES_DB: media_runtime
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U media -d media_runtime"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://media:media@localhost:5432/media_runtime
+      MEDIA_RUNTIME_API_KEY: ci-test-key
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.16.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm governance
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm audit --audit-level high

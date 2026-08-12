@@ -8,6 +8,10 @@ get {
   body: none
   auth: none
 }
+headers {
+  x-tenant-id: bruno-tenant
+  x-api-key: local-demo-key
+}
 tests {
   test("job is addressable", function () {
     expect(res.status).to.equal(200);

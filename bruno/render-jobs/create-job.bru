@@ -8,6 +8,10 @@ post {
   body: json
   auth: none
 }
+headers {
+  x-tenant-id: bruno-tenant
+  x-api-key: local-demo-key
+}
 body:json {
   {"projectId":"bruno-proof","template":"landscape","durationSeconds":18,"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
 }

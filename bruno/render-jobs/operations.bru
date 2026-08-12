@@ -1,0 +1,25 @@
+meta {
+  name: Operations evidence
+  type: http
+  seq: 5
+}
+get {
+  url: {{baseUrl}}/v1/operations
+  body: none
+  auth: none
+}
+headers {
+  x-tenant-id: bruno-tenant
+  x-api-key: local-demo-key
+}
+tests {
+  test("SLO objectives are explicit", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.targets.renderSuccessRate).to.equal(0.999);
+    expect(res.body.targets.recoverySeconds).to.equal(2);
+  });
+  test("workflow telemetry is exposed", function () {
+    expect(res.body.commands).to.be.a("number");
+    expect(res.body.active).to.be.a("number");
+  });
+}

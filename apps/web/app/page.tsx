@@ -1,6 +1,7 @@
 import { RenderLab } from './features/render-lab/render-lab';
 import { CompositionShowcase } from './features/composition-showcase/composition-showcase';
 import { CostGovernance } from './features/cost-governance/cost-governance';
+import { OperationsEvidence } from './features/operations-evidence/operations-evidence';
 import { NAVIGATION } from './shared/constants/navigation';
 
 export default function Page() {
@@ -23,6 +24,7 @@ export default function Page() {
     <RenderLab/>
     <CompositionShowcase />
     <CostGovernance />
+    <OperationsEvidence />
     <section id="architecture" className="architecture">
       <p className="eyebrow">SYSTEM BOUNDARIES</p>
       <h2>Product flow, engineering boundaries, and operational evidence.</h2>
