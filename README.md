@@ -2,7 +2,7 @@
 
 [![verify](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml/badge.svg?branch=dev)](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml)
 
-A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It covers render-job creation, live progress, subtitle and motion composition, artifact delivery, AI token attribution, and cost governance.
+Durable control plane for reliable, cost-governed AI media execution.
 
 ## The high-risk problem
 
@@ -20,13 +20,16 @@ A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It c
 - **Tenant controls** — isolation, rate limits, and token quotas
 - **End-to-end trace** — command → job → artifact → usage
 
-## Engineering targets
+## Engineering evidence
 
-- **0%** duplicate execution
-- **≤ 2s** reconnect recovery
-- **99.9%** render success SLO
-- **100%** cost attribution and trace coverage
-- **0** contract drift accepted by CI
+- **Verified** — duplicate prevention, contract drift gate, trace fields
+- **Targets** — 99.9% render success, ≤ 2s reconnect recovery
+
+### Measured evidence
+
+- 100 concurrent commands → 1 job
+- Reconnect replay → no missing sequences
+- Worker lease expiry → attempt 2 resumes
 
 ## Delivery status
 
