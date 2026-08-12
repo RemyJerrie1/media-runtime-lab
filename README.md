@@ -6,40 +6,33 @@ A full-stack media workflow built with **Next.js, TypeScript, and NestJS**. It c
 
 ## The high-risk problem
 
-AI media execution is slow, expensive, and failure-prone. A duplicate command can double cost; a process restart can lose progress; a disconnected client can miss completion; and an artifact without usage and trace evidence cannot be governed. This repository demonstrates how to put that unstable work behind a durable, tenant-scoped control plane.
+- Duplicate commands waste render and AI cost
+- Restarts can lose jobs; SSE disconnects can miss progress
+- Untraced artifacts cannot be governed
+- This lab adds a durable, tenant-scoped control plane
 
 ## Runtime guarantees
 
-| Risk | Implemented control | Executable evidence |
-| --- | --- | --- |
-| Duplicate execution across API instances | PostgreSQL tenant advisory lock + unique `(tenant_id, idempotency_key)` constraint | Concurrent two-store integration test |
-| API or worker process restart | Persisted job, event, outbox lease, and artifact tables | Repository restart + expired lease recovery test |
-| Missed SSE progress | Monotonic event sequence + `Last-Event-ID` replay | Replay-after-sequence application test |
-| Partial artifact completion | Job `ready`, checksum, event, and outbox completion in one transaction | Domain invariant + PostgreSQL transaction |
-| Cross-tenant data access | Authenticated tenant context on commands and reads | Tenant-isolation test |
-| Unbounded usage | Per-tenant rate policy + daily attributed-token quota | Quota regression test |
-| Untraceable execution | `traceId -> jobId -> transition -> artifact -> usage` structured logs | Operations endpoint + JSON log fields |
+- **One command, one job** — database-backed idempotency
+- **Restart-safe** — persisted jobs, events, leases, and artifacts
+- **Recoverable SSE** — replay from `Last-Event-ID`
+- **Atomic completion** — artifact and `ready` state commit together
+- **Tenant controls** — isolation, rate limits, and token quotas
+- **End-to-end trace** — command → job → artifact → usage
 
 ## Engineering targets
 
-| Measure | Target | Current proof |
-| --- | ---: | --- |
-| Duplicate execution rate | 0% | Database uniqueness, not process memory |
-| Reconnect recovery | <= 2 seconds | 250 ms persisted-event polling, 1 s SSE retry |
-| Render success SLO | 99.9% | Declared in `/v1/operations`; production alerting is next |
-| Cost attribution coverage | 100% | Token and estimated cost on every job receipt |
-| Trace completeness | 100% | Tenant, project, trace, job, sequence, attempt, artifact checksum |
-| Contract drift | 0 accepted | CI-blocking fitness function |
+- **0%** duplicate execution
+- **≤ 2s** reconnect recovery
+- **99.9%** render success SLO
+- **100%** cost attribution and trace coverage
+- **0** contract drift accepted by CI
 
 ## Delivery status
 
-| Implemented | Deliberately simulated | Next production milestone |
-| --- | --- | --- |
-| PostgreSQL persistence and migrations | FFmpeg worker payload | Object storage + signed artifact URLs |
-| Atomic idempotency and quota gate | Provider token receipt | Provider receipt verification |
-| Transactional outbox lease and crash recovery | Local demo credential | External identity and policy service |
-| Persisted SSE replay | Process-local metrics window | OpenTelemetry export + SLO alerts |
-| Tenant isolation, structured trace logs, CI | In-memory fallback when no `DATABASE_URL` | Managed queue only when scale signals require it |
+- **Built** — PostgreSQL workflow, crash recovery, SSE replay, tenancy, tracing, CI
+- **Simulated** — FFmpeg/provider work, local credentials, in-process metrics
+- **Next** — object storage, external identity, verified provider receipts, OpenTelemetry alerts
 
 ## 🎬 Media Job Workflow
 
