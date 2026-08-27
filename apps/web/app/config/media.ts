@@ -6,8 +6,8 @@ export const MEDIA_RUNTIME = {
 } as const;
 
 export const MEDIA_CAPABILITIES = [
-  'CJK Subtitle Cues',
-  'Sprite Sheet Playback',
-  'Canvas 2D Composition',
-  'CSS 3D Layer',
+  '中日韓字幕提示軌',
+  '精靈圖播放',
+  'Canvas 二維合成',
+  'CSS 三維圖層',
 ] as const;

@@ -31,7 +31,7 @@ export function CompositionShowcase() {
         previousCue = cue.text;
       }
       if (spriteFrame !== previousFrame && frameRef.current) {
-        frameRef.current.textContent = `SPRITE ${String(spriteFrame + 1).padStart(2, '0')}/08`;
+        frameRef.current.textContent = `精靈圖 ${String(spriteFrame + 1).padStart(2, '0')}/08`;
         previousFrame = spriteFrame;
       }
 
@@ -60,8 +60,8 @@ export function CompositionShowcase() {
       context.beginPath(); context.moveTo(-15, 21); context.lineTo(-22 + stride, 58); context.moveTo(15, 21); context.lineTo(22 - stride, 58); context.stroke();
       context.restore();
 
-      context.fillStyle = '#f3eee8'; context.font = '700 20px ui-monospace, monospace'; context.fillText('CANVAS 2D COMPOSITION', 48, 58);
-      context.fillStyle = '#9eacba'; context.font = '14px ui-monospace, monospace'; context.fillText('deterministic frame clock · CJK cue track · sprite playback', 48, 84);
+      context.fillStyle = '#f3eee8'; context.font = '700 20px ui-monospace, monospace'; context.fillText('Canvas 二維媒體合成', 48, 58);
+      context.fillStyle = '#9eacba'; context.font = '14px ui-monospace, monospace'; context.fillText('確定性影格時鐘 · 中文提示軌 · 精靈圖播放', 48, 84);
       if (!reducedMotion) animationFrame = requestAnimationFrame(render);
     };
     render(0);
@@ -70,7 +70,7 @@ export function CompositionShowcase() {
 
   return <section id="composition" className={styles.section}>
     <SectionHeading
-      eyebrow="MEDIA COMPOSITION"
+      eyebrow="媒體合成"
       title="字幕、Sprite 與 2D／3D Layer 共用一條媒體時間軸"
       description="AI 負責生成候選內容；確定性的前端預覽與後端算圖管線，負責可重播、可驗證的交付結果。"
     />
@@ -85,8 +85,8 @@ export function CompositionShowcase() {
           <span className={`${styles.face} ${styles.left}`}>CSS</span><span className={`${styles.face} ${styles.right}`}>WEBGL</span>
           <span className={`${styles.face} ${styles.top}`}>Z+</span><span className={`${styles.face} ${styles.bottom}`}>Z−</span>
         </div>
-        <p ref={subtitleRef} className={styles.subtitle} aria-live="polite">讓 AI 產生靈感，讓工程確保交付。</p>
-        <div className={styles.sprite}><span ref={frameRef}>SPRITE 01/08</span><span className={styles.track}><i /></span><span className={styles.badge}>30 FPS</span></div>
+        <p ref={subtitleRef} className={styles.subtitle} aria-live="polite">讓人工智慧產生靈感，讓工程確保交付。</p>
+        <div className={styles.sprite}><span ref={frameRef}>精靈圖 01/08</span><span className={styles.track}><i /></span><span className={styles.badge}>每秒 30 影格</span></div>
       </div>
     </div>
   </section>;

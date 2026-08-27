@@ -24,6 +24,7 @@ Durable control plane for reliable, cost-governed AI media execution.
 - **Frontend** — Next.js App Router · SSE Progress · Canvas Timeline
 - **Backend** — NestJS · Idempotency · State Machine · Artifact Registry
 - **Media** — CJK Subtitle · Sprite Sheet · 2D/3D Composition · FFmpeg-ready Adapter
+- **Interactive Workbench** — Trim · CRF/Bitrate · Preset · FPS · GOP · CFR/VFR · A/V Sync · Subtitle · Watermark · CSAI/SSAI · Faststart
 - **Operations** — Retry & Recovery · Token Usage · Cost Attribution
 
 ## 🎨 Design System & Product Adoption
@@ -60,6 +61,7 @@ Durable control plane for reliable, cost-governed AI media execution.
 - **Usage Ledger** — Append-only events as the source of truth for cost and quota
 - **Budget Gate** — Alert · Throttle · Model Fallback
 - **Execution Note** — Provider receipts are simulated; no external model or API key is used
+- **FFmpeg Note** — The local demo validates and persists executable ffprobe/FFmpeg argument plans; its artifact remains simulated until a real uploaded source and isolated FFmpeg worker are connected
 
 ## 🛡️ Reliability & Recovery
 

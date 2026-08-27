@@ -1,13 +1,15 @@
-import type { RenderJob } from '@media-lab/contracts';
+import type { CreateRenderJob, RenderJob } from '@media-lab/contracts';
 import { MEDIA_RUNTIME } from '../../config/media';
 
 const API = MEDIA_RUNTIME.apiBaseUrl;
 const tenantHeaders={'x-tenant-id':'portfolio','x-api-key':'local-demo-key'};
 
-export async function createRenderJob(): Promise<RenderJob> {
+export type RenderEditorCommand = Pick<CreateRenderJob,'template'|'trimStartSeconds'|'durationSeconds'|'encoding'|'processing'>;
+
+export async function createRenderJob(editor:RenderEditorCommand): Promise<RenderJob> {
   const response = await fetch(`${API}/v1/render-jobs`, {
     method: 'POST', headers: { 'content-type': 'application/json',...tenantHeaders,'x-trace-id':crypto.randomUUID() },
-    body: JSON.stringify({projectId:'portfolio-reel',template:'landscape',durationSeconds:MEDIA_RUNTIME.durationSeconds,narration:'A deterministic media runtime governed by explicit contracts.',idempotencyKey:`portfolio-${Date.now()}`}),
+    body: JSON.stringify({projectId:'portfolio-reel',...editor,narration:'A deterministic media runtime governed by explicit contracts.',idempotencyKey:`portfolio-${Date.now()}`}),
   });
   if (!response.ok) throw new Error(`Render command rejected (${response.status})`);
   return response.json() as Promise<RenderJob>;

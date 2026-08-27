@@ -13,7 +13,7 @@ headers {
   x-api-key: local-demo-key
 }
 body:json {
-  {"projectId":"bruno-proof","template":"landscape","durationSeconds":18,"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
+  {"projectId":"bruno-proof","template":"landscape","trimStartSeconds":0,"durationSeconds":18,"encoding":{"codec":"libx264","preset":"medium","rateControl":"crf","crf":23,"bitrateKbps":4000,"gop":60,"fps":30},"processing":{"frameRateMode":"cfr","audioSampleRate":48000,"audioSync":"async-resample","subtitleMode":"webvtt","watermarkMode":"visible","adInsertion":"none","fastStart":true},"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
 }
 script:post-response {
   bru.setVar("jobId", res.body.id);
@@ -21,4 +21,5 @@ script:post-response {
 tests {
   test("command is accepted or idempotently replayed", function () { expect(res.status).to.equal(201); expect(["accepted", "composing", "encoding", "packaging", "ready"]).to.include(res.body.status); });
   test("cost is attributed", function () { expect(res.body.estimatedCostUsd).to.be.a("number"); });
+  test("FFmpeg processing plan is persisted", function () { expect(res.body.ffmpegArgs).to.include("-crf"); expect(res.body.ffprobeArgs).to.include("-show_streams"); });
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts';
 import { Pool, type PoolClient } from 'pg';
 import { RenderJobAggregate } from '../domain/render-job';
+import { createMediaProcessingPlan } from '../domain/media-processing-plan';
 import type { ClaimedWork, CreateWorkflow, WorkflowStore } from '../domain/workflow-store';
 
 const MIGRATION = `
@@ -23,8 +24,8 @@ export class PostgresWorkflowStore implements WorkflowStore {
     const existing=await client.query<{snapshot:RenderJob}>('SELECT snapshot FROM render_jobs WHERE tenant_id=$1 AND idempotency_key=$2',[tenantId,command.idempotencyKey]);if(existing.rowCount)return {job:existing.rows[0]!.snapshot,created:false};
     const used=await client.query<{used:string}>('SELECT COALESCE(SUM(tokens),0)::text AS used FROM render_jobs WHERE tenant_id=$1 AND created_at>=date_trunc(\'day\',now())',[tenantId]);
     const tokens=Math.ceil(command.narration.length*1.4); if(Number(used.rows[0]?.used??0)+tokens>quotaTokens)throw new Error('TENANT_QUOTA_EXCEEDED');
-    const id=crypto.randomUUID();const now=new Date().toISOString();
-    const job:RenderJob={id,tenantId,projectId:command.projectId,status:'accepted',progress:4,stage:'Contract accepted',sequence:1,attempt:0,traceId,estimatedCostUsd:Number((command.durationSeconds*0.0018).toFixed(3)),tokens,artifactUrl:null,artifactChecksum:null,updatedAt:now};
+    const id=crypto.randomUUID();const now=new Date().toISOString();const plan=createMediaProcessingPlan(command);
+    const job:RenderJob={id,tenantId,projectId:command.projectId,status:'accepted',progress:4,stage:'Probe + processing contract accepted',sequence:1,attempt:0,traceId,estimatedCostUsd:Number((command.durationSeconds*0.0018).toFixed(3)),tokens,template:command.template,trimStartSeconds:command.trimStartSeconds,durationSeconds:command.durationSeconds,encoding:command.encoding,processing:command.processing,...plan,artifactUrl:null,artifactChecksum:null,updatedAt:now};
     const inserted=await client.query<{snapshot:RenderJob}>('INSERT INTO render_jobs(id,tenant_id,idempotency_key,status,tokens,snapshot) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(tenant_id,idempotency_key) DO NOTHING RETURNING snapshot',[id,tenantId,command.idempotencyKey,job.status,tokens,job]);
     if(!inserted.rowCount){const existing=await client.query<{snapshot:RenderJob}>('SELECT snapshot FROM render_jobs WHERE tenant_id=$1 AND idempotency_key=$2',[tenantId,command.idempotencyKey]);return {job:existing.rows[0]!.snapshot,created:false};}
     const event:RenderEvent={id:crypto.randomUUID(),jobId:id,tenantId,sequence:1,type:'render.progress',data:job,createdAt:now};
