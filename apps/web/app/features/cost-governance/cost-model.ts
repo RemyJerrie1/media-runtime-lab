@@ -10,9 +10,9 @@ export type UsageEvent = {
 };
 
 export const USAGE_EVENTS: readonly UsageEvent[] = [
-  { id:'evt_0181', provider:'OpenAI', model:'GPT-4.1 mini', workspace:'Studio', project:'Launch Reel', promptTokens:920, completionTokens:240, costUsd:.0063 },
-  { id:'evt_0182', provider:'Google', model:'Gemini 2.5 Flash', workspace:'Studio', project:'Launch Reel', promptTokens:1_400, completionTokens:180, costUsd:.0041 },
-  { id:'evt_0183', provider:'Anthropic', model:'Claude Haiku', workspace:'Growth', project:'Social Cut', promptTokens:760, completionTokens:330, costUsd:.0088 },
+  { id:'evt_0181', provider:'OpenAI', model:'GPT-4.1 mini', workspace:'影音工作室', project:'發表短片', promptTokens:920, completionTokens:240, costUsd:.0063 },
+  { id:'evt_0182', provider:'Google', model:'Gemini 2.5 Flash', workspace:'影音工作室', project:'發表短片', promptTokens:1_400, completionTokens:180, costUsd:.0041 },
+  { id:'evt_0183', provider:'Anthropic', model:'Claude Haiku', workspace:'成長團隊', project:'社群短片', promptTokens:760, completionTokens:330, costUsd:.0088 },
 ] as const;
 
 export function aggregateUsage(events: readonly UsageEvent[]) {

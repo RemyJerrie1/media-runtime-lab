@@ -53,8 +53,8 @@ def build_product_media() -> None:
     overview_image = overview_image.crop((0, 0, frame_width, frame_height))
     overview_image.save(overview, format="PNG", optimize=True)
     images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
-    images[0].save(MEDIA / "product-demo.gif", save_all=True, append_images=images[1:], duration=160, loop=0, optimize=True)
-    encode_video(frames, MEDIA / "product-demo.mp4", fps=6)
+    images[0].save(MEDIA / "product-demo.gif", save_all=True, append_images=images[1:], duration=1400, loop=0, optimize=True)
+    encode_video(frames, MEDIA / "product-demo.mp4", fps=1)
 
     lifecycle_dir = MEDIA / "lifecycle-frames"
     lifecycle_dir.mkdir(parents=True, exist_ok=True)

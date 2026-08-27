@@ -1,8 +1,8 @@
-# Media Runtime Lab
+# 媒體運行實驗室（Media Runtime Lab）
 
 [![verify](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml/badge.svg?branch=dev)](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml)
 
-Durable control plane for reliable, cost-governed AI media execution.
+可在本機操作的影音工程作品：從剪輯、FFmpeg 編碼與媒體合成，到可復原工作流及人工智慧成本治理。
 
 ## The high-risk problem
 
@@ -17,14 +17,14 @@ Durable control plane for reliable, cost-governed AI media execution.
 - **Atomic completion** — artifact and `ready` state commit together
 - **Governed execution** — tenant controls, quotas, and end-to-end trace
 
-## 🎬 Media Job Workflow
+## 🎬 互動式影音工作流
 
-<a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="Media render workflow" /></a>
+<a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="操作左側分頁、調整 FFmpeg 參數並查看處理結果的示範" /></a>
 
 - **Frontend** — Next.js App Router · SSE Progress · Canvas Timeline
 - **Backend** — NestJS · Idempotency · State Machine · Artifact Registry
 - **Media** — CJK Subtitle · Sprite Sheet · 2D/3D Composition · FFmpeg-ready Adapter
-- **Interactive Workbench** — Trim · CRF/Bitrate · Preset · FPS · GOP · CFR/VFR · A/V Sync · Subtitle · Watermark · CSAI/SSAI · Faststart
+- **互動工作台** — 剪輯 · CRF／碼率 · 編碼預設 · FPS · GOP · CFR／VFR · 音畫同步 · 字幕 · 水印 · 廣告插入 · Faststart
 - **Operations** — Retry & Recovery · Token Usage · Cost Attribution
 
 ## 🎨 Design System & Product Adoption

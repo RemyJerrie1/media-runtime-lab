@@ -32,7 +32,7 @@ export function CostGovernance() {
     <SectionHeading
       eyebrow="人工智慧用量與成本治理"
       title="每次模型呼叫都能追溯到功能、專案與工作區"
-      description="Provider 回傳的 Token Usage 先轉成標準化事件，再進入不可變更的用量帳本；成本、額度與告警因此使用同一份事實來源。"
+      description="模型供應商回傳的 Token 用量會先轉成標準事件，再寫入不可變更的用量帳本；成本、額度與告警因此共用同一份事實來源。"
     />
     <div className={styles.panel}>
       <div className={styles.pipeline}>
@@ -46,7 +46,7 @@ export function CostGovernance() {
         <div className={styles.metric}><span>已歸因成本</span><strong>${totals.costUsd.toFixed(4)}</strong></div>
         <div className={styles.metric}><span>預算使用率</span><strong>{budget}%</strong><div className={styles.budget}><i style={{width:`${budget}%`}} /></div></div>
       </div>
-      <div className={styles.receipt}>
+      <div className={styles.receipt} aria-label="目前用量事件">
         <span className={styles.event}>{event.id}</span><strong>{event.provider} · {event.model}</strong><span>{event.workspace}／{event.project}</span><span>輸入 {event.promptTokens} · 輸出 {event.completionTokens}</span><strong>${event.costUsd.toFixed(4)}</strong>
       </div>
     </div>
