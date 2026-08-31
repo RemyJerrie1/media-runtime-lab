@@ -7,5 +7,8 @@ export function timelineSecond(elapsedMs: number, durationSeconds = 18) {
 }
 
 export function frameNumber(elapsedMs: number, fps = 30, durationSeconds = 18) {
-  return Math.min(Math.floor(timelineSecond(elapsedMs, durationSeconds) * fps), durationSeconds * fps - 1);
+  return Math.min(
+    Math.floor(timelineSecond(elapsedMs, durationSeconds) * fps),
+    durationSeconds * fps - 1,
+  );
 }

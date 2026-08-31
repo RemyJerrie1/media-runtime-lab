@@ -74,8 +74,14 @@
 
 ## 📊 Evidence & Production Boundary
 
+- **Scale** — ~1,000 lines of application code across a single vertical slice. This is a
+  control plane skeleton, deliberately narrow: one command path taken all the way down to
+  durable state, rather than many features taken halfway
 - **Verified** — duplicate prevention, contract drift gate, trace fields
-- **Measured** — 100 concurrent commands → 1 job; replay → no missing sequences; expired lease → attempt 2
+- **Measured** — 100 concurrent commands → 1 job; replay → no missing sequences; expired lease → attempt 2.
+  These execute against a real PostgreSQL **in CI** (see the workflow's `services:` block);
+  locally they skip unless `DATABASE_URL` is set — so a green local run is not the evidence,
+  the badge is
 - **Targets** — 99.9% render success; ≤ 2s reconnect recovery
 - **Simulated** — FFmpeg/provider work, local credentials, in-process metrics
 - **Next** — object storage, external identity, provider receipts, OpenTelemetry alerts
