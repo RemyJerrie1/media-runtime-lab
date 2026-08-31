@@ -1,1 +1,25 @@
-{"name":"media-runtime-lab","private":true,"packageManager":"pnpm@11.16.0","scripts":{"dev":"turbo dev","build":"turbo build","test":"turbo test","typecheck":"turbo typecheck","governance":"node scripts/check-boundaries.mjs \u0026\u0026 node scripts/check-contract-drift.mjs","verify":"pnpm governance \u0026\u0026 pnpm typecheck \u0026\u0026 pnpm test \u0026\u0026 pnpm build","bruno":"node scripts/run-bruno.mjs","prepare":"husky"},"devDependencies":{"@usebruno/cli":"^3.2.0","husky":"9.1.7","postcss":"8.5.18","turbo":"^2.5.6","typescript":"^5.9.2"}}
+{
+  "name": "media-runtime-lab",
+  "private": true,
+  "packageManager": "pnpm@11.16.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "governance": "pnpm format:check && node scripts/check-boundaries.mjs && node scripts/check-contract-drift.mjs",
+    "verify": "pnpm governance && pnpm typecheck && pnpm test && pnpm build",
+    "bruno": "node scripts/run-bruno.mjs",
+    "prepare": "husky",
+    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\""
+  },
+  "devDependencies": {
+    "@usebruno/cli": "^3.2.0",
+    "husky": "9.1.7",
+    "postcss": "8.5.18",
+    "prettier": "^3.9.6",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2"
+  }
+}
