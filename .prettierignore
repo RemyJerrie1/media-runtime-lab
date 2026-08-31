@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+build
+pnpm-lock.yaml
+docs/media
+bruno
+apps/web/next-env.d.ts

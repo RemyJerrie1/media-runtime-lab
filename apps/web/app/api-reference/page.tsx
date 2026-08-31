@@ -1,3 +1,64 @@
-const endpoints=[{method:'POST',path:'/v1/render-jobs',purpose:'建立具租戶範圍與冪等性的原子指令',contract:'建立算圖任務 → 算圖任務'},{method:'GET',path:'/v1/render-jobs/:id',purpose:'讀取持久化的權威狀態',contract:'算圖任務｜找不到任務'},{method:'SSE',path:'/v1/render-jobs/:id/events',purpose:'先重播持久化序列，再串流傳送進度',contract:'最後事件識別碼 → 算圖進度事件'},{method:'GET',path:'/v1/operations',purpose:'讀取運行證據與明確服務目標',contract:'維運快照'}];
-const guarantees=`已接受 → 合成中 → 編碼中 → 封裝中 → 已就緒\n       ↘ 失敗     ↘ 失敗     ↘ 失敗\n\n處理合約：剪輯起點、長度、編碼設定與處理設定。\n編碼收據：Codec、CRF／Bitrate、Preset、FPS、GOP、ffprobe 與 FFmpeg 參數。\n媒體控制：CFR／VFR、音畫同步、字幕、水印、廣告插入與 MP4 快速啟播。\n冪等性：PostgreSQL 唯一限制加上租戶交易鎖。\n復原：Worker 中斷後可重新取得過期的工作租約。\n重播：從最後事件識別碼繼續持久化事件序列。\n原子性：就緒狀態、成品雜湊、事件與工作完成共用同一交易。\n隔離：每次讀取與指令都限定在已驗證租戶。`;
-export default function ApiReference(){return <main><header className="nav"><a className="brand" href="/">媒體運行實驗室</a><nav><a href="/">返回作品</a></nav></header><section className="docs"><p className="eyebrow">靜態介面規格參考</p><h1>算圖任務介面</h1><p className="lede">同一份合約規範 NestJS 介面、Next.js 用戶端、PostgreSQL 工作流、Bruno 集合與回歸測試。</p><div className="endpoint-list">{endpoints.map(endpoint=><article key={endpoint.path}><code>{endpoint.method}</code><div><h2>{endpoint.path}</h2><p>{endpoint.purpose}</p><small>{endpoint.contract}</small></div></article>)}</div><section className="contract"><h2>運行保證</h2><pre>{guarantees}</pre></section></section></main>}
+const endpoints = [
+  {
+    method: 'POST',
+    path: '/v1/render-jobs',
+    purpose: '建立具租戶範圍與冪等性的原子指令',
+    contract: '建立算圖任務 → 算圖任務',
+  },
+  {
+    method: 'GET',
+    path: '/v1/render-jobs/:id',
+    purpose: '讀取持久化的權威狀態',
+    contract: '算圖任務｜找不到任務',
+  },
+  {
+    method: 'SSE',
+    path: '/v1/render-jobs/:id/events',
+    purpose: '先重播持久化序列，再串流傳送進度',
+    contract: '最後事件識別碼 → 算圖進度事件',
+  },
+  {
+    method: 'GET',
+    path: '/v1/operations',
+    purpose: '讀取運行證據與明確服務目標',
+    contract: '維運快照',
+  },
+];
+const guarantees = `已接受 → 合成中 → 編碼中 → 封裝中 → 已就緒\n       ↘ 失敗     ↘ 失敗     ↘ 失敗\n\n處理合約：剪輯起點、長度、編碼設定與處理設定。\n編碼收據：Codec、CRF／Bitrate、Preset、FPS、GOP、ffprobe 與 FFmpeg 參數。\n媒體控制：CFR／VFR、音畫同步、字幕、水印、廣告插入與 MP4 快速啟播。\n冪等性：PostgreSQL 唯一限制加上租戶交易鎖。\n復原：Worker 中斷後可重新取得過期的工作租約。\n重播：從最後事件識別碼繼續持久化事件序列。\n原子性：就緒狀態、成品雜湊、事件與工作完成共用同一交易。\n隔離：每次讀取與指令都限定在已驗證租戶。`;
+export default function ApiReference() {
+  return (
+    <main>
+      <header className="nav">
+        <a className="brand" href="/">
+          媒體運行實驗室
+        </a>
+        <nav>
+          <a href="/">返回作品</a>
+        </nav>
+      </header>
+      <section className="docs">
+        <p className="eyebrow">靜態介面規格參考</p>
+        <h1>算圖任務介面</h1>
+        <p className="lede">
+          同一份合約規範 NestJS 介面、Next.js 用戶端、PostgreSQL 工作流、Bruno 集合與回歸測試。
+        </p>
+        <div className="endpoint-list">
+          {endpoints.map((endpoint) => (
+            <article key={endpoint.path}>
+              <code>{endpoint.method}</code>
+              <div>
+                <h2>{endpoint.path}</h2>
+                <p>{endpoint.purpose}</p>
+                <small>{endpoint.contract}</small>
+              </div>
+            </article>
+          ))}
+        </div>
+        <section className="contract">
+          <h2>運行保證</h2>
+          <pre>{guarantees}</pre>
+        </section>
+      </section>
+    </main>
+  );
+}

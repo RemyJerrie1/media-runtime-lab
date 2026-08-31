@@ -6,5 +6,13 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function Button({ variant = 'primary', size = 'medium', className, ...props }: ButtonProps) {
-  return <button className={['ds-button', className].filter(Boolean).join(' ')} data-size={size} data-variant={variant} type="button" {...props} />;
+  return (
+    <button
+      className={['ds-button', className].filter(Boolean).join(' ')}
+      data-size={size}
+      data-variant={variant}
+      type="button"
+      {...props}
+    />
+  );
 }

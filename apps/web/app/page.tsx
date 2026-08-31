@@ -1,3 +1,5 @@
-import {ProductWorkspace} from './product-workspace';
+import { ProductWorkspace } from './product-workspace';
 
-export default function Page(){return <ProductWorkspace/>}
+export default function Page() {
+  return <ProductWorkspace />;
+}
