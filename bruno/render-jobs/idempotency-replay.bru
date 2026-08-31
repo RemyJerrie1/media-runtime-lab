@@ -13,10 +13,11 @@ headers {
   x-api-key: local-demo-key
 }
 body:json {
-  {"projectId":"bruno-proof","template":"landscape","durationSeconds":18,"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
+  {"projectId":"bruno-proof","template":"landscape","trimStartSeconds":0,"durationSeconds":18,"encoding":{"codec":"libx264","preset":"medium","rateControl":"crf","crf":23,"bitrateKbps":4000,"gop":60,"fps":30},"processing":{"frameRateMode":"cfr","audioSampleRate":48000,"audioSync":"async-resample","subtitleMode":"webvtt","watermarkMode":"visible","adInsertion":"none","fastStart":true},"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
 }
 tests {
   test("same command returns the same identity", function () {
+    expect(res.status).to.equal(201);
     expect(res.body.id).to.equal(bru.getVar("jobId"));
   });
 }
