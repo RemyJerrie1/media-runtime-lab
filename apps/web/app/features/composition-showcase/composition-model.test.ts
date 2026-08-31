@@ -3,7 +3,7 @@ import { activeSpriteFrame, activeSubtitle, loopProgress } from './composition-m
 
 describe('deterministic composition model', () => {
   it('normalizes an authoritative loop clock', () => {
-    expect(loopProgress(5_400)).toBe(.5);
+    expect(loopProgress(5_400)).toBe(0.5);
     expect(loopProgress(10_800)).toBe(0);
   });
 
