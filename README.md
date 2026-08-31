@@ -1,162 +1,93 @@
-# 媒體運行實驗室（Media Runtime Lab）
+# Media Runtime Lab
 
 [![verify](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml/badge.svg?branch=dev)](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml)
 
-可在本機操作的影音工程作品：從剪輯、FFmpeg 編碼與媒體合成，到可復原工作流及人工智慧成本治理。
+> 可復原的影音處理工作流後台 — Recoverable media processing workflow backend.
 
-## The high-risk problem
+可復原是三件具體的事：
 
-- Duplicate commands waste render and AI cost
-- Restarts and SSE disconnects can lose workflow state
-- Untraced artifacts cannot be governed
+- 同一個指令送幾次，都只有一個工作
+- worker 掛掉後，另一個 worker 可以接手
+- 連線中斷後，可以從斷點接回事件
 
-## Runtime guarantees
+這三條都有測試，並在 CI 使用真正的 PostgreSQL 驗證。
 
-- **One command, one job** — database-backed idempotency
-- **Restart-safe** — persisted jobs, events, leases, and SSE replay
-- **Atomic completion** — artifact and `ready` state commit together
-- **Governed execution** — tenant controls, quotas, and end-to-end trace
+## 操作畫面
 
-## 🎬 互動式影音工作流
+調整剪輯、CRF、碼率、FPS、GOP、字幕與水印參數，再查看任務進度與處理收據。
 
-<a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="操作左側分頁、調整 FFmpeg 參數並查看處理結果的示範" /></a>
+<a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="影音處理工作台操作示範" /></a>
 
-- **Frontend** — Next.js App Router · SSE Progress · Canvas Timeline
-- **Backend** — NestJS · Idempotency · State Machine · Artifact Registry
-- **Media** — CJK Subtitle · Sprite Sheet · 2D/3D Composition · FFmpeg-ready Adapter
-- **互動工作台** — 剪輯 · CRF／碼率 · 編碼預設 · FPS · GOP · CFR／VFR · 音畫同步 · 字幕 · 水印 · 廣告插入 · Faststart
-- **Operations** — Retry & Recovery · Token Usage · Cost Attribution
+## 任務生命週期
 
-## 🎨 Design System & Product Adoption
+時間軸以 30 fps 計算影格位置，字幕提示跟著媒體時鐘切換。
 
-<a href="./docs/media/design-system-showcase.mp4"><img src="./docs/media/design-system-showcase.gif" width="760" alt="Design tokens production component states and product usage mapping" /></a>
+<a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="媒體任務與時間軸示範" /></a>
 
-- **Semantic Tokens** — Color · Spacing · Type · Radius
-- **Production Primitives** — Button · Metric Card · Status Badge · Progress Bar
-- **Interaction States** — Default · Hover · Loading · Disabled · Success · Warning · Failure
-- **Traceable Adoption** — Every primitive maps back to Render, Composition, or Governance surfaces
+## 字幕與合成
 
-## 🎞️ Composition Timeline
+包含中文字幕、Sprite Sheet、Canvas 2D 合成，以及 CSS 3D 圖層示範。
 
-<a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="Deterministic composition timeline" /></a>
+<a href="./docs/media/composition-showcase.mp4"><img src="./docs/media/composition-showcase.gif" width="760" alt="字幕與媒體合成示範" /></a>
 
-- Scene Clips · CJK Subtitle Cues · Audio Envelope
-- 18-second Timeline · 30 fps Frame Identity · Render Playhead
+## 任務復原
 
-## ✨ Subtitle · Sprite · 2D/3D Composition
+後端保存 job、event 與 work lease。重複指令會回到同一個 job；lease 過期後可由其他 worker 接手；SSE 依 `Last-Event-ID` 重播事件。
 
-<a href="./docs/media/composition-showcase.mp4"><img src="./docs/media/composition-showcase.gif" width="760" alt="Subtitle sprite and 2D 3D media composition" /></a>
+<a href="./docs/media/reliability-recovery.mp4"><img src="./docs/media/reliability-recovery.gif" width="760" alt="冪等、worker 接手與事件重播示範" /></a>
 
-- **CJK Subtitle** — Cue changes aligned with the media clock
-- **Sprite Sheet** — Traceable frame index and playback progress
-- **Canvas 2D** — Deterministic composition fallback
-- **CSS 3D** — Layered motion with an explicit WebGL/Three.js adapter boundary
+完成時，成品紀錄、`ready` 狀態、事件與工作完成會在同一筆交易寫入。
 
-## 💰 AI Token Usage & Cost Governance
+## FFmpeg 處理計畫
 
-<a href="./docs/media/ai-cost-governance.mp4"><img src="./docs/media/ai-cost-governance.gif" width="760" alt="AI token usage attribution and budget governance" /></a>
+<a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API 與 FFmpeg 處理計畫示範" /></a>
 
-- **Usage Receipt** — Provider · Model · Prompt/Completion Token
-- **Attribution** — Tenant · Workspace · Project · Feature
-- **Usage Ledger** — Append-only events as the source of truth for cost and quota
-- **Budget Gate** — Alert · Throttle · Model Fallback
-- **Execution Note** — Provider receipts are simulated; no external model or API key is used
-- **FFmpeg Note** — The local demo validates and persists executable ffprobe/FFmpeg argument plans; its artifact remains simulated until a real uploaded source and isolated FFmpeg worker are connected
+- `POST /v1/render-jobs`：建立或重播同一個指令
+- `GET /v1/render-jobs/:id`：讀取目前狀態
+- `SSE /v1/render-jobs/:id/events`：接收與重播進度事件
 
-## 🛡️ Reliability & Recovery
+目前會驗證並保存 `ffprobe` 與 FFmpeg 參數，但尚未真的執行 FFmpeg；成品紀錄也是模擬資料。HLS/DASH、ABR、DRM、播放器與直播不在目前範圍內。
 
-<a href="./docs/media/reliability-recovery.mp4"><img src="./docs/media/reliability-recovery.gif" width="760" alt="Idempotency SSE recovery and artifact delivery" /></a>
+## API 回歸測試
 
-- Database-enforced idempotency returns one Job Identity across concurrent API instances
-- Persisted event sequences replay after `Last-Event-ID`, including after job completion
-- Expired outbox leases let another worker resume after process interruption
-- Artifact checksum, ready state, event, and work completion commit atomically
+Bruno 測試涵蓋建立工作、重複指令、錯誤輸入、狀態查詢與復原流程。
 
-## 📊 Evidence & Production Boundary
+<a href="./docs/media/bruno-contract-tests.mp4"><img src="./docs/media/bruno-contract-tests.gif" width="760" alt="Bruno API 回歸測試" /></a>
 
-- **Scale** — ~1,000 lines of application code across a single vertical slice. This is a
-  control plane skeleton, deliberately narrow: one command path taken all the way down to
-  durable state, rather than many features taken halfway
-- **Verified** — duplicate prevention, contract drift gate, trace fields
-- **Measured** — 100 concurrent commands → 1 job; replay → no missing sequences; expired lease → attempt 2.
-  These execute against a real PostgreSQL **in CI** (see the workflow's `services:` block);
-  locally they skip unless `DATABASE_URL` is set — so a green local run is not the evidence,
-  the badge is
-- **Targets** — 99.9% render success; ≤ 2s reconnect recovery
-- **Simulated** — FFmpeg/provider work, local credentials, in-process metrics
-- **Next** — object storage, external identity, provider receipts, OpenTelemetry alerts
+## 成本歸因示範
 
-## 🔌 API Contract
+用模擬資料呈現供應商用量、專案歸因與預算門檻；沒有呼叫外部模型。
 
-<a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API contract walkthrough" /></a>
+<a href="./docs/media/ai-cost-governance.mp4"><img src="./docs/media/ai-cost-governance.gif" width="760" alt="用量與成本歸因示範" /></a>
 
-- `POST /v1/render-jobs` — Idempotent Command
-- `GET /v1/render-jobs/:id` — Authoritative State
-- `SSE /v1/render-jobs/:id/events` — Progress and Recovery
+## 設計系統
 
-## 🧪 Bruno Regression
+共用色彩、間距、字體與狀態元件，並實際用在工作台頁面。
 
-<a href="./docs/media/bruno-contract-tests.mp4"><img src="./docs/media/bruno-contract-tests.gif" width="760" alt="Bruno contract verification" /></a>
+<a href="./docs/media/design-system-showcase.mp4"><img src="./docs/media/design-system-showcase.gif" width="760" alt="設計系統與元件狀態示範" /></a>
 
-- 5 Requests · 7 Tests
-- Idempotency · Boundary Rejection · State Recovery
-
-## 🧱 Architecture & Ownership
+## 程式結構
 
 ```text
-apps/
-├─ web/app/
-│  ├─ design-system/             # Design Tokens · UI Primitives
-│  ├─ config/                    # Environment · Media Runtime Constants
-│  ├─ shared/
-│  │  ├─ api/                    # Typed API Adapters
-│  │  ├─ constants/              # Navigation · Shared Policies
-│  │  ├─ hooks/                  # SSE Lifecycle · Recovery
-│  │  └─ ui/                     # Shared Presentation
-│  └─ features/
-│     ├─ render-lab/             # Job Lifecycle · Media Timeline
-│     ├─ composition-showcase/   # CJK Cue · Sprite · Canvas 2D · CSS 3D
-│     └─ cost-governance/        # Usage Receipt · Attribution · Budget Gate
-└─ api/src/render/
-   ├─ domain/                    # State Machine · Invariants · Ports
-   ├─ application/               # Use Cases · Job Orchestration
-   ├─ interfaces/                # HTTP · SSE · Contract Validation
-   └─ infrastructure/            # PostgreSQL · Outbox · Worker Adapters
-
-packages/contracts/              # Shared Zod Contract · No DTO Drift
-bruno/                           # Executable HTTP Regression
-.agents/skills/                  # Development · Frontend · Backend · E2E
-.codex/                          # Hooks · Governance Gate · Project Config
-.husky/pre-commit                # Governance · Typecheck · Tests
-scripts/                         # Architecture Fitness Functions
+apps/web/                 Next.js 操作介面
+apps/api/src/render/
+  domain/                 狀態機、規則與 ports
+  application/            工作調度與 worker
+  interfaces/             HTTP 與 SSE
+  infrastructure/         PostgreSQL 與記憶體 adapter
+packages/contracts/       前後端共用 Zod contract
+bruno/                    API 回歸測試
 ```
 
-- **Frontend Three Layers** — Route (RSC) → Feature (Client Island) → Shared/Design System
-- **Backend Boundary** — Interface → Application → Domain ← Infrastructure
-- **Design System** — Centralized tokens and primitive interaction rules
-- **State Ownership** — `useRenderJob` owns server state; media canvases own transient render state
-- **App Router** — `layout`, `page`, `loading`, `error`, and `not-found` follow official file conventions
+依賴方向：`interfaces → application → domain ← infrastructure`
 
-## ⚙️ Codex Engineering Governance
+- [架構選擇](./docs/adr/0001-modular-control-plane.md)
+- [持久化與事件重播](./docs/adr/0002-durable-workflow-and-replay.md)
+- [維運與失敗模式](./docs/architecture/operations.md)
 
-- **Project Config** — [`.codex/config.toml`](./.codex/config.toml) · [Lifecycle Hooks](./.codex/hooks.json)
-- **Codex Hooks** — [PreTool Policy](./.codex/hooks/pre-tool-governance.mjs) · [Stop Gate](./.codex/hooks/governance-gate.mjs)
-- **Codex Skills** — [Development](./.agents/skills/development/SKILL.md) · [Frontend](./.agents/skills/frontend/SKILL.md) · [Backend](./.agents/skills/backend/SKILL.md) · [E2E](./.agents/skills/test-e2e/SKILL.md)
-- **Architecture Decisions** — [ADR 0001](./docs/adr/0001-modular-control-plane.md) · [ADR 0002](./docs/adr/0002-durable-workflow-and-replay.md)
-- **Operations Model** — [SLOs, failure modes, and trace evidence](./docs/architecture/operations.md)
+## 本機執行
 
-## ✅ Verification
-
-- Contract Tests · Domain Tests · Application Tests
-- Timeline Mapping · Subtitle Cue · Sprite Frame · Playhead Boundary · Frame Identity
-- AI Usage Aggregation · Cost Attribution · Budget Threshold
-- Bruno HTTP Regression · Typecheck · Production Build
-- Husky Pre-commit · Architecture Fitness Functions
-
-<details>
-<summary><strong>Local Verification</strong></summary>
-
-```bash
+```powershell
 pnpm install
 Copy-Item .env.example .env
 docker compose up -d postgres
@@ -164,9 +95,9 @@ pnpm verify
 pnpm dev
 ```
 
-- Web — `http://localhost:3000`
-- API — `http://localhost:4000`
-- API Reference — `http://localhost:3000/api-reference`
-- Bruno — `pnpm bruno`
+- Web：`http://localhost:3000`
+- API：`http://localhost:4000`
+- API 參考頁：`http://localhost:3000/api-reference`
+- Bruno：`pnpm bruno`
 
-</details>
+`pnpm verify` 會檢查格式、架構邊界、合約、型別、測試與正式版本建置。本機沒有設定 `DATABASE_URL` 時，PostgreSQL 整合測試會跳過；CI 會使用真正的 PostgreSQL 執行。

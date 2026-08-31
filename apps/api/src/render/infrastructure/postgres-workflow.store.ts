@@ -82,6 +82,9 @@ export class PostgresWorkflowStore implements WorkflowStore {
   async initialize() {
     await this.pool.query(MIGRATION);
   }
+  async onApplicationShutdown() {
+    await this.pool.end();
+  }
   private async transaction<T>(operation: (client: PoolClient) => Promise<T>) {
     const client = await this.pool.connect();
     try {
