@@ -5,8 +5,10 @@ import { CompositionShowcase } from './features/composition-showcase/composition
 import { CostGovernance } from './features/cost-governance/cost-governance';
 import { OperationsEvidence } from './features/operations-evidence/operations-evidence';
 import { RenderLab } from './features/render-lab/render-lab';
+import { InterviewTour } from './interview-tour';
+import type { TourTabId } from './interview-tour-model';
 
-type TabId = 'overview' | 'render' | 'composition' | 'cost' | 'operations' | 'architecture';
+type TabId = TourTabId;
 const tabs: [TabId, string, string][] = [
   ['overview', '作品概覽', '核心價值與系統範圍'],
   ['render', '影音工作台', '剪輯、編碼與交付'],
@@ -21,13 +23,13 @@ function Overview() {
     <section className="workspace-overview">
       <p className="eyebrow">媒體運行實驗室</p>
       <h1>
-        受治理的媒體運算，
+        可復原的影音處理，
         <br />
-        從內容建立到成本歸因。
+        從指令到工作完成。
       </h1>
       <p className="lede">
-        以確定性 Canvas 與 FFmpeg
-        工作流承接不穩定的人工智慧輸出，讓每次算圖都可追蹤、可復原、可歸因。
+        同一個指令送幾次都只有一個工作；worker 掛掉後由另一個 worker
+        接手；連線中斷後從斷點接回事件。
       </p>
       <div className="overview-grid">
         <article>
@@ -106,6 +108,7 @@ export function ProductWorkspace() {
         <a className="workspace-brand" href="/">
           媒體運行實驗室
         </a>
+        <InterviewTour onSelectTab={setActive} />
         <div
           className="workspace-tabs"
           role="tablist"
