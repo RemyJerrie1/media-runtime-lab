@@ -8,6 +8,20 @@ import { WORKFLOW_STORE, type WorkflowStore } from './render/domain/workflow-sto
 import { InMemoryWorkflowStore } from './render/infrastructure/in-memory-render.repository';
 import { PostgresWorkflowStore } from './render/infrastructure/postgres-workflow.store';
 
+export async function createWorkflowStore(
+  databaseUrl = process.env.DATABASE_URL,
+  nodeEnv = process.env.NODE_ENV,
+): Promise<WorkflowStore> {
+  if (!databaseUrl && nodeEnv === 'production') {
+    throw new Error('DATABASE_URL_REQUIRED_FOR_RECOVERABLE_WORKFLOW');
+  }
+  const store: WorkflowStore = databaseUrl
+    ? new PostgresWorkflowStore(databaseUrl)
+    : new InMemoryWorkflowStore();
+  await store.initialize();
+  return store;
+}
+
 @Module({
   controllers: [RenderController],
   providers: [
@@ -17,13 +31,7 @@ import { PostgresWorkflowStore } from './render/infrastructure/postgres-workflow
     TenantPolicy,
     {
       provide: WORKFLOW_STORE,
-      useFactory: async (): Promise<WorkflowStore> => {
-        const store: WorkflowStore = process.env.DATABASE_URL
-          ? new PostgresWorkflowStore(process.env.DATABASE_URL)
-          : new InMemoryWorkflowStore();
-        await store.initialize();
-        return store;
-      },
+      useFactory: createWorkflowStore,
     },
   ],
 })

@@ -1,11 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { PostgresWorkflowStore } from './postgres-workflow.store';
 const databaseUrl = process.env.DATABASE_URL;
 const suite = databaseUrl ? describe : describe.skip;
 suite('PostgreSQL workflow integration', () => {
+  const stores: PostgresWorkflowStore[] = [];
+  const createStore = () => {
+    const store = new PostgresWorkflowStore(databaseUrl!);
+    stores.push(store);
+    return store;
+  };
+  afterEach(async () => {
+    await Promise.all(stores.splice(0).map((store) => store.onApplicationShutdown()));
+  });
   it('survives repository restart, deduplicates concurrent instances, and reclaims expired work', async () => {
-    const firstStore = new PostgresWorkflowStore(databaseUrl!);
-    const secondStore = new PostgresWorkflowStore(databaseUrl!);
+    const firstStore = createStore();
+    const secondStore = createStore();
     await firstStore.initialize();
     await secondStore.initialize();
     const key = `integration-${crypto.randomUUID()}`;
@@ -61,5 +70,24 @@ suite('PostgreSQL workflow integration', () => {
     const reclaimed = await secondStore.claimNext('recovery-worker', 5000);
     expect(reclaimed?.jobId).toBe(first.job.id);
     expect(reclaimed!.attempt).toBe(2);
+
+    await expect(
+      firstStore.advance(abandoned!, 'composing', 26, 'stale worker must be fenced'),
+    ).resolves.toBeUndefined();
+    await secondStore.advance(reclaimed!, 'composing', 26, 'composition resumed');
+    await secondStore.advance(reclaimed!, 'encoding', 58, 'encoding resumed');
+    await secondStore.advance(reclaimed!, 'packaging', 84, 'receipt persisted');
+    await secondStore.advance(reclaimed!, 'ready', 100, 'workflow recovered');
+
+    const restartedStore = createStore();
+    await restartedStore.initialize();
+    expect(await restartedStore.findById(input.tenantId, first.job.id)).toMatchObject({
+      status: 'ready',
+      attempt: 2,
+      sequence: 5,
+    });
+    const replayed = await restartedStore.listEvents(input.tenantId, first.job.id, 2);
+    expect(replayed.map((event) => event.sequence)).toEqual([3, 4, 5]);
+    expect(replayed.at(-1)?.data.status).toBe('ready');
   });
 });

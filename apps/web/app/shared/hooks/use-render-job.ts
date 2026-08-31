@@ -14,22 +14,40 @@ export function useRenderJob() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const stream = useRef<EventSource | null>(null);
-  useEffect(() => () => stream.current?.close(), []);
+  const lastReceivedSequence = useRef(0);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      stream.current?.close();
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+    },
+    [],
+  );
   function connect(id: string, after: number) {
+    stream.current?.close();
     const events = renderJobEvents(id, after);
     stream.current = events;
     events.addEventListener('render.progress', (event) => {
+      if (stream.current !== events) return;
       const next = JSON.parse((event as MessageEvent).data) as RenderJob;
+      lastReceivedSequence.current = Math.max(lastReceivedSequence.current, next.sequence);
       setJob(next);
       if (next.status === 'ready' || next.status === 'failed') events.close();
     });
     events.onerror = async () => {
+      if (stream.current !== events) return;
       events.close();
       try {
         const recovered = await getRenderJob(id);
-        setJob(recovered);
-        if (recovered.status !== 'ready' && recovered.status !== 'failed')
-          connect(id, recovered.sequence);
+        if (recovered.status === 'ready' || recovered.status === 'failed') {
+          lastReceivedSequence.current = Math.max(lastReceivedSequence.current, recovered.sequence);
+          setJob(recovered);
+        } else {
+          reconnectTimer.current = setTimeout(
+            () => connect(id, lastReceivedSequence.current),
+            1000,
+          );
+        }
       } catch {
         setError('Live progress interrupted; authoritative state could not be recovered.');
       }
@@ -39,6 +57,8 @@ export function useRenderJob() {
     setBusy(true);
     setError(null);
     stream.current?.close();
+    if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+    lastReceivedSequence.current = 0;
     try {
       const created = await createRenderJob(command);
       setJob(created);
