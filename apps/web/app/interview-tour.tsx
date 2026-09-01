@@ -145,11 +145,17 @@ export function InterviewTour() {
       if (completion.type === 'state') {
         const detail = event instanceof CustomEvent ? event.detail : undefined;
         if (completion.rejects?.(detail)) {
-          setFeedback('任務未完成，已帶你回到送出步驟，可以調整後重新執行。');
-          window.setTimeout(() => {
-            setStepIndex(completion.retryStep ?? Math.max(stepIndex - 1, 0));
-            setFeedback(null);
-          }, 1600);
+          if (completion.retryStep === undefined) {
+            setFeedback('後端目前未完成任務；錯誤已顯示在狀態區。導覽將結束，不會卡在此處。');
+            window.setTimeout(finish, 2600);
+          } else {
+            const retryStep = completion.retryStep;
+            setFeedback('任務未完成，已帶你回到送出步驟，可以調整後重新執行。');
+            window.setTimeout(() => {
+              setStepIndex(retryStep);
+              setFeedback(null);
+            }, 1600);
+          }
           return;
         }
         if (!completion.matches(detail)) return;

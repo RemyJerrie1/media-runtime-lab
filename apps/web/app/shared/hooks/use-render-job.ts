@@ -64,7 +64,10 @@ export function useRenderJob() {
       setJob(created);
       connect(created.id, 0);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : '目前無法建立算圖任務，請確認後端服務。');
+      const message =
+        cause instanceof Error ? cause.message : '目前無法建立算圖任務，請確認後端服務。';
+      setError(message);
+      window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: 'unavailable' }));
     } finally {
       setBusy(false);
     }
