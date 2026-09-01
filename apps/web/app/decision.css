@@ -1,0 +1,182 @@
+.encoding-decision {
+  margin: var(--space-7) 0;
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+}
+.decision-heading {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: var(--space-6);
+  align-items: end;
+}
+.decision-heading h3 {
+  margin: 8px 0 0;
+}
+.decision-disclaimer {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--type-caption);
+}
+.decision-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.decision-summary article {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.decision-summary span,
+.decision-summary small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--type-caption);
+}
+.decision-summary strong {
+  display: block;
+  margin: 4px 0;
+  font-size: 1.25rem;
+}
+.decision-summary article[data-risk='中'] strong {
+  color: var(--color-warning);
+}
+.decision-summary article[data-risk='高'] strong {
+  color: var(--color-danger);
+}
+.decision-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 0.65fr;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+.quality-curve,
+.abr-ladder {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.decision-grid h4 {
+  margin: 0;
+  font-size: var(--type-body-lg);
+}
+.decision-grid p {
+  margin: 4px 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--type-caption);
+}
+.curve-bars {
+  display: flex;
+  height: 180px;
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border-strong);
+  background: linear-gradient(to top, var(--color-border) 1px, transparent 1px);
+  background-size: 100% 25%;
+}
+.curve-bars div {
+  display: grid;
+  flex: 1;
+  height: 100%;
+  align-content: end;
+  justify-items: center;
+  gap: 4px;
+}
+.curve-bars div > span {
+  width: min(52px, 70%);
+  min-height: 28px;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(var(--color-accent), var(--color-feature));
+}
+.curve-bars strong {
+  font-size: var(--type-label);
+}
+.curve-bars small {
+  color: var(--color-text-muted);
+}
+.abr-ladder ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.abr-ladder li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px 12px;
+  border-left: 4px solid var(--color-accent);
+  background: var(--color-surface-raised);
+  font-size: var(--type-caption);
+}
+.candidate-table-wrap {
+  margin-top: var(--space-4);
+  overflow-x: auto;
+}
+.candidate-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  font-size: var(--type-caption);
+}
+.candidate-table caption {
+  padding: 0 0 var(--space-3);
+  text-align: left;
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
+}
+.candidate-table th,
+.candidate-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+.candidate-table thead th {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+}
+.candidate-table tr[data-decision='保留'] td:last-child {
+  color: var(--color-success);
+}
+.candidate-table tr[data-decision='觀察'] td:last-child {
+  color: var(--color-warning);
+}
+.candidate-table tr[data-decision='淘汰'] td:last-child {
+  color: var(--color-danger);
+}
+.decision-conclusion {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4);
+  border-left: 4px solid var(--color-action);
+  background: var(--color-surface);
+  font-size: var(--type-body);
+}
+@media (max-width: 900px) {
+  .decision-heading,
+  .decision-grid {
+    grid-template-columns: 1fr;
+  }
+  .decision-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 620px) {
+  .decision-summary {
+    grid-template-columns: 1fr;
+  }
+  .encoding-decision {
+    padding: 18px;
+  }
+  .curve-bars {
+    gap: 8px;
+  }
+}

@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { interviewTourSteps, moveTourStep } from './interview-tour-model';
 
-describe('interview tour', () => {
-  it('covers the positioning, workflow, recovery, architecture and media evidence', () => {
-    expect(interviewTourSteps.map((step) => step.tab)).toEqual([
-      'overview',
-      'composition',
-      'render',
-      'operations',
-      'architecture',
+describe('guided product tour', () => {
+  it('binds every step to a real data-tour target and a completion condition', () => {
+    expect(interviewTourSteps).toHaveLength(6);
+    for (const step of interviewTourSteps) {
+      expect(step.target).toMatch(/^\[data-tour="[a-z-]+"\]$/);
+      expect(step.completion.type).toBeTruthy();
+    }
+  });
+
+  it('covers click, input and application-state completion', () => {
+    expect(interviewTourSteps.map((step) => step.completion.type)).toEqual([
+      'click',
+      'input',
+      'input',
+      'input',
+      'click',
+      'state',
     ]);
   });
 

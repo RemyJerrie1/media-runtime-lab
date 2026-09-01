@@ -1,11 +1,12 @@
 'use client';
 
 import type { FfmpegEncoding, MediaProcessing } from '@media-lab/contracts';
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { Button } from '../../design-system/button';
 import { MetricCard } from '../../design-system/metric-card';
 import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
+import { EncodingDecision } from './encoding-decision';
 import { MediaTimeline } from './media-timeline';
 
 const pipeline = ['檢測', '剪輯', '編碼', '封裝', '驗證', '儲存', '交付', '播放'];
@@ -33,6 +34,10 @@ export function RenderLab() {
     fps: 30,
   });
   const [processing, setProcessing] = useState<MediaProcessing>(defaults);
+  useEffect(() => {
+    if (!job?.status) return;
+    window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: job.status }));
+  }, [job?.status]);
   const encode =
     (field: keyof Omit<FfmpegEncoding, 'codec'>) =>
     (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -77,10 +82,11 @@ export function RenderLab() {
             </span>
           ))}
         </div>
+        <EncodingDecision input={encoding} />
         <fieldset>
           <legend>剪輯與編碼</legend>
           <div className="editor-grid">
-            <label>
+            <label data-tour="adjust-crf">
               剪輯起點
               <input
                 aria-label="剪輯起點秒數"
@@ -141,7 +147,7 @@ export function RenderLab() {
               />
               <small>關鍵影格間隔（Keyframe Interval）≈ {keyframeSeconds} 秒</small>
             </label>
-            <label>
+            <label data-tour="choose-preset">
               編碼速度預設（Preset）
               <select
                 aria-label="FFmpeg 編碼預設"
@@ -256,7 +262,7 @@ export function RenderLab() {
                 <option value="ssai">伺服器端標記（SSAI）</option>
               </select>
             </label>
-            <label className="check">
+            <label className="check" data-tour="toggle-faststart">
               <input
                 aria-label="MP4 快速啟播"
                 type="checkbox"
@@ -272,6 +278,7 @@ export function RenderLab() {
           <code>{command}</code>
         </div>
         <Button
+          data-tour="submit-render"
           disabled={busy}
           onClick={() =>
             run({ template: 'landscape', trimStartSeconds, durationSeconds, encoding, processing })
@@ -287,7 +294,7 @@ export function RenderLab() {
       </div>
       <div className="console">
         <MediaTimeline />
-        <div className="job">
+        <div className="job" data-tour="render-result">
           <MetricCard
             label="任務狀態（Job Status）"
             value={job?.status.toUpperCase() ?? '尚未開始'}

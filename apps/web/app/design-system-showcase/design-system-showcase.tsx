@@ -138,14 +138,24 @@ export function DesignSystemShowcase() {
               ))}
             </article>
             <article className={styles.foundation}>
-              <p className={styles.eyebrow}>字體與圓角</p>
-              <div className={styles.typeSample}>
-                <span>展示文字 · 52/56</span>
-                <strong>媒體運算</strong>
-              </div>
-              <div className={styles.typeSample}>
-                <span>內文 · 17/28</span>
-                <p>讓所有產品介面的維運證據都清楚可讀。</p>
+              <p className={styles.eyebrow}>字體階層與圓角</p>
+              <div className={styles.typeScale}>
+                <div data-type="display">
+                  <span>頁面標題 · 40–60／1.18</span>
+                  <strong>媒體運算決策</strong>
+                </div>
+                <div data-type="section">
+                  <span>區塊標題 · 28–40／1.25</span>
+                  <strong>品質與成本取捨</strong>
+                </div>
+                <div data-type="body">
+                  <span>主要內文 · 16／1.65</span>
+                  <p>讓所有產品介面的維運證據都清楚可讀。</p>
+                </div>
+                <div data-type="caption">
+                  <span>輔助文字 · 14／1.55</span>
+                  <p>適用於單位、補充說明與資料來源。</p>
+                </div>
               </div>
               <div className={styles.radiusRow}>
                 <i data-radius="sm" />

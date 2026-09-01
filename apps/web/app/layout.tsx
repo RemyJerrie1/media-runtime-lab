@@ -1,8 +1,11 @@
 import './design-system/tokens.css';
 import './styles.css';
+import './typography.css';
 import './workbench.css';
+import './decision.css';
 import './theme.css';
 import './workspace.css';
+import './onboarding.css';
 import './a11y.css';
 import { ThemeToggle } from './design-system/theme-toggle';
 export const metadata = {

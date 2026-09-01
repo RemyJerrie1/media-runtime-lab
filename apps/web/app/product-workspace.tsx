@@ -91,7 +91,15 @@ export function ProductWorkspace() {
   const [active, setActive] = useState<TabId>('overview');
   useEffect(() => {
     const requested = window.location.hash.slice(1) as TabId;
-    if (tabs.some(([id]) => id === requested)) setActive(requested);
+    if (tabs.some(([id]) => id === requested)) {
+      setActive(requested);
+      if (new URLSearchParams(window.location.search).get('focus') === 'decision') {
+        window.setTimeout(
+          () => document.querySelector('.encoding-decision')?.scrollIntoView({ block: 'center' }),
+          350,
+        );
+      }
+    }
   }, []);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
@@ -108,7 +116,7 @@ export function ProductWorkspace() {
         <a className="workspace-brand" href="/">
           媒體運行實驗室
         </a>
-        <InterviewTour onSelectTab={setActive} />
+        <InterviewTour />
         <div
           className="workspace-tabs"
           role="tablist"
@@ -124,6 +132,7 @@ export function ProductWorkspace() {
               aria-selected={active === id}
               aria-controls={`panel-${id}`}
               tabIndex={active === id ? 0 : -1}
+              data-tour={id === 'render' ? 'open-workbench' : undefined}
               onClick={() => setActive(id)}
             >
               <strong>{label}</strong>
