@@ -86,7 +86,7 @@ export function RenderLab() {
         <fieldset>
           <legend>剪輯與編碼</legend>
           <div className="editor-grid">
-            <label data-tour="adjust-crf">
+            <label>
               剪輯起點
               <input
                 aria-label="剪輯起點秒數"
@@ -123,7 +123,7 @@ export function RenderLab() {
               />
               <small>固定影格率（CFR）輸出節奏</small>
             </label>
-            <label>
+            <label data-tour="adjust-crf">
               固定品質（CRF）<output>{encoding.crf}</output>
               <input
                 aria-label="固定品質係數 CRF"
@@ -286,11 +286,6 @@ export function RenderLab() {
         >
           {busy ? '建立中…' : '套用並算圖'}
         </Button>
-        {error ? (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        ) : null}
       </div>
       <div className="console">
         <MediaTimeline />
@@ -305,6 +300,11 @@ export function RenderLab() {
             label="成本／Token"
             value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'}
           />
+          {error ? (
+            <p className="error job-error" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
         <ProgressBar
           label="算圖進度（Render Progress）"
