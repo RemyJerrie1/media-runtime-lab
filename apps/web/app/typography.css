@@ -1,0 +1,70 @@
+html {
+  font-size: 16px;
+}
+body {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-body);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: break-word;
+}
+h1 {
+  margin: var(--space-5) 0 var(--space-6);
+  font-size: var(--type-title-lg);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.035em;
+}
+h2 {
+  font-size: var(--type-title-md);
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+  letter-spacing: -0.022em;
+}
+h3 {
+  font-size: var(--type-title-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.35;
+}
+.lede {
+  font-size: var(--type-body-lg);
+  line-height: 1.7;
+}
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--type-label);
+  font-weight: var(--weight-bold);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+}
+small,
+.text-caption {
+  font-size: var(--type-caption);
+  line-height: 1.55;
+}
+.text-label {
+  font-size: var(--type-label);
+  font-weight: var(--weight-semibold);
+  line-height: 1.45;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+@media (max-width: 620px) {
+  html {
+    font-size: 15px;
+  }
+  h1 {
+    font-size: clamp(2.2rem, 11vw, 3rem);
+  }
+}

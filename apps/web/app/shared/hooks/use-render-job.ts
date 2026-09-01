@@ -49,7 +49,7 @@ export function useRenderJob() {
           );
         }
       } catch {
-        setError('Live progress interrupted; authoritative state could not be recovered.');
+        setError('即時進度已中斷，目前無法取回後端的權威狀態，請稍後重試。');
       }
     };
   }
@@ -64,7 +64,7 @@ export function useRenderJob() {
       setJob(created);
       connect(created.id, 0);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to create render job.');
+      setError(cause instanceof Error ? cause.message : '目前無法建立算圖任務，請確認後端服務。');
     } finally {
       setBusy(false);
     }
