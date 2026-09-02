@@ -11,7 +11,8 @@ describe('guided product tour', () => {
   });
 
   it('covers click, input and application-state completion', () => {
-    expect(interviewTourSteps.filter((step) => step.completion.type === 'click')).toHaveLength(12);
+    expect(interviewTourSteps.filter((step) => step.completion.type === 'manual')).toHaveLength(5);
+    expect(interviewTourSteps.filter((step) => step.completion.type === 'click')).toHaveLength(7);
     expect(interviewTourSteps.filter((step) => step.completion.type === 'input')).toHaveLength(3);
     expect(interviewTourSteps.filter((step) => step.completion.type === 'state')).toHaveLength(1);
   });
