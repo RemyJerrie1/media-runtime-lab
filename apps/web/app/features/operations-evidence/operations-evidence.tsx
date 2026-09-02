@@ -36,7 +36,7 @@ export function OperationsEvidence() {
           onClick={refresh}
           data-tour="operations-content"
         >
-          讀取本機 API 維運快照
+          更新維運數據
         </button>
       </div>
       <div className={styles.snapshot} aria-live="polite" data-tour="operations-result">
@@ -49,7 +49,7 @@ export function OperationsEvidence() {
             <span>重播事件 {snapshot.replayedEvents}</span>
           </>
         ) : (
-          <span>按下按鈕，查看這次本機執行留下的真實數據。</span>
+          <span>更新數據，查看目前任務的執行狀態與服務指標。</span>
         )}
         {error ? <span role="alert">{error}</span> : null}
       </div>
@@ -67,27 +67,47 @@ export function OperationsEvidence() {
           <span>指令</span>
           <strong>請求追蹤 ID</strong>
         </div>
-        <i>↓</i>
+        <i aria-hidden="true">→</i>
         <div>
           <span>任務</span>
           <strong>算圖任務 ID</strong>
         </div>
-        <i>↓</i>
+        <i aria-hidden="true">→</i>
         <div>
           <span>狀態轉換</span>
           <strong>狀態與事件序列</strong>
         </div>
-        <i>↓</i>
+        <i aria-hidden="true">→</i>
         <div>
           <span>成品</span>
           <strong>檔案雜湊值</strong>
         </div>
-        <i>↓</i>
+        <i aria-hidden="true">→</i>
         <div>
           <span>成本歸因</span>
           <strong>估算處理成本</strong>
         </div>
       </div>
+      <details className={styles.evidenceJson} open={Boolean(snapshot?.latestEvidence)}>
+        <summary>查看端到端追蹤 JSON</summary>
+        <p>W3C Trace Context 串聯請求與任務；Request ID 用於定位單次 HTTP 請求。</p>
+        <pre>
+          {JSON.stringify(
+            snapshot?.latestEvidence
+              ? {
+                  traceContext: 'W3C traceparent',
+                  ...snapshot.latestEvidence,
+                  statusChain: ['accepted', 'composing', 'encoding', 'packaging', 'ready'],
+                }
+              : {
+                  status: '尚無任務資料',
+                  action: '請先更新維運數據',
+                },
+            null,
+            2,
+          )}
+        </pre>
+      </details>
       <div className={styles.controls}>
         <span>資料庫冪等性</span>
         <span>工作租約復原</span>

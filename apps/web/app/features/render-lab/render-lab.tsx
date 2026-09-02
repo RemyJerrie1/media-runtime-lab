@@ -434,7 +434,7 @@ export function RenderLab() {
           />
           <MetricCard label="處理階段（Stage）" value={job?.stage ?? '等待指令'} />
           <MetricCard
-            label="估算處理成本／示意 Token"
+            label="預估處理成本／Token 用量"
             value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'}
           />
           {error ? (

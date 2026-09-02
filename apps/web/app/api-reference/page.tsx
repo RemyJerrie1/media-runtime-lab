@@ -57,7 +57,7 @@ export default function ApiReference() {
           媒體運行實驗室
         </a>
         <nav>
-          <a href="/">返回作品</a>
+          <a href="/">返回影音後台</a>
         </nav>
       </header>
       <section className="docs">

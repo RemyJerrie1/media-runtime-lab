@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { interviewTourSteps, type InterviewTourStep } from './interview-tour-model';
 
 type Rect = {
@@ -11,14 +18,19 @@ type Rect = {
   width: number;
   height: number;
 };
-type TooltipPosition = { top: number; left: number; arrow: InterviewTourStep['placement'] };
+type TooltipPosition = {
+  top: number;
+  left: number;
+  maxHeight: number;
+  arrow: InterviewTourStep['placement'];
+};
 
 const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v4';
 const TOUR_STEP_KEY = 'media-runtime-guided-tour-step-v1';
 const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 16;
 const TOOLTIP_WIDTH = 280;
-const TOOLTIP_ESTIMATED_HEIGHT = 250;
+const TOOLTIP_ESTIMATED_HEIGHT = 340;
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
@@ -33,7 +45,11 @@ function readRect(element: HTMLElement): Rect {
   return { top, left, right, bottom, width: right - left, height: bottom - top };
 }
 
-function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']): TooltipPosition {
+function positionTooltip(
+  rect: Rect,
+  preferred: InterviewTourStep['placement'],
+  tooltipHeight = TOOLTIP_ESTIMATED_HEIGHT,
+): TooltipPosition {
   const width = Math.min(TOOLTIP_WIDTH, window.innerWidth - VIEWPORT_GAP * 2);
   const gap = 18;
   const available = {
@@ -43,9 +59,9 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
     left: rect.left - gap - VIEWPORT_GAP,
   };
   const fits = {
-    top: available.top >= TOOLTIP_ESTIMATED_HEIGHT,
+    top: available.top >= tooltipHeight,
     right: available.right >= width,
-    bottom: available.bottom >= TOOLTIP_ESTIMATED_HEIGHT,
+    bottom: available.bottom >= tooltipHeight,
     left: available.left >= width,
   };
   const order: NonNullable<InterviewTourStep['placement']>[] = [
@@ -55,9 +71,16 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
     'right',
     'left',
   ];
+  const uniqueOrder = order.filter((candidate, index) => order.indexOf(candidate) === index);
   const placement =
-    order.find((candidate, index) => order.indexOf(candidate) === index && fits[candidate]) ??
-    (available.top >= available.bottom ? 'top' : 'bottom');
+    uniqueOrder.find((candidate) => fits[candidate]) ??
+    (available.right >= width
+      ? 'right'
+      : available.left >= width
+        ? 'left'
+        : available.top >= available.bottom
+          ? 'top'
+          : 'bottom');
   const unclampedLeft =
     placement === 'left'
       ? rect.left - width - gap
@@ -70,17 +93,24 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
   );
   const top =
     placement === 'top'
-      ? Math.max(VIEWPORT_GAP, rect.top - TOOLTIP_ESTIMATED_HEIGHT - gap)
+      ? Math.max(VIEWPORT_GAP, rect.top - tooltipHeight - gap)
       : placement === 'left' || placement === 'right'
         ? Math.min(
-            Math.max(rect.top + rect.height / 2 - TOOLTIP_ESTIMATED_HEIGHT / 2, VIEWPORT_GAP),
-            window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT - VIEWPORT_GAP,
+            Math.max(rect.top + rect.height / 2 - tooltipHeight / 2, VIEWPORT_GAP),
+            window.innerHeight - tooltipHeight - VIEWPORT_GAP,
           )
         : rect.bottom + gap;
-  return { top, left, arrow: placement ?? 'bottom' };
+  const maxHeight =
+    placement === 'top'
+      ? Math.max(120, rect.top - gap - VIEWPORT_GAP)
+      : placement === 'bottom'
+        ? Math.max(120, window.innerHeight - rect.bottom - gap - VIEWPORT_GAP)
+        : window.innerHeight - VIEWPORT_GAP * 2;
+  return { top, left, maxHeight, arrow: placement ?? 'bottom' };
 }
 
 export function InterviewTour() {
+  const tooltipRef = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
@@ -103,6 +133,13 @@ export function InterviewTour() {
         return current;
       }
       window.sessionStorage.setItem(TOUR_STEP_KEY, String(current + 1));
+      const route =
+        interviewTourSteps[current]?.id === 'open-design-system'
+          ? '/design-system'
+          : interviewTourSteps[current]?.id === 'open-api-reference'
+            ? '/api-reference'
+            : null;
+      if (route) window.setTimeout(() => window.location.assign(route), 0);
       return current + 1;
     });
   }, [finish]);
@@ -198,6 +235,11 @@ export function InterviewTour() {
     if (!attach()) {
       setRect(null);
       setTooltip(null);
+      if (step.id === 'open-design-system' || step.id === 'open-api-reference') {
+        const route = step.id === 'open-design-system' ? '/design-system' : '/api-reference';
+        window.sessionStorage.setItem(TOUR_STEP_KEY, String(stepIndex + 1));
+        settleTimers.push(window.setTimeout(() => window.location.assign(route), 450));
+      }
     }
     const observer = new MutationObserver(() => {
       if (!target?.isConnected) attach();
@@ -274,6 +316,28 @@ export function InterviewTour() {
     };
   }, [advance, open, step]);
 
+  useLayoutEffect(() => {
+    const element = tooltipRef.current;
+    if (!open || !rect || !element) return;
+    const reposition = () => {
+      const measuredHeight = Math.ceil(element.getBoundingClientRect().height);
+      const next = positionTooltip(rect, step.placement, measuredHeight);
+      setTooltip((current) =>
+        current &&
+        current.top === next.top &&
+        current.left === next.left &&
+        current.maxHeight === next.maxHeight &&
+        current.arrow === next.arrow
+          ? current
+          : next,
+      );
+    };
+    reposition();
+    const observer = new ResizeObserver(reposition);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [open, rect, step.placement, stepIndex]);
+
   const spotlightStyle = rect
     ? ({
         top: rect.top,
@@ -306,9 +370,10 @@ export function InterviewTour() {
           )}
           {tooltip ? (
             <aside
+              ref={tooltipRef}
               className="tour-tooltip"
               data-placement={tooltip.arrow}
-              style={{ top: tooltip.top, left: tooltip.left }}
+              style={{ top: tooltip.top, left: tooltip.left, maxHeight: tooltip.maxHeight }}
               role="region"
               aria-labelledby="tour-step-title"
               aria-describedby="tour-step-instruction tour-keyboard-help"

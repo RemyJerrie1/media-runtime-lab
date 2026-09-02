@@ -10,17 +10,21 @@ export class OperationsTelemetry {
   private completed = 0;
   private failed = 0;
   private replayed = 0;
+  private latestJob: RenderJob | null = null;
   command(job: RenderJob, created: boolean) {
+    this.latestJob = job;
     this.commands += 1;
     if (!created) this.duplicates += 1;
     this.log('render.command', job, { created });
   }
   transition(job: RenderJob) {
+    this.latestJob = job;
     if (job.status === 'ready') this.completed += 1;
     if (job.status === 'failed') this.failed += 1;
     this.log('render.transition', job);
   }
   replay(count: number, job: RenderJob) {
+    this.latestJob = job;
     this.replayed += count;
     if (count) this.log('render.replay', job, { count });
   }
@@ -34,6 +38,17 @@ export class OperationsTelemetry {
       failed: this.failed,
       active,
       replayedEvents: this.replayed,
+      latestEvidence: this.latestJob
+        ? {
+            traceId: this.latestJob.traceId,
+            jobId: this.latestJob.id,
+            sequence: this.latestJob.sequence,
+            status: this.latestJob.status,
+            artifactChecksum: this.latestJob.artifactChecksum,
+            estimatedCostUsd: this.latestJob.estimatedCostUsd,
+            tokens: this.latestJob.tokens,
+          }
+        : null,
       targets: {
         renderSuccessRate: 0.999,
         recoverySeconds: 2,

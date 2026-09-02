@@ -33,12 +33,15 @@ export function artifactUrl(path: string) {
 }
 
 export async function createRenderJob(editor: RenderEditorCommand): Promise<RenderJob> {
+  const traceId = crypto.randomUUID().replaceAll('-', '');
+  const spanId = crypto.randomUUID().replaceAll('-', '').slice(0, 16);
   const response = await fetch(`${API}/v1/render-jobs`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       ...tenantHeaders,
-      'x-trace-id': crypto.randomUUID(),
+      traceparent: `00-${traceId}-${spanId}-01`,
+      'x-request-id': crypto.randomUUID(),
     },
     body: JSON.stringify({
       projectId: 'portfolio-reel',

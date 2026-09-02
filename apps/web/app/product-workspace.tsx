@@ -9,7 +9,7 @@ import type { TourTabId } from './interview-tour-model';
 
 type TabId = TourTabId;
 const tabs: [TabId, string, string][] = [
-  ['overview', '作品概覽', '核心價值與系統範圍'],
+  ['overview', '平台概覽', '核心價值與系統範圍'],
   ['render', '影音工作台', '剪輯、編碼與交付'],
   ['composition', '媒體合成', '字幕、精靈圖與時間軸'],
   ['cost', '人工智慧成本', '用量、預算與歸因'],
@@ -130,12 +130,12 @@ export function ProductWorkspace() {
         >
           <span>互動導覽</span>
           <strong>開始導覽 →</strong>
-          <small>跟著實際操作認識作品</small>
+          <small>跟著實際操作認識影音營運後台</small>
         </button>
         <div
           className="workspace-tabs"
           role="tablist"
-          aria-label="作品主題"
+          aria-label="平台明暗主題"
           aria-orientation="vertical"
           onKeyDown={onKeyDown}
         >
