@@ -65,7 +65,7 @@ export function DesignSystemShowcase() {
         </a>
         <div className={styles.headerLinks}>
           <a className={styles.back} href="/">
-            返回作品
+            返回影音後台
           </a>
           <a className={styles.back} href="/api-reference" data-tour="open-api-reference">
             前往介面規格 →

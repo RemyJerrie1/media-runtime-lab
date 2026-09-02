@@ -7,7 +7,7 @@ import styles from './cost-governance.module.css';
 
 const STEPS = [
   ['01', '請求脈絡', '租戶 · 工作區 · 專案'],
-  ['02', '供應商收據介面', '資料結構示意'],
+  ['02', '供應商收據介面', '統一用量格式'],
   ['03', '用量帳本', '僅附加的用量事件'],
   ['04', '成本歸因', '專案 · 功能 · 客戶'],
   ['05', '預算閘門', '告警 · 限流 · 降級'],
@@ -25,7 +25,7 @@ export function CostGovernance() {
   return (
     <section id="cost" className={styles.section}>
       <SectionHeading
-        eyebrow="人工智慧用量與成本治理（架構示意）"
+        eyebrow="人工智慧用量與成本治理"
         title="示範如何把模型用量歸因到功能、專案與工作區"
         description="目前使用固定範例資料，尚未連接 AI 模型供應商。正式環境會把供應商回傳的 Token 用量標準化，再寫入不可變更的用量帳本。"
       />
@@ -57,7 +57,7 @@ export function CostGovernance() {
           <div className={styles.decision}>
             <span>系統決策</span>
             <strong>{decision}</strong>
-            <small>估算展示，未呼叫 AI</small>
+            <small>依預設費率估算，未呼叫模型</small>
           </div>
         </div>
         <div className={styles.pipeline} data-tour="cost-pipeline">
@@ -75,11 +75,11 @@ export function CostGovernance() {
             <strong>{totals.requests}</strong>
           </div>
           <div className={styles.metric}>
-            <span>示意 Token 總量</span>
+            <span>預估 Token 總量</span>
             <strong>{totals.tokens.toLocaleString()}</strong>
           </div>
           <div className={styles.metric}>
-            <span>示意歸因成本</span>
+            <span>預估歸因成本</span>
             <strong>${totals.costUsd.toFixed(4)}</strong>
           </div>
           <div className={styles.metric}>
@@ -93,7 +93,7 @@ export function CostGovernance() {
         <div
           className={styles.receipt}
           data-tour="cost-receipt"
-          aria-label="範例用量事件（非真實供應商帳單）"
+          aria-label="預估用量事件（未連接模型供應商）"
         >
           <span className={styles.event}>{event.id}</span>
           <strong>

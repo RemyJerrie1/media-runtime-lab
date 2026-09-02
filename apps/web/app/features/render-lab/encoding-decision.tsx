@@ -15,7 +15,7 @@ export function EncodingDecision({ input }: { input: EncodingDecisionInput }) {
           <h3 id="encoding-decision-title">最高畫質，不一定是最佳播放體驗。</h3>
         </div>
         <p className="decision-disclaimer">
-          VMAF 與成本為決策示意；正式環境應以 libvmaf、實際編碼時間及雲端帳單校正。
+          VMAF 與成本採預估值；正式環境應以 libvmaf、實際編碼時間及雲端帳單校正。
         </p>
       </header>
 

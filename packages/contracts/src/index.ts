@@ -100,6 +100,17 @@ export const operationsSnapshotSchema = z.object({
   failed: z.number().int(),
   active: z.number().int(),
   replayedEvents: z.number().int(),
+  latestEvidence: z
+    .object({
+      traceId: z.string(),
+      jobId: z.string(),
+      sequence: z.number().int(),
+      status: renderStatusSchema,
+      artifactChecksum: z.string().nullable(),
+      estimatedCostUsd: z.number(),
+      tokens: z.number().int(),
+    })
+    .nullable(),
   targets: z.object({
     renderSuccessRate: z.number(),
     recoverySeconds: z.number(),

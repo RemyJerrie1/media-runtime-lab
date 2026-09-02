@@ -31,10 +31,12 @@ export class RenderController {
     @Headers('x-tenant-id') tenantHeader: string | undefined,
     @Headers('x-api-key') apiKey: string | undefined,
     @Headers('x-trace-id') traceHeader: string | undefined,
+    @Headers('traceparent') traceParent: string | undefined,
   ) {
     const tenantId = this.tenant(tenantHeader, apiKey);
     this.policy.rateLimit(tenantId);
-    const traceId = traceHeader ?? crypto.randomUUID();
+    const w3cTraceId = traceParent?.match(/^00-([0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}$/i)?.[1];
+    const traceId = w3cTraceId ?? traceHeader ?? crypto.randomUUID();
     const parsed = createRenderJobSchema.safeParse(body);
     if (!parsed.success)
       throw new BadRequestException({

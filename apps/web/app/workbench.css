@@ -254,6 +254,15 @@ legend {
 .source-details p,
 .source-details small { color: var(--color-text-muted); line-height: 1.6; }
 .source-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.source-actions > .ds-button,
+.source-actions > .source-file-button {
+  width: 240px;
+  min-height: 52px;
+  margin-top: 0;
+  padding: 12px 22px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
 .source-file-button {
   display: inline-flex;
   min-height: 48px;

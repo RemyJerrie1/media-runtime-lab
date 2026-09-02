@@ -80,6 +80,16 @@
   gap: 8px;
   margin-top: 16px;
 }
+.evidenceJson {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--panel);
+}
+.evidenceJson summary { min-height: 44px; color: var(--cyan); font-weight: 800; cursor: pointer; }
+.evidenceJson p { color: var(--muted); }
+.evidenceJson pre { overflow-x: auto; padding: 16px; border-radius: 10px; background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.6; }
 .controls span {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
@@ -97,6 +107,7 @@
   }
   .trace i {
     justify-self: center;
+    transform: rotate(90deg);
   }
 }
 @media (max-width: 620px) {
