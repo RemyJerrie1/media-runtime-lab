@@ -7,7 +7,7 @@ import styles from './cost-governance.module.css';
 
 const STEPS = [
   ['01', '請求脈絡', '租戶 · 工作區 · 專案'],
-  ['02', '供應商收據', '模型 · 提示詞 · 回覆'],
+  ['02', '供應商收據介面', '資料結構示意'],
   ['03', '用量帳本', '僅附加的用量事件'],
   ['04', '成本歸因', '專案 · 功能 · 客戶'],
   ['05', '預算閘門', '告警 · 限流 · 降級'],
@@ -31,9 +31,9 @@ export function CostGovernance() {
   return (
     <section id="cost" className={styles.section}>
       <SectionHeading
-        eyebrow="人工智慧用量與成本治理"
-        title="每次模型呼叫都能追溯到功能、專案與工作區"
-        description="模型供應商回傳的 Token 用量會先轉成標準事件，再寫入不可變更的用量帳本；成本、額度與告警因此共用同一份事實來源。"
+        eyebrow="人工智慧用量與成本治理（架構示意）"
+        title="示範如何把模型用量歸因到功能、專案與工作區"
+        description="目前使用固定範例資料，尚未連接 AI 模型供應商。正式環境會把供應商回傳的 Token 用量標準化，再寫入不可變更的用量帳本。"
       />
       <div className={styles.panel}>
         <div className={styles.pipeline}>
@@ -51,11 +51,11 @@ export function CostGovernance() {
             <strong>{totals.requests}</strong>
           </div>
           <div className={styles.metric}>
-            <span>Token 總量</span>
+            <span>示意 Token 總量</span>
             <strong>{totals.tokens.toLocaleString()}</strong>
           </div>
           <div className={styles.metric}>
-            <span>已歸因成本</span>
+            <span>示意歸因成本</span>
             <strong>${totals.costUsd.toFixed(4)}</strong>
           </div>
           <div className={styles.metric}>
@@ -66,7 +66,7 @@ export function CostGovernance() {
             </div>
           </div>
         </div>
-        <div className={styles.receipt} aria-label="目前用量事件">
+        <div className={styles.receipt} aria-label="範例用量事件（非真實供應商帳單）">
           <span className={styles.event}>{event.id}</span>
           <strong>
             {event.provider} · {event.model}

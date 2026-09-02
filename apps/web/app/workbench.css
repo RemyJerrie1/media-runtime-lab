@@ -174,3 +174,26 @@ legend {
   padding: 12px 14px;
   background: color-mix(in srgb, var(--color-danger) 12%, var(--panel));
 }
+.artifact-preview {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 16px;
+  padding: 24px;
+  background: var(--color-surface);
+}
+.artifact-preview h3 { margin: 10px 0 8px; font-size: var(--type-title-sm); }
+.artifact-preview p { margin: 0; color: var(--color-text-muted); line-height: 1.65; }
+.artifact-preview dl { display: grid; gap: 10px; margin: 0; }
+.artifact-preview dl > div { display: grid; grid-template-columns: 110px 1fr; gap: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.artifact-preview dt { color: var(--color-text-muted); }
+.artifact-preview dd { margin: 0; font-weight: var(--weight-bold); }
+.simulation-badge {
+  display: inline-flex;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-pill);
+  padding: 4px 9px;
+  color: var(--color-warning);
+  font-size: var(--type-caption);
+  font-weight: var(--weight-bold);
+}

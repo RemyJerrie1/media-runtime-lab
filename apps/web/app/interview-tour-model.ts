@@ -65,7 +65,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'submit-render',
     target: '[data-tour="submit-render"]',
     title: '送出真實算圖任務',
-    instruction: '點擊「套用並算圖」。系統會將目前參數送往後端。',
+    instruction: '點擊「送出處理模擬」。系統會將目前參數送往後端狀態機。',
     completion: { type: 'click' },
     placement: 'top',
   },
@@ -73,7 +73,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'render-result',
     target: '[data-tour="render-result"]',
     title: '等待後端處理完成',
-    instruction: '這裡會即時呈現任務狀態、進度與成本；API 成功後自動完成導覽。',
+    instruction: '這裡會呈現模擬任務狀態與估算成本；目前不會宣稱已產生真實影片。',
     completion: {
       type: 'state',
       name: 'media-lab:render-state',
