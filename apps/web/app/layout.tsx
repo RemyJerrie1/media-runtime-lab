@@ -15,8 +15,8 @@ export const metadata = {
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-Hant">
-      <body>
+    <html lang="zh-Hant" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <a className="skip-link" href="#main-content">
           跳至主要內容
         </a>
