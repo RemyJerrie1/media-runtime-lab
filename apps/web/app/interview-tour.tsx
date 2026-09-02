@@ -193,10 +193,16 @@ export function InterviewTour() {
 
   useEffect(() => {
     if (!open) return;
+    if (step.pathname && window.location.pathname !== step.pathname) {
+      window.sessionStorage.setItem(TOUR_STEP_KEY, String(stepIndex));
+      window.location.replace(step.pathname);
+      return;
+    }
     let target: HTMLElement | null = null;
     let frame = 0;
     let resizeObserver: ResizeObserver | undefined;
     const settleTimers: number[] = [];
+    let targetFound = false;
     setRect(null);
     setTooltip(null);
     window.dispatchEvent(new CustomEvent('media-lab:select-tab', { detail: step.tab }));
@@ -213,6 +219,7 @@ export function InterviewTour() {
       const found = document.querySelector(step.target);
       if (!(found instanceof HTMLElement)) return false;
       target = found;
+      targetFound = true;
       target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
       resizeObserver?.disconnect();
       resizeObserver = new ResizeObserver(update);
@@ -241,6 +248,13 @@ export function InterviewTour() {
         settleTimers.push(window.setTimeout(() => window.location.assign(route), 450));
       }
     }
+    settleTimers.push(
+      window.setTimeout(() => {
+        if (targetFound) return;
+        setFeedback('找不到導覽目標，已結束導覽並恢復頁面操作。');
+        window.setTimeout(finish, 900);
+      }, 3500),
+    );
     const observer = new MutationObserver(() => {
       if (!target?.isConnected) attach();
     });
@@ -314,7 +328,7 @@ export function InterviewTour() {
       window.removeEventListener('scroll', update, true);
       document.removeEventListener('focusin', keepFocusInTour);
     };
-  }, [advance, open, step]);
+  }, [advance, finish, open, step, stepIndex]);
 
   useLayoutEffect(() => {
     const element = tooltipRef.current;
@@ -407,7 +421,12 @@ export function InterviewTour() {
               </div>
             </aside>
           ) : (
-            <p className="tour-locating">正在尋找下一個操作元件…</p>
+            <div className="tour-locating" role="status">
+              <p>{feedback ?? '正在前往下一個導覽位置…'}</p>
+              <button type="button" onClick={finish}>
+                結束導覽
+              </button>
+            </div>
           )}
         </div>
       ) : null}
