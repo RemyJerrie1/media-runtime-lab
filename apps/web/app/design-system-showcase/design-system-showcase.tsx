@@ -133,7 +133,7 @@ export function DesignSystemShowcase() {
             ))}
           </div>
           <div className={styles.foundationGrid}>
-            <article className={styles.foundation}>
+            <article className={styles.foundation} data-tour="design-spacing">
               <p className={styles.eyebrow}>間距尺度</p>
               {spaces.map(([label, value]) => (
                 <div className={styles.spaceRow} key={label}>
@@ -143,7 +143,7 @@ export function DesignSystemShowcase() {
                 </div>
               ))}
             </article>
-            <article className={styles.foundation}>
+            <article className={styles.foundation} data-tour="design-typography">
               <p className={styles.eyebrow}>字體階層與圓角</p>
               <div className={styles.typeScale}>
                 <div data-type="display">
@@ -183,7 +183,7 @@ export function DesignSystemShowcase() {
             <StatusBadge tone="accent">即時元件</StatusBadge>
           </div>
           <div className={styles.componentGrid} data-tour="design-components">
-            <article className={styles.component}>
+            <article className={styles.component} data-tour="design-buttons">
               <header>
                 <div>
                   <code>Button</code>
@@ -198,7 +198,7 @@ export function DesignSystemShowcase() {
                 <Button disabled>建立中…</Button>
               </div>
             </article>
-            <article className={styles.component}>
+            <article className={styles.component} data-tour="design-statuses">
               <header>
                 <div>
                   <code>StatusBadge</code>
@@ -214,7 +214,7 @@ export function DesignSystemShowcase() {
                 <StatusBadge tone="danger">失敗</StatusBadge>
               </div>
             </article>
-            <article className={styles.component}>
+            <article className={styles.component} data-tour="design-metrics">
               <header>
                 <div>
                   <code>MetricCard</code>
@@ -228,7 +228,7 @@ export function DesignSystemShowcase() {
                 <MetricCard label="成本／Token" value="$0.083 / 4,920" />
               </div>
             </article>
-            <article className={styles.component}>
+            <article className={styles.component} data-tour="design-progress">
               <header>
                 <div>
                   <code>ProgressBar</code>
@@ -271,7 +271,7 @@ export function DesignSystemShowcase() {
               </article>
             ))}
           </div>
-          <div className={styles.map}>
+          <div className={styles.map} data-tour="design-adoption-map">
             <div>
               <span>語意設計變數</span>
               <strong>色彩 · 間距 · 字體 · 圓角</strong>
