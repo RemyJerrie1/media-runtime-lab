@@ -17,12 +17,19 @@
 }
 .tour-launch {
   position: relative;
+  height: auto;
+  min-height: max-content;
   gap: 5px;
   margin-top: var(--space-4);
   border: 2px solid var(--color-action);
   padding: 14px 16px;
   background: color-mix(in srgb, var(--color-action) 12%, var(--color-surface));
   box-shadow: 0 10px 30px color-mix(in srgb, var(--color-action) 12%, transparent);
+}
+.tour-launch > span,
+.tour-launch > strong,
+.tour-launch > small {
+  display: block;
 }
 .tour-launch::after {
   position: absolute;
