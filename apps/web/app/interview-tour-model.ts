@@ -29,9 +29,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'overview-summary',
     target: '[data-tour="overview-summary"]',
-    title: '先理解作品要解決什麼',
-    instruction:
-      '這裡整理媒體生命週期、工作流復原與成本治理。可以先停留閱讀，看完再開始實際操作每個頁籤。',
+    title: '作品解決什麼？',
+    instruction: '從媒體處理、工作流復原到成本治理，先掌握完整範圍。',
     completion: { type: 'manual' },
     tab: 'overview',
     placement: 'left',
@@ -39,8 +38,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'open-workbench',
     target: '[data-tour="tab-render"]',
-    title: '先進入影音工作台',
-    instruction: '點擊「影音工作台」，開始一次完整的編碼決策。',
+    title: '進入影音工作台',
+    instruction: '點擊頁籤，開始一次真實轉檔。',
     completion: { type: 'click' },
     tab: 'overview',
     placement: 'right',
@@ -48,8 +47,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'choose-source',
     target: '[data-tour="choose-source"]',
-    title: '從可播放素材開始',
-    instruction: '預設影片已由後端備妥。點擊「使用這支示範影片」直接開始，也可以換成自己的影片。',
+    title: '選擇來源影片',
+    instruction: '示範影片已就緒。直接使用，或換成自己的影片。',
     completion: { type: 'click' },
     tab: 'render',
     placement: 'right',
@@ -57,8 +56,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'adjust-quality',
     target: '[data-tour="adjust-crf"]',
-    title: '設定畫質目標',
-    instruction: '拖曳 CRF。數字越低，畫質與檔案通常越大。',
+    title: '設定畫質',
+    instruction: '調整 CRF：越低畫質越高，檔案也越大。',
     completion: { type: 'input' },
     tab: 'render',
     placement: 'right',
@@ -66,8 +65,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'choose-preset',
     target: '[data-tour="choose-preset"]',
-    title: '決定編碼成本',
-    instruction: '選擇另一個編碼速度，觀察速度與壓縮效率的取捨。',
+    title: '選擇編碼速度',
+    instruction: '切換 Preset，比較速度與壓縮效率。',
     completion: { type: 'input' },
     tab: 'render',
     placement: 'left',
@@ -75,8 +74,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'toggle-faststart',
     target: '[data-tour="toggle-faststart"]',
-    title: '改善啟播速度',
-    instruction: 'Faststart 已採用推薦設定。可以保留勾選並按下一步，若實際切換則會自動前進。',
+    title: '改善啟播',
+    instruction: 'Faststart 已採用推薦設定，可直接下一步。',
     completion: { type: 'input' },
     tab: 'render',
     placement: 'right',
@@ -84,8 +83,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'submit-render',
     target: '[data-tour="submit-render"]',
-    title: '送出真實算圖任務',
-    instruction: '點擊「套用參數並執行 FFmpeg」。後端會實際轉碼並建立 MP4。',
+    title: '開始轉檔',
+    instruction: '送出參數，由後端 FFmpeg 產生 MP4。',
     completion: { type: 'click' },
     tab: 'render',
     placement: 'top',
@@ -93,8 +92,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'render-result',
     target: '[data-tour="render-result"]',
-    title: '等待後端處理完成',
-    instruction: '等待 worker 完成；成功後上方會直接播放本次產生的真實 MP4。',
+    title: '查看處理結果',
+    instruction: '完成後可直接播放 MP4，並檢查任務收據。',
     completion: {
       type: 'state',
       name: 'media-lab:render-state',
@@ -108,7 +107,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'open-composition',
     target: '[data-tour="tab-composition"]',
     title: '前往媒體合成',
-    instruction: '點擊「媒體合成」，查看字幕、精靈圖與圖層如何共用同一條媒體時間軸。',
+    instruction: '查看字幕、精靈圖與圖層時間軸。',
     completion: { type: 'click' },
     tab: 'render',
     placement: 'right',
@@ -116,9 +115,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'inspect-composition',
     target: '[data-tour="composition-content"]',
-    title: '辨識預覽與正式成品的邊界',
-    instruction:
-      '這裡用確定性時鐘示範合成預覽；正式成品仍由後端 FFmpeg 產生。可以停留觀察字幕與時間軸。',
+    title: '預覽與成品',
+    instruction: '前端負責即時預覽；後端負責確定性成品。',
     completion: { type: 'manual' },
     tab: 'composition',
     placement: 'left',
@@ -127,7 +125,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'open-cost',
     target: '[data-tour="tab-cost"]',
     title: '前往人工智慧成本',
-    instruction: '點擊「人工智慧成本」，查看用量如何歸因到專案與預算。',
+    instruction: '查看用量、歸因與預算控制。',
     completion: { type: 'click' },
     tab: 'composition',
     placement: 'right',
@@ -135,9 +133,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'inspect-cost',
     target: '[data-tour="cost-content"]',
-    title: '看懂成本治理資料流',
-    instruction:
-      '供應商收據會標準化成用量事件，再進行成本歸因與預算控制；目前數字清楚標示為範例。可以停留觀察資料流。',
+    title: '成本治理流程',
+    instruction: '收據標準化後，才能歸因成本並控制預算。',
     completion: { type: 'manual' },
     tab: 'cost',
     placement: 'left',
@@ -146,7 +143,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'open-operations',
     target: '[data-tour="tab-operations"]',
     title: '前往維運證據',
-    instruction: '點擊「維運證據」，查看任務如何被追蹤、復原與驗證。',
+    instruction: '查看任務追蹤、復原與驗證。',
     completion: { type: 'click' },
     tab: 'cost',
     placement: 'right',
@@ -154,9 +151,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'inspect-operations',
     target: '[data-tour="operations-content"]',
-    title: '從指令一路追到成品',
-    instruction:
-      'Trace、Job、狀態序列、Artifact 雜湊與成本歸因可串成同一條證據鏈。可以停留檢查每一段證據。',
+    title: '追蹤完整證據鏈',
+    instruction: '從指令、任務到成品雜湊，每一步都可追溯。',
     completion: { type: 'manual' },
     tab: 'operations',
     placement: 'left',
@@ -165,7 +161,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'open-architecture',
     target: '[data-tour="tab-architecture"]',
     title: '前往系統架構',
-    instruction: '點擊「系統架構」，最後檢視前端、API、Worker 與 Artifact 的責任邊界。',
+    instruction: '檢視前端、API、Worker 與成品服務。',
     completion: { type: 'click' },
     tab: 'operations',
     placement: 'right',
@@ -173,9 +169,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'inspect-architecture',
     target: '[data-tour="architecture-content"]',
-    title: '完成整套作品導覽',
-    instruction:
-      '產品介面送出合約，NestJS 管理工作流，FFmpeg Worker 產生 Artifact，靜態服務負責播放。確認責任邊界後完成導覽。',
+    title: '掌握責任邊界',
+    instruction: '介面送出合約，Worker 產生成品，靜態服務負責播放。',
     completion: { type: 'manual' },
     tab: 'architecture',
     placement: 'left',

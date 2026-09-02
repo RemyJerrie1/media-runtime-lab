@@ -16,8 +16,8 @@ type TooltipPosition = { top: number; left: number; arrow: InterviewTourStep['pl
 const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v4';
 const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 16;
-const TOOLTIP_WIDTH = 380;
-const TOOLTIP_ESTIMATED_HEIGHT = 430;
+const TOOLTIP_WIDTH = 320;
+const TOOLTIP_ESTIMATED_HEIGHT = 310;
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
@@ -59,9 +59,9 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
     (available.top >= available.bottom ? 'top' : 'bottom');
   const unclampedLeft =
     placement === 'left'
-      ? rect.left - width - gap
+      ? VIEWPORT_GAP
       : placement === 'right'
-        ? rect.right + gap
+        ? window.innerWidth - width - VIEWPORT_GAP
         : rect.left + rect.width / 2 - width / 2;
   const left = Math.min(
     Math.max(unclampedLeft, VIEWPORT_GAP),
@@ -71,10 +71,9 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
     placement === 'top'
       ? Math.max(VIEWPORT_GAP, rect.top - TOOLTIP_ESTIMATED_HEIGHT - gap)
       : placement === 'left' || placement === 'right'
-        ? Math.min(
-            Math.max(rect.top + rect.height / 2 - TOOLTIP_ESTIMATED_HEIGHT / 2, VIEWPORT_GAP),
-            window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT - VIEWPORT_GAP,
-          )
+        ? rect.top + rect.height / 2 < window.innerHeight / 2
+          ? Math.max(VIEWPORT_GAP, window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT - VIEWPORT_GAP)
+          : VIEWPORT_GAP
         : rect.bottom + gap;
   return { top, left, arrow: placement ?? 'bottom' };
 }
@@ -322,12 +321,7 @@ export function InterviewTour() {
               </div>
               <strong>{step.title}</strong>
               <p>{step.instruction}</p>
-              <small className={feedback ? 'tour-feedback' : undefined}>
-                {feedback ??
-                  (step.completion.type === 'manual'
-                    ? '請先閱讀畫面內容，看完後再繼續。'
-                    : '可以操作發亮區域自動前進，也可以直接使用下方導覽按鈕。')}
-              </small>
+              {feedback ? <small className="tour-feedback">{feedback}</small> : null}
               <div className="tour-navigation">
                 <button type="button" onClick={goBack} disabled={stepIndex === 0}>
                   ← 上一步
