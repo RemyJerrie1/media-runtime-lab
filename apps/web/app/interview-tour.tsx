@@ -16,8 +16,8 @@ type TooltipPosition = { top: number; left: number; arrow: InterviewTourStep['pl
 const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v4';
 const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 16;
-const TOOLTIP_WIDTH = 320;
-const TOOLTIP_ESTIMATED_HEIGHT = 300;
+const TOOLTIP_WIDTH = 380;
+const TOOLTIP_ESTIMATED_HEIGHT = 430;
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
@@ -106,6 +106,11 @@ export function InterviewTour() {
     });
   }, [finish]);
 
+  const goBack = useCallback(() => {
+    setFeedback(null);
+    setStepIndex((current) => Math.max(current - 1, 0));
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('guide') === '0') return;
@@ -139,6 +144,7 @@ export function InterviewTour() {
     const settleTimers: number[] = [];
     setRect(null);
     setTooltip(null);
+    window.dispatchEvent(new CustomEvent('media-lab:select-tab', { detail: step.tab }));
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
@@ -317,8 +323,23 @@ export function InterviewTour() {
               <strong>{step.title}</strong>
               <p>{step.instruction}</p>
               <small className={feedback ? 'tour-feedback' : undefined}>
-                {feedback ?? '請直接操作發亮區域，完成後會自動前往下一步。'}
+                {feedback ??
+                  (step.completion.type === 'manual'
+                    ? '請先閱讀畫面內容，看完後再繼續。'
+                    : '可以操作發亮區域自動前進，也可以直接使用下方導覽按鈕。')}
               </small>
+              <div className="tour-navigation">
+                <button type="button" onClick={goBack} disabled={stepIndex === 0}>
+                  ← 上一步
+                </button>
+                <button type="button" onClick={advance}>
+                  {stepIndex === interviewTourSteps.length - 1
+                    ? '完成導覽'
+                    : step.completion.type === 'manual'
+                      ? '看完，繼續 →'
+                      : '下一步 →'}
+                </button>
+              </div>
             </aside>
           ) : (
             <p className="tour-locating">正在尋找下一個操作元件…</p>
