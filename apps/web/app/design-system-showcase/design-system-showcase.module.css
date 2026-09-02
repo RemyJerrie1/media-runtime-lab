@@ -13,6 +13,7 @@
   background: rgb(8 11 18 / 88%);
   backdrop-filter: blur(16px);
 }
+.headerLinks { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .brand,
 .back {
   font: 700 var(--type-caption)/1.3 var(--font-sans);

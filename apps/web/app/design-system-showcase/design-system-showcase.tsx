@@ -63,9 +63,14 @@ export function DesignSystemShowcase() {
         <a className={styles.brand} href="/">
           媒體運行實驗室
         </a>
-        <a className={styles.back} href="/">
-          ← 返回作品
-        </a>
+        <div className={styles.headerLinks}>
+          <a className={styles.back} href="/">
+            返回作品
+          </a>
+          <a className={styles.back} href="/api-reference" data-tour="open-api-reference">
+            前往介面規格 →
+          </a>
+        </div>
       </header>
       <section className={styles.hero}>
         <div>
@@ -89,10 +94,11 @@ export function DesignSystemShowcase() {
           </span>
         </div>
       </section>
-      <nav className={styles.tabs} aria-label="設計系統分類">
+      <nav className={styles.tabs} aria-label="設計系統分類" data-tour="design-tabs">
         {(['tokens', 'components', 'usage'] as View[]).map((item) => (
           <button
             key={item}
+            data-tour={`design-tab-${item}`}
             aria-current={view === item ? 'page' : undefined}
             data-active={view === item}
             onClick={() => setView(item)}
@@ -114,7 +120,7 @@ export function DesignSystemShowcase() {
             </div>
             <StatusBadge tone="success">八種核心角色</StatusBadge>
           </div>
-          <div className={styles.colorGrid}>
+          <div className={styles.colorGrid} data-tour="design-tokens">
             {colors.map(([label, token, value]) => (
               <article className={styles.swatch} key={token}>
                 <i style={{ background: value }} />
@@ -176,7 +182,7 @@ export function DesignSystemShowcase() {
             </div>
             <StatusBadge tone="accent">即時元件</StatusBadge>
           </div>
-          <div className={styles.componentGrid}>
+          <div className={styles.componentGrid} data-tour="design-components">
             <article className={styles.component}>
               <header>
                 <div>
@@ -248,7 +254,7 @@ export function DesignSystemShowcase() {
             </div>
             <StatusBadge tone="success">沒有孤立元件</StatusBadge>
           </div>
-          <div className={styles.usageList}>
+          <div className={styles.usageList} data-tour="design-usage">
             {usage.map((item, index) => (
               <article key={item.name}>
                 <span className={styles.index}>0{index + 1}</span>

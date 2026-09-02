@@ -7,7 +7,7 @@
     "build": "turbo build",
     "test": "turbo test",
     "typecheck": "turbo typecheck",
-    "governance": "pnpm format:check && node scripts/check-boundaries.mjs && node scripts/check-contract-drift.mjs",
+    "governance": "pnpm format:check && node scripts/check-boundaries.mjs && node scripts/check-contract-drift.mjs && node scripts/check-a11y-colors.mjs",
     "verify": "pnpm governance && pnpm typecheck && pnpm test && pnpm build",
     "bruno": "node scripts/run-bruno.mjs",
     "prepare": "husky",

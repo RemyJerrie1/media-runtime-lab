@@ -7,9 +7,13 @@ export function createMediaProcessingPlan(command: CreateRenderJob): MediaProces
   const filters: string[] = [];
   if (processing.subtitleMode === 'burn-in') filters.push('subtitles=subtitles.srt');
   if (processing.watermarkMode === 'visible')
-    filters.push("drawtext=text='MEDIA LAB':x=w-tw-24:y=h-th-24");
+    filters.push(
+      "drawtext=text='MEDIA LAB':x=w-tw-32:y=h-th-32:fontsize=28:fontcolor=white:box=1:boxcolor=black@0.82:boxborderw=12",
+    );
   if (processing.watermarkMode === 'dynamic')
-    filters.push("drawtext=text='%{pts\\:hms} · SESSION':x=w-tw-24:y=24");
+    filters.push(
+      "drawtext=text='%{pts\\:hms} · SESSION':x=w-tw-32:y=32:fontsize=28:fontcolor=white:box=1:boxcolor=black@0.82:boxborderw=12",
+    );
   const ffmpegArgs = [
     '-ss',
     String(command.trimStartSeconds),

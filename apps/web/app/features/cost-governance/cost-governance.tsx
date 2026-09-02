@@ -60,7 +60,7 @@ export function CostGovernance() {
             <small>估算展示，未呼叫 AI</small>
           </div>
         </div>
-        <div className={styles.pipeline}>
+        <div className={styles.pipeline} data-tour="cost-pipeline">
           {STEPS.map(([index, title, detail]) => (
             <article className={styles.node} key={index}>
               <b>{index}</b>
@@ -69,7 +69,7 @@ export function CostGovernance() {
             </article>
           ))}
         </div>
-        <div className={styles.metrics}>
+        <div className={styles.metrics} data-tour="cost-metrics">
           <div className={styles.metric}>
             <span>已記錄請求</span>
             <strong>{totals.requests}</strong>
@@ -90,7 +90,11 @@ export function CostGovernance() {
             </div>
           </div>
         </div>
-        <div className={styles.receipt} aria-label="範例用量事件（非真實供應商帳單）">
+        <div
+          className={styles.receipt}
+          data-tour="cost-receipt"
+          aria-label="範例用量事件（非真實供應商帳單）"
+        >
           <span className={styles.event}>{event.id}</span>
           <strong>
             {event.provider} · {event.model}
