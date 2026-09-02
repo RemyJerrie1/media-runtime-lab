@@ -23,6 +23,7 @@ export type InterviewTourStep = {
   completion: TourCompletion;
   tab: TourTabId;
   placement?: 'top' | 'right' | 'bottom' | 'left';
+  pathname?: '/' | '/design-system' | '/api-reference';
 };
 
 export const interviewTourSteps: InterviewTourStep[] = [
@@ -282,6 +283,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'manual' },
     tab: 'architecture',
     placement: 'top',
+    pathname: '/design-system',
   },
   {
     id: 'design-components-tab',
@@ -291,6 +293,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'click' },
     tab: 'architecture',
     placement: 'bottom',
+    pathname: '/design-system',
   },
   {
     id: 'design-components',
@@ -300,6 +303,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'manual' },
     tab: 'architecture',
     placement: 'top',
+    pathname: '/design-system',
   },
   {
     id: 'design-usage-tab',
@@ -309,6 +313,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'click' },
     tab: 'architecture',
     placement: 'bottom',
+    pathname: '/design-system',
   },
   {
     id: 'design-usage',
@@ -318,6 +323,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'manual' },
     tab: 'architecture',
     placement: 'top',
+    pathname: '/design-system',
   },
   {
     id: 'open-api-reference',
@@ -327,6 +333,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'click' },
     tab: 'architecture',
     placement: 'bottom',
+    pathname: '/design-system',
   },
   {
     id: 'api-endpoints',
@@ -336,6 +343,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'manual' },
     tab: 'architecture',
     placement: 'top',
+    pathname: '/api-reference',
   },
   {
     id: 'api-guarantees',
@@ -345,6 +353,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     completion: { type: 'manual' },
     tab: 'architecture',
     placement: 'top',
+    pathname: '/api-reference',
   },
 ];
 
