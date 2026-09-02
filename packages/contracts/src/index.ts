@@ -37,6 +37,7 @@ export const mediaAssetSchema = z.object({
   fileName: z.string().min(1),
   mimeType: z.string().startsWith('video/'),
   sizeBytes: z.number().int().positive(),
+  url: z.string().startsWith('/media/'),
 });
 export type MediaAsset = z.infer<typeof mediaAssetSchema>;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRenderJobSchema, renderJobSchema } from './index.js';
+import { createRenderJobSchema, mediaAssetSchema, renderJobSchema } from './index.js';
 const encoding = {
   codec: 'libx264' as const,
   preset: 'medium' as const,
@@ -19,6 +19,18 @@ const processing = {
   fastStart: true,
 };
 describe('public contracts', () => {
+  it('describes a playable uploaded media asset', () => {
+    const id = crypto.randomUUID();
+    expect(
+      mediaAssetSchema.safeParse({
+        id,
+        fileName: 'demo.mp4',
+        mimeType: 'video/mp4',
+        sizeBytes: 1024,
+        url: `/media/${id}`,
+      }).success,
+    ).toBe(true);
+  });
   it('rejects unbounded media commands', () =>
     expect(
       createRenderJobSchema.safeParse({

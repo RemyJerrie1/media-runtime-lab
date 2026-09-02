@@ -10,7 +10,7 @@ const targets = [
 
 export function OperationsEvidence() {
   return (
-    <section className={styles.section}>
+    <section className={styles.section} data-tour="operations-content">
       <div className={styles.heading}>
         <div>
           <p className="eyebrow">維運證據</p>

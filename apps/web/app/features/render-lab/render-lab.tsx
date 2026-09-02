@@ -1,12 +1,12 @@
 'use client';
 
-import type { FfmpegEncoding, MediaProcessing } from '@media-lab/contracts';
+import type { FfmpegEncoding, MediaAsset, MediaProcessing } from '@media-lab/contracts';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { Button } from '../../design-system/button';
 import { MetricCard } from '../../design-system/metric-card';
 import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
-import { artifactUrl, uploadMedia } from '../../shared/api/render-jobs';
+import { artifactUrl, getDemoMedia, uploadMedia } from '../../shared/api/render-jobs';
 import { EncodingDecision } from './encoding-decision';
 
 const pipeline = ['檢測', '剪輯', '編碼', '封裝', '驗證', '儲存', '交付', '播放'];
@@ -34,13 +34,31 @@ export function RenderLab() {
     fps: 30,
   });
   const [processing, setProcessing] = useState<MediaProcessing>(defaults);
-  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [sourceAsset, setSourceAsset] = useState<MediaAsset | null>(null);
+  const [usingDemo, setUsingDemo] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   useEffect(() => {
     if (!job?.status) return;
     window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: job.status }));
   }, [job?.status]);
+  useEffect(() => {
+    let active = true;
+    setUploading(true);
+    getDemoMedia()
+      .then((asset) => {
+        if (active) setSourceAsset(asset);
+      })
+      .catch((cause) => {
+        if (active) setUploadError(cause instanceof Error ? cause.message : '示範素材準備失敗');
+      })
+      .finally(() => {
+        if (active) setUploading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const encode =
     (field: keyof Omit<FfmpegEncoding, 'codec'>) =>
     (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -86,21 +104,70 @@ export function RenderLab() {
           ))}
         </div>
         <EncodingDecision input={encoding} />
-        <fieldset className="source-upload">
-          <legend>1. 上傳來源影片</legend>
-          <label data-tour="upload-source">
-            選擇影片素材（MP4／MOV／WebM／MKV，最大 200 MB）
-            <input
-              type="file"
-              accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
-              onChange={(event) => setSourceFile(event.target.files?.[0] ?? null)}
-            />
-            <small>
-              {sourceFile
-                ? `${sourceFile.name} · ${(sourceFile.size / 1024 / 1024).toFixed(1)} MB`
-                : '尚未選擇素材'}
-            </small>
-          </label>
+        <fieldset className="source-upload" data-tour="choose-source">
+          <legend>1. 選擇來源素材</legend>
+          <div className="source-picker">
+            <div className="source-preview">
+              {sourceAsset ? (
+                <video controls muted preload="metadata" src={artifactUrl(sourceAsset.url)}>
+                  您的瀏覽器不支援影片播放。
+                </video>
+              ) : (
+                <div className="source-loading">正在準備示範素材…</div>
+              )}
+            </div>
+            <div className="source-details">
+              <span className="artifact-badge">{usingDemo ? '內建示範素材' : '自訂素材'}</span>
+              <h3>{sourceAsset?.fileName ?? '正在載入影片'}</h3>
+              <p>
+                {sourceAsset
+                  ? `MP4 · ${(sourceAsset.sizeBytes / 1024 / 1024).toFixed(2)} MB · 已可交給後端 Worker`
+                  : '後端正在建立可直接操作的預設素材。'}
+              </p>
+              <div className="source-actions">
+                <Button
+                  type="button"
+                  disabled={uploading}
+                  onClick={async () => {
+                    setUploading(true);
+                    setUploadError(null);
+                    try {
+                      setSourceAsset(await getDemoMedia());
+                      setUsingDemo(true);
+                    } catch (cause) {
+                      setUploadError(cause instanceof Error ? cause.message : '示範素材準備失敗');
+                    } finally {
+                      setUploading(false);
+                    }
+                  }}
+                >
+                  使用這支示範影片
+                </Button>
+                <label className="source-file-button">
+                  換成自己的影片
+                  <input
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      setUploading(true);
+                      setUploadError(null);
+                      try {
+                        setSourceAsset(await uploadMedia(file));
+                        setUsingDemo(false);
+                      } catch (cause) {
+                        setUploadError(cause instanceof Error ? cause.message : '素材上傳失敗');
+                      } finally {
+                        setUploading(false);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <small>支援 MP4／MOV／WebM／MKV，最大 200 MB</small>
+            </div>
+          </div>
         </fieldset>
         <fieldset>
           <legend>剪輯與編碼</legend>
@@ -298,15 +365,13 @@ export function RenderLab() {
         </div>
         <Button
           data-tour="submit-render"
-          disabled={busy || uploading || !sourceFile}
+          disabled={busy || uploading || !sourceAsset}
           onClick={async () => {
-            if (!sourceFile) return;
-            setUploading(true);
+            if (!sourceAsset) return;
             setUploadError(null);
             try {
-              const asset = await uploadMedia(sourceFile);
               await run({
-                sourceAssetId: asset.id,
+                sourceAssetId: sourceAsset.id,
                 template: 'landscape',
                 trimStartSeconds,
                 durationSeconds,
@@ -315,12 +380,10 @@ export function RenderLab() {
               });
             } catch (cause) {
               setUploadError(cause instanceof Error ? cause.message : '素材處理失敗');
-            } finally {
-              setUploading(false);
             }
           }}
         >
-          {busy || uploading ? '處理中…' : '上傳並執行 FFmpeg'}
+          {busy || uploading ? '準備中…' : '套用參數並執行 FFmpeg'}
         </Button>
         {uploadError ? (
           <p className="error" role="alert">

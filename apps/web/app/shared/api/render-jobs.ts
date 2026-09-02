@@ -17,6 +17,12 @@ export async function uploadMedia(file: File): Promise<MediaAsset> {
   return response.json() as Promise<MediaAsset>;
 }
 
+export async function getDemoMedia(): Promise<MediaAsset> {
+  const response = await fetch(`${API}/v1/media/demo`, { method: 'POST', headers: tenantHeaders });
+  if (!response.ok) throw new Error(`示範素材準備失敗（${response.status}）`);
+  return response.json() as Promise<MediaAsset>;
+}
+
 export function artifactUrl(path: string) {
   return `${API}${path}`;
 }

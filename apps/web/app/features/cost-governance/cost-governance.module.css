@@ -48,7 +48,7 @@
   color: var(--color-text);
 }
 .node p {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--color-text-muted);
   margin: 5px 0 0;
 }
@@ -98,7 +98,7 @@
   border: 1px solid var(--color-border-strong);
   border-radius: 12px;
   background: var(--color-surface);
-  font-size: 14px;
+  font-size: 16px;
 }
 .receipt span {
   color: var(--color-text-muted);

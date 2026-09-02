@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { MediaAsset } from '@media-lab/contracts';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -37,9 +37,55 @@ export class MediaFilesService {
       fileName: file.originalname,
       mimeType: file.mimetype,
       sizeBytes: file.size,
+      url: `/media/${id}`,
     };
     await writeFile(resolve(this.uploads, `${id}.json`), JSON.stringify({ ...asset, storedName }));
     return asset;
+  }
+
+  async provisionDemo(): Promise<MediaAsset> {
+    await this.initialize();
+    const id = '00000000-0000-4000-8000-000000000001';
+    const storedName = `${id}.mp4`;
+    const destination = resolve(this.uploads, storedName);
+    if (!(await stat(destination).catch(() => undefined))) {
+      const source = await this.firstExisting([
+        resolve(process.cwd(), 'docs/media/product-demo.mp4'),
+        resolve(process.cwd(), '../../docs/media/product-demo.mp4'),
+      ]);
+      await copyFile(source, destination);
+    }
+    const details = await stat(destination);
+    const asset = {
+      id,
+      fileName: '媒體運行實驗室示範影片.mp4',
+      mimeType: 'video/mp4',
+      sizeBytes: details.size,
+      url: `/media/${id}`,
+    };
+    await writeFile(resolve(this.uploads, `${id}.json`), JSON.stringify({ ...asset, storedName }));
+    return asset;
+  }
+
+  async source(id: string) {
+    const path = await this.sourcePath(id);
+    const metadata = JSON.parse(
+      await readFile(resolve(this.uploads, `${id}.json`), 'utf8'),
+    ) as MediaAsset;
+    const details = await stat(path);
+    return {
+      path,
+      size: details.size,
+      mimeType: metadata.mimeType,
+      stream: () => createReadStream(path),
+    };
+  }
+
+  private async firstExisting(paths: string[]) {
+    for (const path of paths) {
+      if (await stat(path).catch(() => undefined)) return path;
+    }
+    throw new NotFoundException('DEMO_MEDIA_NOT_FOUND');
   }
 
   async sourcePath(id: string) {

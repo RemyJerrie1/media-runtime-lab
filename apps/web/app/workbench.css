@@ -26,7 +26,7 @@
 .pipeline-strip b {
   display: block;
   color: var(--color-accent);
-  font-size: 15px;
+  font-size: 16px;
 }
 fieldset {
   border: 1px solid var(--color-border-strong);
@@ -141,16 +141,16 @@ legend {
 .review-grid strong {
   display: block;
   margin: 7px 0;
-  font-size: 15px;
+  font-size: 16px;
 }
 .review-grid p {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.6;
 }
 .encode-receipt strong {
-  font-size: 15px;
+  font-size: 16px;
 }
 .error {
   color: var(--color-danger);
@@ -215,3 +215,59 @@ legend {
 }
 .artifact-empty { border: 1px dashed var(--line); border-radius: 10px; padding: 28px; text-align: center; }
 .source-upload { border-color: var(--color-accent) !important; }
+.source-picker {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(300px, 1.1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+.source-preview {
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 14px;
+  background: #050a12;
+}
+.source-preview video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  object-fit: cover;
+}
+.source-loading {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  color: var(--color-text-muted);
+}
+.source-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 4px;
+}
+.source-details h3,
+.source-details p { margin: 0; }
+.source-details h3 { font-size: var(--type-title-sm); }
+.source-details p,
+.source-details small { color: var(--color-text-muted); line-height: 1.6; }
+.source-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.source-file-button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  padding: 10px 18px;
+  color: var(--color-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.source-file-button:focus-within { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+.source-file-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 850px) {
+  .source-picker { grid-template-columns: 1fr; }
+}
