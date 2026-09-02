@@ -7,7 +7,6 @@ import { MetricCard } from '../../design-system/metric-card';
 import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
 import { EncodingDecision } from './encoding-decision';
-import { MediaTimeline } from './media-timeline';
 
 const pipeline = ['檢測', '剪輯', '編碼', '封裝', '驗證', '儲存', '交付', '播放'];
 const defaults: MediaProcessing = {
@@ -284,11 +283,29 @@ export function RenderLab() {
             run({ template: 'landscape', trimStartSeconds, durationSeconds, encoding, processing })
           }
         >
-          {busy ? '建立中…' : '套用並算圖'}
+          {busy ? '送出中…' : '送出處理模擬'}
         </Button>
       </div>
       <div className="console">
-        <MediaTimeline />
+        <section className="artifact-preview" aria-labelledby="artifact-preview-title">
+          <div>
+            <span className="simulation-badge">模擬 Worker</span>
+            <h3 id="artifact-preview-title">後端成品（Artifact）</h3>
+            <p>
+              目前後端只模擬任務狀態與 FFmpeg 參數，尚未執行 FFmpeg，因此不會在這裡假裝顯示前端 Canvas 成品。
+            </p>
+          </div>
+          <dl>
+            <div>
+              <dt>實體影片</dt>
+              <dd>尚未產生</dd>
+            </div>
+            <div>
+              <dt>下一步</dt>
+              <dd>安裝 FFmpeg → 上傳素材 → Worker 轉碼 → 提供影片預覽</dd>
+            </div>
+          </dl>
+        </section>
         <div className="job" data-tour="render-result">
           <MetricCard
             label="任務狀態（Job Status）"
@@ -297,7 +314,7 @@ export function RenderLab() {
           />
           <MetricCard label="處理階段（Stage）" value={job?.stage ?? '等待指令'} />
           <MetricCard
-            label="成本／Token"
+            label="估算處理成本／示意 Token"
             value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'}
           />
           {error ? (
