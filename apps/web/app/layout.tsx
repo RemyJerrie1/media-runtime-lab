@@ -8,6 +8,7 @@ import './workspace.css';
 import './onboarding.css';
 import './a11y.css';
 import { ThemeToggle } from './design-system/theme-toggle';
+import { InterviewTour } from './interview-tour';
 export const metadata = {
   title: '媒體運行實驗室',
   description: '可追蹤、可復原並可驗證的媒體處理作品',
@@ -21,6 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </a>
         <ThemeToggle />
         <div id="main-content">{children}</div>
+        <InterviewTour />
       </body>
     </html>
   );

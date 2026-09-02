@@ -53,7 +53,7 @@ export function OperationsEvidence() {
         )}
         {error ? <span role="alert">{error}</span> : null}
       </div>
-      <div className={styles.targets}>
+      <div className={styles.targets} data-tour="operations-targets">
         {targets.map((target) => (
           <article key={target.label}>
             <strong>{target.value}</strong>
@@ -62,7 +62,7 @@ export function OperationsEvidence() {
           </article>
         ))}
       </div>
-      <div className={styles.trace}>
+      <div className={styles.trace} data-tour="operations-trace">
         <div>
           <span>指令</span>
           <strong>請求追蹤 ID</strong>

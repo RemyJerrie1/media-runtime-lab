@@ -5,7 +5,6 @@ import { CompositionShowcase } from './features/composition-showcase/composition
 import { CostGovernance } from './features/cost-governance/cost-governance';
 import { OperationsEvidence } from './features/operations-evidence/operations-evidence';
 import { RenderLab } from './features/render-lab/render-lab';
-import { InterviewTour } from './interview-tour';
 import type { TourTabId } from './interview-tour-model';
 
 type TabId = TourTabId;
@@ -124,7 +123,15 @@ export function ProductWorkspace() {
         <a className="workspace-brand" href="/">
           媒體運行實驗室
         </a>
-        <InterviewTour />
+        <button
+          className="tour-launch"
+          type="button"
+          onClick={() => window.dispatchEvent(new Event('media-lab:start-tour'))}
+        >
+          <span>互動導覽</span>
+          <strong>開始導覽 →</strong>
+          <small>跟著實際操作認識作品</small>
+        </button>
         <div
           className="workspace-tabs"
           role="tablist"
@@ -149,7 +156,9 @@ export function ProductWorkspace() {
           ))}
         </div>
         <nav className="workspace-links" aria-label="參考頁面">
-          <a href="/design-system">設計系統預覽</a>
+          <a href="/design-system" data-tour="open-design-system">
+            設計系統預覽
+          </a>
           <a href="/api-reference">介面規格參考</a>
         </nav>
       </aside>

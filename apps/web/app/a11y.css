@@ -46,6 +46,25 @@ select:focus-visible {
 .skip-link:focus {
   transform: translateY(0);
 }
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+.editor-grid input:disabled,
+:root[data-theme='light'] .editor-grid input:disabled {
+  border-color: var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 72%, var(--color-canvas));
+  color: var(--color-text-muted);
+  opacity: 0.48;
+  cursor: not-allowed;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

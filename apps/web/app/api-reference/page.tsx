@@ -66,7 +66,7 @@ export default function ApiReference() {
         <p className="lede">
           同一份合約規範 NestJS 介面、Next.js 用戶端、PostgreSQL 工作流、Bruno 集合與回歸測試。
         </p>
-        <div className="endpoint-list">
+        <div className="endpoint-list" data-tour="api-endpoints">
           {endpoints.map((endpoint) => (
             <article key={endpoint.path}>
               <code>{endpoint.method}</code>
@@ -78,7 +78,7 @@ export default function ApiReference() {
             </article>
           ))}
         </div>
-        <section className="contract">
+        <section className="contract" data-tour="api-guarantees">
           <h2>運行保證</h2>
           <pre>{guarantees}</pre>
         </section>

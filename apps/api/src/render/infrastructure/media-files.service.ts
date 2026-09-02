@@ -48,13 +48,13 @@ export class MediaFilesService {
     const id = '00000000-0000-4000-8000-000000000001';
     const storedName = `${id}.mp4`;
     const destination = resolve(this.uploads, storedName);
-    if (!(await stat(destination).catch(() => undefined))) {
-      const source = await this.firstExisting([
-        resolve(process.cwd(), 'docs/media/product-demo.mp4'),
-        resolve(process.cwd(), '../../docs/media/product-demo.mp4'),
-      ]);
-      await copyFile(source, destination);
-    }
+    const source = await this.firstExisting([
+      resolve(process.cwd(), 'docs/media/product-demo.mp4'),
+      resolve(process.cwd(), '../../docs/media/product-demo.mp4'),
+    ]);
+    // The demo ID is intentionally stable, but its bundled film may evolve with the product.
+    // Refresh the managed copy so local interviews never replay a stale earlier demo.
+    await copyFile(source, destination);
     const details = await stat(destination);
     const asset = {
       id,

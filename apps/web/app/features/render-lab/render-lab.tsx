@@ -262,6 +262,7 @@ export function RenderLab() {
               影片碼率（kbps）
               <input
                 aria-label="影片碼率 kbps"
+                aria-describedby="bitrate-help"
                 type="number"
                 min="200"
                 max="50000"
@@ -269,7 +270,11 @@ export function RenderLab() {
                 disabled={encoding.rateControl !== 'bitrate'}
                 onChange={encode('bitrateKbps')}
               />
-              <small>僅用於目標碼率模式</small>
+              <small id="bitrate-help">
+                {encoding.rateControl === 'bitrate'
+                  ? '目前用來控制輸出碼率'
+                  : 'CRF 模式不使用此欄位'}
+              </small>
             </label>
           </div>
         </fieldset>

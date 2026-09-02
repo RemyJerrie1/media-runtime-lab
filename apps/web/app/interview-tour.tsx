@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { interviewTourSteps, type InterviewTourStep } from './interview-tour-model';
 
 type Rect = {
@@ -14,10 +14,11 @@ type Rect = {
 type TooltipPosition = { top: number; left: number; arrow: InterviewTourStep['placement'] };
 
 const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v4';
+const TOUR_STEP_KEY = 'media-runtime-guided-tour-step-v1';
 const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 16;
-const TOOLTIP_WIDTH = 320;
-const TOOLTIP_ESTIMATED_HEIGHT = 310;
+const TOOLTIP_WIDTH = 280;
+const TOOLTIP_ESTIMATED_HEIGHT = 250;
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
@@ -59,9 +60,9 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
     (available.top >= available.bottom ? 'top' : 'bottom');
   const unclampedLeft =
     placement === 'left'
-      ? VIEWPORT_GAP
+      ? rect.left - width - gap
       : placement === 'right'
-        ? window.innerWidth - width - VIEWPORT_GAP
+        ? rect.right + gap
         : rect.left + rect.width / 2 - width / 2;
   const left = Math.min(
     Math.max(unclampedLeft, VIEWPORT_GAP),
@@ -71,9 +72,10 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
     placement === 'top'
       ? Math.max(VIEWPORT_GAP, rect.top - TOOLTIP_ESTIMATED_HEIGHT - gap)
       : placement === 'left' || placement === 'right'
-        ? rect.top + rect.height / 2 < window.innerHeight / 2
-          ? Math.max(VIEWPORT_GAP, window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT - VIEWPORT_GAP)
-          : VIEWPORT_GAP
+        ? Math.min(
+            Math.max(rect.top + rect.height / 2 - TOOLTIP_ESTIMATED_HEIGHT / 2, VIEWPORT_GAP),
+            window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT - VIEWPORT_GAP,
+          )
         : rect.bottom + gap;
   return { top, left, arrow: placement ?? 'bottom' };
 }
@@ -84,14 +86,13 @@ export function InterviewTour() {
   const [rect, setRect] = useState<Rect | null>(null);
   const [tooltip, setTooltip] = useState<TooltipPosition | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const launchButton = useRef<HTMLButtonElement>(null);
   const step = interviewTourSteps[stepIndex]!;
 
   const finish = useCallback(() => {
     setOpen(false);
     setRect(null);
     window.sessionStorage.setItem(TOUR_SESSION_KEY, '1');
-    requestAnimationFrame(() => launchButton.current?.focus());
+    window.sessionStorage.removeItem(TOUR_STEP_KEY);
   }, []);
 
   const advance = useCallback(() => {
@@ -101,29 +102,47 @@ export function InterviewTour() {
         window.setTimeout(finish, 900);
         return current;
       }
+      window.sessionStorage.setItem(TOUR_STEP_KEY, String(current + 1));
       return current + 1;
     });
   }, [finish]);
 
   const goBack = useCallback(() => {
     setFeedback(null);
-    setStepIndex((current) => Math.max(current - 1, 0));
+    setStepIndex((current) => {
+      const previous = Math.max(current - 1, 0);
+      window.sessionStorage.setItem(TOUR_STEP_KEY, String(previous));
+      return previous;
+    });
   }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('guide') === '0') return;
     const requested = params.get('guide') === '1';
-    if (!requested && window.sessionStorage.getItem(TOUR_SESSION_KEY) === '1') return;
+    const savedStep = window.sessionStorage.getItem(TOUR_STEP_KEY);
+    const resumedStep = Number(savedStep);
+    const canResume = savedStep !== null && Number.isInteger(resumedStep) && resumedStep >= 0;
+    if (!requested && !canResume) return;
     const requestedStep = Number(params.get('step')) - 1;
-    const initialStep = Number.isInteger(requestedStep)
-      ? Math.min(Math.max(requestedStep, 0), interviewTourSteps.length - 1)
-      : 0;
+    const initialStep = canResume
+      ? Math.min(resumedStep, interviewTourSteps.length - 1)
+      : Number.isInteger(requestedStep)
+        ? Math.min(Math.max(requestedStep, 0), interviewTourSteps.length - 1)
+        : 0;
     const timer = window.setTimeout(() => {
       setStepIndex(initialStep);
       setOpen(true);
     }, 500);
     return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    const start = () => {
+      window.sessionStorage.setItem(TOUR_STEP_KEY, '0');
+      setStepIndex(0);
+      setOpen(true);
+    };
+    window.addEventListener('media-lab:start-tour', start);
+    return () => window.removeEventListener('media-lab:start-tour', start);
   }, []);
 
   useEffect(() => {
@@ -266,20 +285,6 @@ export function InterviewTour() {
 
   return (
     <>
-      <button
-        className="tour-launch"
-        type="button"
-        ref={launchButton}
-        onClick={() => {
-          window.dispatchEvent(new CustomEvent('media-lab:select-tab', { detail: 'overview' }));
-          setStepIndex(0);
-          setOpen(true);
-        }}
-      >
-        <span>第一次使用？</span>
-        <strong>開始互動操作導覽 →</strong>
-        <small>直接操作真實介面，約 2 分鐘完成</small>
-      </button>
       {open ? (
         <div className="tour-layer" aria-live="polite">
           {rect ? (
@@ -304,7 +309,9 @@ export function InterviewTour() {
               className="tour-tooltip"
               data-placement={tooltip.arrow}
               style={{ top: tooltip.top, left: tooltip.left }}
-              aria-label={`操作導覽，第 ${stepIndex + 1} 步，共 ${interviewTourSteps.length} 步`}
+              role="region"
+              aria-labelledby="tour-step-title"
+              aria-describedby="tour-step-instruction tour-keyboard-help"
             >
               <div className="tour-tooltip-meta">
                 <span>
@@ -319,19 +326,18 @@ export function InterviewTour() {
                   style={{ width: `${((stepIndex + 1) / interviewTourSteps.length) * 100}%` }}
                 />
               </div>
-              <strong>{step.title}</strong>
-              <p>{step.instruction}</p>
+              <strong id="tour-step-title">{step.title}</strong>
+              <p id="tour-step-instruction">{step.instruction}</p>
+              <small id="tour-keyboard-help" className="visually-hidden">
+                第 {stepIndex + 1} 步，共 {interviewTourSteps.length} 步。按 Escape 可以結束導覽。
+              </small>
               {feedback ? <small className="tour-feedback">{feedback}</small> : null}
               <div className="tour-navigation">
                 <button type="button" onClick={goBack} disabled={stepIndex === 0}>
                   ← 上一步
                 </button>
                 <button type="button" onClick={advance}>
-                  {stepIndex === interviewTourSteps.length - 1
-                    ? '完成導覽'
-                    : step.completion.type === 'manual'
-                      ? '看完，繼續 →'
-                      : '下一步 →'}
+                  {stepIndex === interviewTourSteps.length - 1 ? '完成導覽' : '繼續導覽 →'}
                 </button>
               </div>
             </aside>
