@@ -12,6 +12,10 @@
   padding: 26px;
   overflow: hidden;
 }
+.simulator { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 12px; margin-bottom: 22px; }
+.simulator label, .decision { display: grid; gap: 7px; padding: 14px; border: 1px solid var(--color-border-strong); border-radius: 12px; }
+.simulator select, .simulator input { min-height: 44px; border: 1px solid var(--color-border-strong); border-radius: 8px; padding: 8px 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.decision strong { color: var(--color-accent); font-size: 18px; }.decision small { color: var(--color-text-muted); }
 .pipeline {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -113,6 +117,7 @@
   color: var(--color-warning) !important;
 }
 @media (max-width: 850px) {
+  .simulator { grid-template-columns: 1fr; }
   .pipeline {
     grid-template-columns: 1fr;
   }

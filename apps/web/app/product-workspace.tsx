@@ -20,7 +20,7 @@ const tabs: [TabId, string, string][] = [
 
 function Overview() {
   return (
-    <section className="workspace-overview" data-tour="overview-summary">
+    <section className="workspace-overview">
       <p className="eyebrow">媒體運行實驗室</p>
       <h1>
         可復原的影音處理，
@@ -31,7 +31,7 @@ function Overview() {
         同一個指令送幾次都只有一個工作；worker 掛掉後由另一個 worker
         接手；連線中斷後從斷點接回事件。
       </p>
-      <div className="overview-grid">
+      <div className="overview-grid" data-tour="overview-summary">
         <article>
           <span>媒體生命週期</span>
           <strong>建立 → 合成 → 交付</strong>
@@ -55,10 +55,10 @@ function Overview() {
 
 function Architecture() {
   return (
-    <section className="workspace-architecture" data-tour="architecture-content">
+    <section className="workspace-architecture">
       <p className="eyebrow">系統邊界</p>
       <h2>產品流程、工程邊界與可驗證的維運證據。</h2>
-      <div className="flow">
+      <div className="flow" data-tour="architecture-content">
         <article>
           <b>01 · 產品體驗</b>
           <h3>Next.js + TypeScript</h3>
