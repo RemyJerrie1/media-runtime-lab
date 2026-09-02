@@ -32,8 +32,17 @@ export const mediaProcessingSchema = z.object({
 });
 export type MediaProcessing = z.infer<typeof mediaProcessingSchema>;
 
+export const mediaAssetSchema = z.object({
+  id: z.string().uuid(),
+  fileName: z.string().min(1),
+  mimeType: z.string().startsWith('video/'),
+  sizeBytes: z.number().int().positive(),
+});
+export type MediaAsset = z.infer<typeof mediaAssetSchema>;
+
 export const createRenderJobSchema = z.object({
   projectId: z.string().min(3),
+  sourceAssetId: z.string().uuid(),
   template: z.enum(['story', 'square', 'landscape']),
   trimStartSeconds: z.number().min(0).max(3600),
   durationSeconds: z.number().int().min(3).max(120),
@@ -48,6 +57,7 @@ export const renderJobSchema = z.object({
   id: z.string(),
   tenantId: z.string(),
   projectId: z.string(),
+  sourceAssetId: z.string().uuid(),
   status: renderStatusSchema,
   progress: z.number().min(0).max(100),
   stage: z.string(),

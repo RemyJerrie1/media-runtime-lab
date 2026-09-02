@@ -3,7 +3,12 @@ import type { RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts'
 import { Pool, type PoolClient } from 'pg';
 import { RenderJobAggregate } from '../domain/render-job';
 import { createMediaProcessingPlan } from '../domain/media-processing-plan';
-import type { ClaimedWork, CreateWorkflow, WorkflowStore } from '../domain/workflow-store';
+import type {
+  ArtifactReceipt,
+  ClaimedWork,
+  CreateWorkflow,
+  WorkflowStore,
+} from '../domain/workflow-store';
 
 /**
  * Schema for the durable render workflow.
@@ -121,6 +126,7 @@ export class PostgresWorkflowStore implements WorkflowStore {
         id,
         tenantId,
         projectId: command.projectId,
+        sourceAssetId: command.sourceAssetId,
         status: 'accepted',
         progress: 4,
         stage: 'Probe + processing contract accepted',
@@ -200,7 +206,13 @@ export class PostgresWorkflowStore implements WorkflowStore {
       ? { id: row.id, jobId: row.job_id, tenantId: row.tenant_id, workerId, attempt: row.attempt }
       : undefined;
   }
-  async advance(work: ClaimedWork, status: RenderStatus, progress: number, stage: string) {
+  async advance(
+    work: ClaimedWork,
+    status: RenderStatus,
+    progress: number,
+    stage: string,
+    artifact?: ArtifactReceipt,
+  ) {
     return this.transaction(async (client) => {
       const locked = await client.query<{ snapshot: RenderJob }>(
         "SELECT j.snapshot FROM render_jobs j JOIN render_outbox o ON o.job_id=j.id WHERE j.id=$1 AND j.tenant_id=$2 AND o.id=$3 AND o.worker_id=$4 AND o.state='leased' FOR UPDATE",
@@ -211,6 +223,7 @@ export class PostgresWorkflowStore implements WorkflowStore {
         status,
         progress,
         stage,
+        artifact,
       );
       next.attempt = work.attempt;
       await client.query(

@@ -14,7 +14,7 @@
 
 ## 操作畫面
 
-調整剪輯、CRF、碼率、FPS、GOP、字幕與水印參數，再查看任務進度與處理收據。
+上傳來源影片，調整剪輯、CRF、碼率、FPS、GOP、字幕與水印參數，再查看真實任務進度、處理收據與成品預覽。
 
 <a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="影音處理工作台操作示範" /></a>
 
@@ -42,11 +42,13 @@
 
 <a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API 與 FFmpeg 處理計畫示範" /></a>
 
-- `POST /v1/render-jobs`：建立或重播同一個指令
+- `POST /v1/media`：上傳來源影片並取得媒體資產識別碼
+- `POST /v1/render-jobs`：以媒體資產建立或重播同一個指令
 - `GET /v1/render-jobs/:id`：讀取目前狀態
 - `SSE /v1/render-jobs/:id/events`：接收與重播進度事件
+- `GET /artifacts/:jobId.mp4`：用 HTTP Range Request 傳送轉檔成品
 
-目前會驗證並保存 `ffprobe` 與 FFmpeg 參數，但尚未真的執行 FFmpeg；成品紀錄也是模擬資料。HLS/DASH、ABR、DRM、播放器與直播不在目前範圍內。
+Worker 會以 `ffprobe` 檢測來源、實際執行 FFmpeg、再次檢測輸出，並計算成品 SHA-256。Web 端使用真實 `<video>` 播放產生的 MP4。HLS/DASH、ABR、DRM 與直播仍不在目前範圍內。
 
 ## API 回歸測試
 
@@ -94,6 +96,8 @@ docker compose up -d postgres
 pnpm verify
 pnpm dev
 ```
+
+`pnpm install` 會透過 `ffmpeg-static` 與 `@ffprobe-installer/ffprobe` 安裝本機執行檔，不需要另外設定系統 PATH。
 
 - Web：`http://localhost:3000`
 - API：`http://localhost:4000`

@@ -6,6 +6,7 @@ import { Button } from '../../design-system/button';
 import { MetricCard } from '../../design-system/metric-card';
 import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
+import { artifactUrl, uploadMedia } from '../../shared/api/render-jobs';
 import { EncodingDecision } from './encoding-decision';
 
 const pipeline = ['檢測', '剪輯', '編碼', '封裝', '驗證', '儲存', '交付', '播放'];
@@ -33,6 +34,9 @@ export function RenderLab() {
     fps: 30,
   });
   const [processing, setProcessing] = useState<MediaProcessing>(defaults);
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   useEffect(() => {
     if (!job?.status) return;
     window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: job.status }));
@@ -82,6 +86,22 @@ export function RenderLab() {
           ))}
         </div>
         <EncodingDecision input={encoding} />
+        <fieldset className="source-upload">
+          <legend>1. 上傳來源影片</legend>
+          <label data-tour="upload-source">
+            選擇影片素材（MP4／MOV／WebM／MKV，最大 200 MB）
+            <input
+              type="file"
+              accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
+              onChange={(event) => setSourceFile(event.target.files?.[0] ?? null)}
+            />
+            <small>
+              {sourceFile
+                ? `${sourceFile.name} · ${(sourceFile.size / 1024 / 1024).toFixed(1)} MB`
+                : '尚未選擇素材'}
+            </small>
+          </label>
+        </fieldset>
         <fieldset>
           <legend>剪輯與編碼</legend>
           <div className="editor-grid">
@@ -278,33 +298,57 @@ export function RenderLab() {
         </div>
         <Button
           data-tour="submit-render"
-          disabled={busy}
-          onClick={() =>
-            run({ template: 'landscape', trimStartSeconds, durationSeconds, encoding, processing })
-          }
+          disabled={busy || uploading || !sourceFile}
+          onClick={async () => {
+            if (!sourceFile) return;
+            setUploading(true);
+            setUploadError(null);
+            try {
+              const asset = await uploadMedia(sourceFile);
+              await run({
+                sourceAssetId: asset.id,
+                template: 'landscape',
+                trimStartSeconds,
+                durationSeconds,
+                encoding,
+                processing,
+              });
+            } catch (cause) {
+              setUploadError(cause instanceof Error ? cause.message : '素材處理失敗');
+            } finally {
+              setUploading(false);
+            }
+          }}
         >
-          {busy ? '送出中…' : '送出處理模擬'}
+          {busy || uploading ? '處理中…' : '上傳並執行 FFmpeg'}
         </Button>
+        {uploadError ? (
+          <p className="error" role="alert">
+            {uploadError}
+          </p>
+        ) : null}
       </div>
       <div className="console">
         <section className="artifact-preview" aria-labelledby="artifact-preview-title">
           <div>
-            <span className="simulation-badge">模擬 Worker</span>
+            <span className={job?.artifactUrl ? 'artifact-badge' : 'simulation-badge'}>
+              {job?.artifactUrl ? '真實 FFmpeg Artifact' : '等待處理'}
+            </span>
             <h3 id="artifact-preview-title">後端成品（Artifact）</h3>
-            <p>
-              目前後端只模擬任務狀態與 FFmpeg 參數，尚未執行 FFmpeg，因此不會在這裡假裝顯示前端 Canvas 成品。
-            </p>
+            <p>上傳素材後由後端 worker 執行 FFmpeg；完成後直接播放本次任務產生的 MP4。</p>
           </div>
-          <dl>
-            <div>
-              <dt>實體影片</dt>
-              <dd>尚未產生</dd>
-            </div>
-            <div>
-              <dt>下一步</dt>
-              <dd>安裝 FFmpeg → 上傳素材 → Worker 轉碼 → 提供影片預覽</dd>
-            </div>
-          </dl>
+          {job?.artifactUrl ? (
+            <video
+              key={job.artifactUrl}
+              controls
+              preload="metadata"
+              src={artifactUrl(job.artifactUrl)}
+            >
+              您的瀏覽器不支援影片播放。
+            </video>
+          ) : (
+            <p className="artifact-empty">尚未產生實體影片。</p>
+          )}
         </section>
         <div className="job" data-tour="render-result">
           <MetricCard

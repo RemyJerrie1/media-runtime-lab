@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import type { RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts';
 import { RenderJobAggregate } from '../domain/render-job';
 import { createMediaProcessingPlan } from '../domain/media-processing-plan';
-import type { ClaimedWork, CreateWorkflow, WorkflowStore } from '../domain/workflow-store';
+import type {
+  ArtifactReceipt,
+  ClaimedWork,
+  CreateWorkflow,
+  WorkflowStore,
+} from '../domain/workflow-store';
 
 type WorkRow = {
   id: string;
@@ -47,6 +52,7 @@ export class InMemoryWorkflowStore implements WorkflowStore {
       id,
       tenantId,
       projectId: command.projectId,
+      sourceAssetId: command.sourceAssetId,
       status: 'accepted',
       progress: 4,
       stage: 'Probe + processing contract accepted',
@@ -117,12 +123,18 @@ export class InMemoryWorkflowStore implements WorkflowStore {
     }
     return { id: row.id, jobId: row.jobId, tenantId: row.tenantId, workerId, attempt: row.attempt };
   }
-  async advance(work: ClaimedWork, status: RenderStatus, progress: number, stage: string) {
+  async advance(
+    work: ClaimedWork,
+    status: RenderStatus,
+    progress: number,
+    stage: string,
+    artifact?: ArtifactReceipt,
+  ) {
     const key = this.jobKey(work.tenantId, work.jobId);
     const current = this.jobs.get(key);
     const row = this.work.get(work.id);
     if (!current || !row || row.workerId !== work.workerId) return;
-    const next = new RenderJobAggregate(current).advance(status, progress, stage);
+    const next = new RenderJobAggregate(current).advance(status, progress, stage, artifact);
     next.attempt = work.attempt;
     this.jobs.set(key, structuredClone(next));
     const event: RenderEvent = {

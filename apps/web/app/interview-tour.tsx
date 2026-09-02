@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { interviewTourSteps, type InterviewTourStep } from './interview-tour-model';
 
-type Rect = { top: number; left: number; right: number; bottom: number; width: number; height: number };
+type Rect = {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+};
 type TooltipPosition = { top: number; left: number; arrow: InterviewTourStep['placement'] };
 
 const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v3';
@@ -43,7 +50,8 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
     'right',
     'left',
   ];
-  const placement = order.find((candidate, index) => order.indexOf(candidate) === index && fits[candidate]) ??
+  const placement =
+    order.find((candidate, index) => order.indexOf(candidate) === index && fits[candidate]) ??
     (available.top >= available.bottom ? 'top' : 'bottom');
   const unclampedLeft =
     placement === 'left'
@@ -51,7 +59,10 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
       : placement === 'right'
         ? rect.right + gap
         : rect.left + rect.width / 2 - width / 2;
-  const left = Math.min(Math.max(unclampedLeft, VIEWPORT_GAP), window.innerWidth - width - VIEWPORT_GAP);
+  const left = Math.min(
+    Math.max(unclampedLeft, VIEWPORT_GAP),
+    window.innerWidth - width - VIEWPORT_GAP,
+  );
   const top =
     placement === 'top'
       ? Math.max(VIEWPORT_GAP, rect.top - TOOLTIP_ESTIMATED_HEIGHT - gap)
@@ -220,12 +231,25 @@ export function InterviewTour() {
   }, [advance, open, step]);
 
   const spotlightStyle = rect
-    ? ({ top: rect.top, left: rect.left, width: rect.width, height: rect.height } satisfies CSSProperties)
+    ? ({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      } satisfies CSSProperties)
     : undefined;
 
   return (
     <>
-      <button className="tour-launch" type="button" ref={launchButton} onClick={() => { setStepIndex(0); setOpen(true); }}>
+      <button
+        className="tour-launch"
+        type="button"
+        ref={launchButton}
+        onClick={() => {
+          setStepIndex(0);
+          setOpen(true);
+        }}
+      >
         <span>第一次使用？</span>
         <strong>開始互動操作導覽 →</strong>
         <small>直接操作真實介面，約 2 分鐘完成</small>
@@ -235,8 +259,14 @@ export function InterviewTour() {
           {rect ? (
             <>
               <div className="tour-blocker tour-blocker-top" style={{ height: rect.top }} />
-              <div className="tour-blocker tour-blocker-left" style={{ top: rect.top, width: rect.left, height: rect.height }} />
-              <div className="tour-blocker tour-blocker-right" style={{ top: rect.top, left: rect.right, height: rect.height }} />
+              <div
+                className="tour-blocker tour-blocker-left"
+                style={{ top: rect.top, width: rect.left, height: rect.height }}
+              />
+              <div
+                className="tour-blocker tour-blocker-right"
+                style={{ top: rect.top, left: rect.right, height: rect.height }}
+              />
               <div className="tour-blocker tour-blocker-bottom" style={{ top: rect.bottom }} />
               <div className="tour-spotlight" aria-hidden="true" style={spotlightStyle} />
             </>
@@ -244,13 +274,24 @@ export function InterviewTour() {
             <div className="tour-blocker tour-blocker-full" />
           )}
           {tooltip ? (
-            <aside className="tour-tooltip" data-placement={tooltip.arrow} style={{ top: tooltip.top, left: tooltip.left }} aria-label={`操作導覽，第 ${stepIndex + 1} 步，共 ${interviewTourSteps.length} 步`}>
+            <aside
+              className="tour-tooltip"
+              data-placement={tooltip.arrow}
+              style={{ top: tooltip.top, left: tooltip.left }}
+              aria-label={`操作導覽，第 ${stepIndex + 1} 步，共 ${interviewTourSteps.length} 步`}
+            >
               <div className="tour-tooltip-meta">
-                <span>{stepIndex + 1} / {interviewTourSteps.length}</span>
-                <button type="button" onClick={finish} aria-label="跳過操作導覽">跳過導覽</button>
+                <span>
+                  {stepIndex + 1} / {interviewTourSteps.length}
+                </span>
+                <button type="button" onClick={finish} aria-label="跳過操作導覽">
+                  跳過導覽
+                </button>
               </div>
               <div className="tour-progress-track" aria-hidden="true">
-                <span style={{ width: `${((stepIndex + 1) / interviewTourSteps.length) * 100}%` }} />
+                <span
+                  style={{ width: `${((stepIndex + 1) / interviewTourSteps.length) * 100}%` }}
+                />
               </div>
               <strong>{step.title}</strong>
               <p>{step.instruction}</p>

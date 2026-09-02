@@ -4,9 +4,11 @@ packages:
 
 onlyBuiltDependencies:
   - esbuild
+  - ffmpeg-static
   - sharp
 allowBuilds:
   esbuild: true
+  ffmpeg-static: true
   protobufjs: false
   sharp: true
 

@@ -24,6 +24,7 @@ suite('PostgreSQL workflow integration', () => {
       quotaTokens: 50000,
       command: {
         projectId: 'integration',
+        sourceAssetId: '8eb8e256-8904-4b9f-8488-10b617e7068a',
         template: 'landscape' as const,
         trimStartSeconds: 0,
         durationSeconds: 18,

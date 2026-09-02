@@ -31,4 +31,6 @@ Every structured workflow log includes `traceId`, `tenantId`, `projectId`, `jobI
 
 Implemented: persistence, event replay, work lease recovery, atomic completion, tenant isolation, quota, structured logs, CI integration database.
 
-Simulated: FFmpeg execution payload, external AI provider receipt, object storage, identity provider, and distributed telemetry backend.
+Implemented locally: bounded media upload, ffprobe validation, FFmpeg worker execution, SHA-256 artifact receipt, HTTP range delivery, and HTML video preview.
+
+Still simulated or out of scope: external AI provider receipt, object storage/CDN, identity provider, and distributed telemetry backend.

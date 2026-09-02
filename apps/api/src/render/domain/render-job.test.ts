@@ -4,6 +4,7 @@ const base = {
   id: 'job-1',
   tenantId: 'tenant-1',
   projectId: 'project-1',
+  sourceAssetId: '8eb8e256-8904-4b9f-8488-10b617e7068a',
   status: 'accepted' as const,
   progress: 4,
   stage: 'accepted',
@@ -53,7 +54,10 @@ describe('render state machine', () => {
     let job = new RenderJobAggregate(base).advance('composing', 25, 'compose');
     job = new RenderJobAggregate(job).advance('encoding', 55, 'encode');
     job = new RenderJobAggregate(job).advance('packaging', 85, 'package');
-    job = new RenderJobAggregate(job).advance('ready', 100, 'ready');
+    job = new RenderJobAggregate(job).advance('ready', 100, 'ready', {
+      url: '/artifacts/job-1.mp4',
+      checksum: `sha256:${'a'.repeat(64)}`,
+    });
     expect(job).toMatchObject({ artifactUrl: '/artifacts/job-1.mp4' });
     expect(job.artifactChecksum).toMatch(/^sha256:/);
   });

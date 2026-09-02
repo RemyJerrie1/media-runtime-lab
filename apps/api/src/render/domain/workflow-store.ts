@@ -1,5 +1,7 @@
 import type { CreateRenderJob, RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts';
 
+export type ArtifactReceipt = { url: string; checksum: string };
+
 export const WORKFLOW_STORE = Symbol('WORKFLOW_STORE');
 export type CreateWorkflow = {
   tenantId: string;
@@ -26,6 +28,7 @@ export interface WorkflowStore {
     status: RenderStatus,
     progress: number,
     stage: string,
+    artifact?: ArtifactReceipt,
   ): Promise<RenderJob | undefined>;
   release(work: ClaimedWork, error?: string): Promise<void>;
   activeCount(tenantId: string): Promise<number>;

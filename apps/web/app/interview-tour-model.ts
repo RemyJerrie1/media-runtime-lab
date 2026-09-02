@@ -1,10 +1,5 @@
 export type TourTabId =
-  | 'overview'
-  | 'render'
-  | 'composition'
-  | 'cost'
-  | 'operations'
-  | 'architecture';
+  'overview' | 'render' | 'composition' | 'cost' | 'operations' | 'architecture';
 
 export type TourCompletion =
   | { type: 'click' }
@@ -38,6 +33,17 @@ export const interviewTourSteps: InterviewTourStep[] = [
     placement: 'right',
   },
   {
+    id: 'upload-source',
+    target: '[data-tour="upload-source"]',
+    title: '上傳真實影片素材',
+    instruction: '選擇一支影片；素材會先上傳到後端，再交給 FFmpeg worker。',
+    completion: {
+      type: 'input',
+      validate: (element) => element instanceof HTMLInputElement && Boolean(element.files?.length),
+    },
+    placement: 'right',
+  },
+  {
     id: 'adjust-quality',
     target: '[data-tour="adjust-crf"]',
     title: '設定畫質目標',
@@ -65,7 +71,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'submit-render',
     target: '[data-tour="submit-render"]',
     title: '送出真實算圖任務',
-    instruction: '點擊「送出處理模擬」。系統會將目前參數送往後端狀態機。',
+    instruction: '點擊「上傳並執行 FFmpeg」。後端會實際轉碼並建立 MP4。',
     completion: { type: 'click' },
     placement: 'top',
   },
@@ -73,7 +79,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     id: 'render-result',
     target: '[data-tour="render-result"]',
     title: '等待後端處理完成',
-    instruction: '這裡會呈現模擬任務狀態與估算成本；目前不會宣稱已產生真實影片。',
+    instruction: '等待 worker 完成；成功後上方會直接播放本次產生的真實 MP4。',
     completion: {
       type: 'state',
       name: 'media-lab:render-state',
