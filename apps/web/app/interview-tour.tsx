@@ -352,6 +352,24 @@ export function InterviewTour() {
     return () => observer.disconnect();
   }, [open, rect, step.placement, stepIndex]);
 
+  useLayoutEffect(() => {
+    tooltipRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [stepIndex]);
+
+  const continueTour = useCallback(() => {
+    if (step.completion.type === 'click') {
+      const target = document.querySelector<HTMLElement>(step.target);
+      const control = target?.matches('button, a[href], input, select, textarea')
+        ? target
+        : target?.querySelector<HTMLElement>('button, a[href], input, select, textarea');
+      if (control) {
+        control.click();
+        return;
+      }
+    }
+    advance();
+  }, [advance, step]);
+
   const spotlightStyle = rect
     ? ({
         top: rect.top,
@@ -415,7 +433,7 @@ export function InterviewTour() {
                 <button type="button" onClick={goBack} disabled={stepIndex === 0}>
                   ← 上一步
                 </button>
-                <button type="button" onClick={advance}>
+                <button type="button" onClick={continueTour}>
                   {stepIndex === interviewTourSteps.length - 1 ? '完成導覽' : '繼續導覽 →'}
                 </button>
               </div>

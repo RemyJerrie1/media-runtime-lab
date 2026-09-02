@@ -67,8 +67,8 @@ export default function ApiReference() {
           同一份合約規範 NestJS 介面、Next.js 用戶端、PostgreSQL 工作流、Bruno 集合與回歸測試。
         </p>
         <div className="endpoint-list" data-tour="api-endpoints">
-          {endpoints.map((endpoint) => (
-            <article key={endpoint.path}>
+          {endpoints.map((endpoint, index) => (
+            <article key={endpoint.path} data-tour={`api-endpoint-${index + 1}`}>
               <code>{endpoint.method}</code>
               <div>
                 <h2>{endpoint.path}</h2>
