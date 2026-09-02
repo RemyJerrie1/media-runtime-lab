@@ -12,6 +12,8 @@
   border-right: 1px solid var(--line);
   padding: 28px 18px;
   background: var(--panel);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .workspace-brand {
   padding: 10px 12px;
@@ -20,6 +22,7 @@
 }
 .workspace-tabs {
   display: grid;
+  flex: 0 0 auto;
   gap: 7px;
   margin-top: 28px;
 }
@@ -54,6 +57,7 @@
 }
 .workspace-links {
   display: grid;
+  flex: 0 0 auto;
   gap: 8px;
   margin-top: auto;
 }
@@ -146,6 +150,7 @@
 }
 .tour-launch {
   display: grid;
+  flex: 0 0 auto;
   gap: 4px;
   margin-top: 18px;
   border: 1px solid color-mix(in srgb, var(--color-accent) 50%, var(--line));
