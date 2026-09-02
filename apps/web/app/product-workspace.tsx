@@ -20,7 +20,7 @@ const tabs: [TabId, string, string][] = [
 
 function Overview() {
   return (
-    <section className="workspace-overview">
+    <section className="workspace-overview" data-tour="overview-summary">
       <p className="eyebrow">媒體運行實驗室</p>
       <h1>
         可復原的影音處理，
@@ -55,7 +55,7 @@ function Overview() {
 
 function Architecture() {
   return (
-    <section className="workspace-architecture">
+    <section className="workspace-architecture" data-tour="architecture-content">
       <p className="eyebrow">系統邊界</p>
       <h2>產品流程、工程邊界與可驗證的維運證據。</h2>
       <div className="flow">
@@ -101,6 +101,14 @@ export function ProductWorkspace() {
       }
     }
   }, []);
+  useEffect(() => {
+    const selectTab = (event: Event) => {
+      const requested = event instanceof CustomEvent ? (event.detail as TabId) : undefined;
+      if (requested && tabs.some(([id]) => id === requested)) setActive(requested);
+    };
+    window.addEventListener('media-lab:select-tab', selectTab);
+    return () => window.removeEventListener('media-lab:select-tab', selectTab);
+  }, []);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
@@ -132,7 +140,7 @@ export function ProductWorkspace() {
               aria-selected={active === id}
               aria-controls={`panel-${id}`}
               tabIndex={active === id ? 0 : -1}
-              data-tour={id === 'render' ? 'open-workbench' : undefined}
+              data-tour={`tab-${id}`}
               onClick={() => setActive(id)}
             >
               <strong>{label}</strong>

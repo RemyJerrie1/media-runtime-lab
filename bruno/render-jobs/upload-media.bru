@@ -19,5 +19,5 @@ script:post-response {
   bru.setVar("assetId", res.body.id);
 }
 tests {
-  test("source media is stored", function () { expect(res.status).to.equal(201); expect(res.body.id).to.be.a("string"); });
+  test("source media is stored and playable", function () { expect(res.status).to.equal(201); expect(res.body.id).to.be.a("string"); expect(res.body.url).to.include("/media/"); });
 }

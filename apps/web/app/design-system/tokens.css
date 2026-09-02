@@ -35,10 +35,10 @@
   --shadow-panel: 0 24px 70px rgb(0 0 0 / 36%);
   --font-sans: 'Noto Sans TC', 'Microsoft JhengHei UI', 'PingFang TC', 'Segoe UI', sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-  --type-caption: 0.875rem;
-  --type-label: 0.9375rem;
-  --type-body: 1rem;
-  --type-body-lg: 1.125rem;
+  --type-caption: 1rem;
+  --type-label: 1.0625rem;
+  --type-body: 1.125rem;
+  --type-body-lg: 1.25rem;
   --type-title-sm: clamp(1.25rem, 1.4vw, 1.5rem);
   --type-title-md: clamp(1.75rem, 2.6vw, 2.5rem);
   --type-title-lg: clamp(2.5rem, 4.4vw, 3.75rem);
@@ -82,7 +82,7 @@
   padding: 12px 22px;
   background: var(--color-action);
   color: #17100c;
-  font: 700 15px/1 var(--font-sans);
+  font: 700 16px/1 var(--font-sans);
   letter-spacing: 0.02em;
   cursor: pointer;
   transition:
@@ -151,7 +151,7 @@
 .metric-card strong {
   display: block;
   margin-top: 5px;
-  font-size: 14px;
+  font-size: 16px;
 }
 .ds-status-badge {
   display: inline-flex;

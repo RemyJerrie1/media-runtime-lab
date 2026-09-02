@@ -29,7 +29,7 @@ export function CostGovernance() {
   const budget = budgetUtilization(totals.costUsd);
 
   return (
-    <section id="cost" className={styles.section}>
+    <section id="cost" className={styles.section} data-tour="cost-content">
       <SectionHeading
         eyebrow="人工智慧用量與成本治理（架構示意）"
         title="示範如何把模型用量歸因到功能、專案與工作區"

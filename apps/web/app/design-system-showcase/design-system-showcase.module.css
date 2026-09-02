@@ -162,7 +162,7 @@
   padding: 14px;
 }
 .swatch strong {
-  font-size: 14px;
+  font-size: 16px;
 }
 .swatch code {
   grid-column: 1/-1;
@@ -399,7 +399,7 @@
 .map strong {
   display: block;
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 16px;
 }
 .map i {
   align-self: center;

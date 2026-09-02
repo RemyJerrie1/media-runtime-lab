@@ -7,6 +7,18 @@ const endpoints = [
   },
   {
     method: 'POST',
+    path: '/v1/media/demo',
+    purpose: '準備可立即操作與播放的內建示範素材',
+    contract: '內建影片 → 已選取的媒體資產',
+  },
+  {
+    method: 'GET',
+    path: '/media/:assetId',
+    purpose: '預覽來源素材並支援位元組範圍請求',
+    contract: '媒體資產識別碼 → 可播放來源影片',
+  },
+  {
+    method: 'POST',
     path: '/v1/render-jobs',
     purpose: '建立具租戶範圍與冪等性的原子指令',
     contract: '建立算圖任務 → 算圖任務',

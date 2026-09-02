@@ -9,7 +9,7 @@
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: var(--shadow-panel);
-  font-size: 14px;
+  font-size: 16px;
 }
 .theme-toggle:hover {
   border-color: var(--color-accent);

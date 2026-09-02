@@ -13,7 +13,7 @@ type Rect = {
 };
 type TooltipPosition = { top: number; left: number; arrow: InterviewTourStep['placement'] };
 
-const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v3';
+const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v4';
 const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 16;
 const TOOLTIP_WIDTH = 320;
@@ -246,6 +246,7 @@ export function InterviewTour() {
         type="button"
         ref={launchButton}
         onClick={() => {
+          window.dispatchEvent(new CustomEvent('media-lab:select-tab', { detail: 'overview' }));
           setStepIndex(0);
           setOpen(true);
         }}

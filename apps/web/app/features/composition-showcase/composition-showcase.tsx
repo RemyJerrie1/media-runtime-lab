@@ -85,7 +85,7 @@ export function CompositionShowcase() {
       context.font = '700 20px ui-monospace, monospace';
       context.fillText('Canvas 二維媒體合成', 48, 58);
       context.fillStyle = '#9eacba';
-      context.font = '14px ui-monospace, monospace';
+      context.font = '16px ui-monospace, monospace';
       context.fillText('確定性影格時鐘 · 中文提示軌 · 精靈圖播放', 48, 84);
       if (!reducedMotion) animationFrame = requestAnimationFrame(render);
     };
@@ -94,7 +94,7 @@ export function CompositionShowcase() {
   }, []);
 
   return (
-    <section id="composition" className={styles.section}>
+    <section id="composition" className={styles.section} data-tour="composition-content">
       <SectionHeading
         eyebrow="媒體合成"
         title="字幕、Sprite 與 2D／3D Layer 共用一條媒體時間軸"
