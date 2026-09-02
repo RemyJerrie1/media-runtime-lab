@@ -12,15 +12,15 @@
 
 這三條都有測試，並在 CI 使用真正的 PostgreSQL 驗證。
 
-## 操作畫面
+## Dreamy 預設影片
 
-上傳來源影片，調整剪輯、CRF、碼率、FPS、GOP、字幕與水印參數，再查看真實任務進度、處理收據與成品預覽。
+內建一支八秒療癒系倉鼠短片：角色由左向右移動，搭配三段中文字幕與柔和提示音。它會實際送進後端 FFmpeg，供剪輯、編碼、合成與成品播放流程使用。
 
 <a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="影音處理工作台操作示範" /></a>
 
 ## 任務生命週期
 
-時間軸以 30 fps 計算影格位置，字幕提示跟著媒體時鐘切換。
+任務依序經過接受、合成、編碼、封裝與交付；每一步都有狀態、進度與復原證據。
 
 <a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="媒體任務與時間軸示範" /></a>
 
@@ -38,14 +38,17 @@
 
 完成時，成品紀錄、`ready` 狀態、事件與工作完成會在同一筆交易寫入。
 
-## FFmpeg 處理計畫
+## 介面規格
 
 <a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API 與 FFmpeg 處理計畫示範" /></a>
 
 - `POST /v1/media`：上傳來源影片並取得媒體資產識別碼
+- `POST /v1/media/demo`：準備內建 Dreamy 示範影片
 - `POST /v1/render-jobs`：以媒體資產建立或重播同一個指令
 - `GET /v1/render-jobs/:id`：讀取目前狀態
 - `SSE /v1/render-jobs/:id/events`：接收與重播進度事件
+- `GET /v1/operations`：讀取任務、復原、追蹤與成本證據
+- `GET /media/:assetId`：以 HTTP Range Request 預覽來源影片
 - `GET /artifacts/:jobId.mp4`：用 HTTP Range Request 傳送轉檔成品
 
 Worker 會以 `ffprobe` 檢測來源、實際執行 FFmpeg、再次檢測輸出，並計算成品 SHA-256。Web 端使用真實 `<video>` 播放產生的 MP4。HLS/DASH、ABR、DRM 與直播仍不在目前範圍內。
