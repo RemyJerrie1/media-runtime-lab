@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { SectionHeading } from '../../shared/ui/section-heading';
 import { aggregateUsage, budgetUtilization, USAGE_EVENTS } from './cost-model';
 import styles from './cost-governance.module.css';
@@ -14,31 +14,55 @@ const STEPS = [
 ] as const;
 
 export function CostGovernance() {
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const timer = window.setInterval(() => setTick((current) => (current + 1) % 15), 720);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const step = tick % STEPS.length;
-  const eventIndex = Math.floor(tick / STEPS.length);
+  const [eventIndex, setEventIndex] = useState(0);
+  const [budgetUsd, setBudgetUsd] = useState(0.02);
   const event = USAGE_EVENTS[eventIndex]!;
   const totals = aggregateUsage(USAGE_EVENTS.slice(0, eventIndex + 1));
-  const budget = budgetUtilization(totals.costUsd);
+  const budget = budgetUtilization(totals.costUsd, budgetUsd);
+  const decision =
+    budget >= 100 ? '停止非必要生成' : budget >= 75 ? '告警並改用低成本模型' : '允許執行';
 
   return (
-    <section id="cost" className={styles.section} data-tour="cost-content">
+    <section id="cost" className={styles.section}>
       <SectionHeading
         eyebrow="人工智慧用量與成本治理（架構示意）"
         title="示範如何把模型用量歸因到功能、專案與工作區"
         description="目前使用固定範例資料，尚未連接 AI 模型供應商。正式環境會把供應商回傳的 Token 用量標準化，再寫入不可變更的用量帳本。"
       />
       <div className={styles.panel}>
+        <div className={styles.simulator} data-tour="cost-content">
+          <label>
+            使用情境
+            <select
+              value={eventIndex}
+              onChange={(event) => setEventIndex(Number(event.target.value))}
+            >
+              {USAGE_EVENTS.map((item, index) => (
+                <option key={item.id} value={index}>
+                  {item.project} · {item.model}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            本次預算（美元）
+            <input
+              type="number"
+              min="0.005"
+              step="0.005"
+              value={budgetUsd}
+              onChange={(event) => setBudgetUsd(Math.max(0.005, Number(event.target.value)))}
+            />
+          </label>
+          <div className={styles.decision}>
+            <span>系統決策</span>
+            <strong>{decision}</strong>
+            <small>估算展示，未呼叫 AI</small>
+          </div>
+        </div>
         <div className={styles.pipeline}>
-          {STEPS.map(([index, title, detail], position) => (
-            <article className={styles.node} data-active={position === step} key={index}>
+          {STEPS.map(([index, title, detail]) => (
+            <article className={styles.node} key={index}>
               <b>{index}</b>
               <strong>{title}</strong>
               <p>{detail}</p>

@@ -60,6 +60,7 @@
 .tour-layer {
   z-index: 1000;
 }
+body:has(.tour-layer) .theme-toggle { display: none; }
 .tour-blocker {
   position: fixed;
   z-index: 1000;

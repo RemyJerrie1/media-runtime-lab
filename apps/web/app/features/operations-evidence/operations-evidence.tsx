@@ -1,4 +1,7 @@
-import { StatusBadge } from '../../design-system/status-badge';
+'use client';
+import { useState } from 'react';
+import type { OperationsSnapshot } from '@media-lab/contracts';
+import { getOperations } from '../../shared/api/render-jobs';
 import styles from './operations-evidence.module.css';
 
 const targets = [
@@ -9,15 +12,46 @@ const targets = [
 ];
 
 export function OperationsEvidence() {
+  const [snapshot, setSnapshot] = useState<OperationsSnapshot | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const refresh = async () => {
+    try {
+      setError(null);
+      setSnapshot(await getOperations());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : '讀取失敗');
+    }
+  };
   return (
-    <section className={styles.section} data-tour="operations-content">
+    <section className={styles.section}>
       <div className={styles.heading}>
         <div>
           <p className="eyebrow">維運證據</p>
           <h2>明確的目標、故障控制與可追蹤收據。</h2>
           <p>以下是參考系統的工程目標，不代表歷史客戶流量的實績聲明。</p>
         </div>
-        <StatusBadge tone="success">持續整合已驗證</StatusBadge>
+        <button
+          className={styles.refresh}
+          type="button"
+          onClick={refresh}
+          data-tour="operations-content"
+        >
+          讀取本機 API 維運快照
+        </button>
+      </div>
+      <div className={styles.snapshot} aria-live="polite" data-tour="operations-result">
+        {snapshot ? (
+          <>
+            <strong>真實後端快照</strong>
+            <span>指令 {snapshot.commands}</span>
+            <span>完成 {snapshot.completed}</span>
+            <span>處理中 {snapshot.active}</span>
+            <span>重播事件 {snapshot.replayedEvents}</span>
+          </>
+        ) : (
+          <span>按下按鈕，查看這次本機執行留下的真實數據。</span>
+        )}
+        {error ? <span role="alert">{error}</span> : null}
       </div>
       <div className={styles.targets}>
         {targets.map((target) => (
@@ -31,27 +65,27 @@ export function OperationsEvidence() {
       <div className={styles.trace}>
         <div>
           <span>指令</span>
-          <strong>trace_91A2</strong>
+          <strong>請求追蹤 ID</strong>
         </div>
         <i>↓</i>
         <div>
           <span>任務</span>
-          <strong>job_72C1</strong>
+          <strong>算圖任務 ID</strong>
         </div>
         <i>↓</i>
         <div>
           <span>狀態轉換</span>
-          <strong>序列 05 · 就緒</strong>
+          <strong>狀態與事件序列</strong>
         </div>
         <i>↓</i>
         <div>
           <span>成品</span>
-          <strong>雜湊值已驗證</strong>
+          <strong>檔案雜湊值</strong>
         </div>
         <i>↓</i>
         <div>
           <span>成本歸因</span>
-          <strong>$0.083 · 4,920 Token</strong>
+          <strong>估算處理成本</strong>
         </div>
       </div>
       <div className={styles.controls}>

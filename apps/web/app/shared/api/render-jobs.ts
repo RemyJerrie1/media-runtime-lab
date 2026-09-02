@@ -1,4 +1,9 @@
-import type { CreateRenderJob, MediaAsset, RenderJob } from '@media-lab/contracts';
+import type {
+  CreateRenderJob,
+  MediaAsset,
+  OperationsSnapshot,
+  RenderJob,
+} from '@media-lab/contracts';
 import { MEDIA_RUNTIME } from '../../config/media';
 
 const API = MEDIA_RUNTIME.apiBaseUrl;
@@ -62,4 +67,13 @@ export function renderJobEvents(id: string, after = 0) {
     after: String(after),
   });
   return new EventSource(`${API}/v1/render-jobs/${id}/events?${query}`);
+}
+
+export async function getOperations(): Promise<OperationsSnapshot> {
+  const response = await fetch(`${API}/v1/operations`, {
+    cache: 'no-store',
+    headers: tenantHeaders,
+  });
+  if (!response.ok) throw new Error(`維運快照讀取失敗（${response.status}）`);
+  return response.json() as Promise<OperationsSnapshot>;
 }

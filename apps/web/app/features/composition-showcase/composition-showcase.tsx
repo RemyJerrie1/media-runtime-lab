@@ -1,16 +1,28 @@
 'use client';
 
-import { useEffect, useRef, type CSSProperties } from 'react';
-import { MEDIA_CAPABILITIES, MEDIA_RUNTIME } from '../../config/media';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import type { MediaAsset, MediaProcessing } from '@media-lab/contracts';
+import { MEDIA_RUNTIME } from '../../config/media';
 import { SectionHeading } from '../../shared/ui/section-heading';
 import { activeSpriteFrame, activeSubtitle, loopProgress } from './composition-model';
 import styles from './composition-showcase.module.css';
+import { useRenderJob } from '../../shared/hooks/use-render-job';
+import { artifactUrl, getDemoMedia } from '../../shared/api/render-jobs';
 
 export function CompositionShowcase() {
+  const { job, busy, error, run } = useRenderJob();
+  const [source, setSource] = useState<MediaAsset | null>(null);
+  const [watermarkMode, setWatermarkMode] = useState<MediaProcessing['watermarkMode']>('visible');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const frameRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    getDemoMedia()
+      .then(setSource)
+      .catch(() => setSource(null));
+  }, []);
 
   useEffect(() => {
     const context = canvasRef.current?.getContext('2d');
@@ -94,19 +106,69 @@ export function CompositionShowcase() {
   }, []);
 
   return (
-    <section id="composition" className={styles.section} data-tour="composition-content">
+    <section id="composition" className={styles.section}>
       <SectionHeading
         eyebrow="媒體合成"
         title="字幕、Sprite 與 2D／3D Layer 共用一條媒體時間軸"
         description="AI 負責生成候選內容；確定性的前端預覽與後端算圖管線，負責可重播、可驗證的交付結果。"
       />
       <div className={styles.grid}>
-        <div className={styles.copy}>
-          <ul>
-            {MEDIA_CAPABILITIES.map((capability) => (
-              <li key={capability}>{capability}</li>
-            ))}
-          </ul>
+        <div className={styles.copy} data-tour="composition-content">
+          <h3>產生可驗證的合成影片</h3>
+          <p>右側是即時草稿；送出後由本機 FFmpeg 將浮水印燒入影片。</p>
+          <label className={styles.control} data-tour="composition-options">
+            浮水印模式
+            <select
+              value={watermarkMode}
+              onChange={(event) =>
+                setWatermarkMode(event.target.value as MediaProcessing['watermarkMode'])
+              }
+            >
+              <option value="none">不加浮水印</option>
+              <option value="visible">固定浮水印</option>
+              <option value="dynamic">動態時間浮水印</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            data-tour="composition-submit"
+            disabled={!source || busy}
+            onClick={() =>
+              source &&
+              run({
+                sourceAssetId: source.id,
+                template: 'landscape',
+                trimStartSeconds: 0,
+                durationSeconds: 3,
+                encoding: {
+                  codec: 'libx264',
+                  preset: 'fast',
+                  rateControl: 'crf',
+                  crf: 23,
+                  bitrateKbps: 4000,
+                  gop: 60,
+                  fps: 30,
+                },
+                processing: {
+                  frameRateMode: 'cfr',
+                  audioSampleRate: 48000,
+                  audioSync: 'async-resample',
+                  subtitleMode: 'none',
+                  watermarkMode,
+                  adInsertion: 'none',
+                  fastStart: true,
+                },
+              })
+            }
+          >
+            {busy ? '正在送出…' : '產生後端合成影片'}
+          </button>
+          {error ? <p role="alert">{error}</p> : null}
+          {job ? (
+            <p aria-live="polite">
+              後端狀態：{job.status}（{job.progress}%）
+            </p>
+          ) : null}
         </div>
         <div ref={stageRef} className={styles.stage} style={{ '--progress': 0 } as CSSProperties}>
           <canvas
@@ -136,6 +198,15 @@ export function CompositionShowcase() {
           </div>
         </div>
       </div>
+      {job?.status === 'ready' && job.artifactUrl ? (
+        <div className={styles.artifact} data-tour="composition-result">
+          <div>
+            <strong>FFmpeg 實際成品</strong>
+            <span>已完成、可播放、可下載</span>
+          </div>
+          <video controls autoPlay muted loop playsInline src={artifactUrl(job.artifactUrl)} />
+        </div>
+      ) : null}
     </section>
   );
 }

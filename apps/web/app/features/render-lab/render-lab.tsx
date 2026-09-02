@@ -392,7 +392,11 @@ export function RenderLab() {
         ) : null}
       </div>
       <div className="console">
-        <section className="artifact-preview" aria-labelledby="artifact-preview-title">
+        <section
+          className="artifact-preview"
+          aria-labelledby="artifact-preview-title"
+          data-tour="artifact-result"
+        >
           <div>
             <span className={job?.artifactUrl ? 'artifact-badge' : 'simulation-badge'}>
               {job?.artifactUrl ? '真實 FFmpeg Artifact' : '等待處理'}
@@ -404,6 +408,10 @@ export function RenderLab() {
             <video
               key={job.artifactUrl}
               controls
+              autoPlay
+              muted
+              loop
+              playsInline
               preload="metadata"
               src={artifactUrl(job.artifactUrl)}
             >
