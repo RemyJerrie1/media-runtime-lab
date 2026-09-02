@@ -397,7 +397,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
   },
   {
     id: 'api-endpoints',
-    target: '[data-tour="api-endpoints"]',
+    target: '[data-tour="api-overview"]',
     title: '完整服務流程',
     instruction: '從素材、任務、事件到成品播放，都有明確端點。',
     completion: { type: 'manual' },

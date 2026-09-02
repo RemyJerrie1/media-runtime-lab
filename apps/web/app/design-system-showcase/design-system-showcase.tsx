@@ -120,9 +120,13 @@ export function DesignSystemShowcase() {
             </div>
             <StatusBadge tone="success">八種核心角色</StatusBadge>
           </div>
-          <div className={styles.colorGrid} data-tour="design-tokens">
-            {colors.map(([label, token, value]) => (
-              <article className={styles.swatch} key={token}>
+          <div className={styles.colorGrid}>
+            {colors.map(([label, token, value], index) => (
+              <article
+                className={styles.swatch}
+                key={token}
+                data-tour={index === 0 ? 'design-tokens' : undefined}
+              >
                 <i style={{ background: value }} />
                 <div>
                   <strong>{label}</strong>
@@ -254,11 +258,11 @@ export function DesignSystemShowcase() {
             </div>
             <StatusBadge tone="success">沒有孤立元件</StatusBadge>
           </div>
-          <div className={styles.usageList} data-tour="design-usage">
+          <div className={styles.usageList}>
             {usage.map((item, index) => (
               <article key={item.name}>
                 <span className={styles.index}>0{index + 1}</span>
-                <div>
+                <div data-tour={index === 0 ? 'design-usage' : undefined}>
                   <code>{item.source}</code>
                   <h3>{item.name}</h3>
                 </div>
@@ -271,8 +275,8 @@ export function DesignSystemShowcase() {
               </article>
             ))}
           </div>
-          <div className={styles.map} data-tour="design-adoption-map">
-            <div>
+          <div className={styles.map}>
+            <div data-tour="design-adoption-map">
               <span>語意設計變數</span>
               <strong>色彩 · 間距 · 字體 · 圓角</strong>
             </div>

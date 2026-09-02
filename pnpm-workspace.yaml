@@ -3,10 +3,12 @@ packages:
   - packages/*
 
 onlyBuiltDependencies:
+  - '@ffprobe-installer/linux-x64'
   - esbuild
   - ffmpeg-static
   - sharp
 allowBuilds:
+  '@ffprobe-installer/linux-x64': true
   esbuild: true
   ffmpeg-static: true
   protobufjs: false

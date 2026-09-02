@@ -48,7 +48,7 @@ const endpoints = [
     contract: '位元組範圍 → MP4 Partial Content',
   },
 ];
-const guarantees = `已接受 → 合成中 → 編碼中 → 封裝中 → 已就緒\n       ↘ 失敗     ↘ 失敗     ↘ 失敗\n\n來源素材：受驗證的影片上傳後取得媒體資產識別碼。\n真實 Worker：ffprobe 先檢測來源，FFmpeg 依 CRF／Bitrate、Preset、FPS、GOP 等參數轉檔，再由 ffprobe 驗證成品。\nArtifact：成品寫入靜態服務目錄、計算 SHA-256，並支援 HTTP Range Request 與 <video> 播放。\n處理合約：剪輯起點、長度、編碼設定與處理設定。\n冪等性：PostgreSQL 唯一限制加上租戶交易鎖。\n復原：Worker 中斷後可重新取得過期的工作租約。\n重播：從最後事件識別碼繼續持久化事件序列。\n原子性：就緒狀態、成品雜湊、事件與工作完成共用同一交易。\n隔離：每次讀取與指令都限定在已驗證租戶。`;
+const guarantees = `已接受 → 合成中 → 編碼中 → 封裝中 → 已就緒\n       ↘ 失敗     ↘ 失敗     ↘ 失敗\n\n來源素材：受驗證的影片上傳後取得媒體資產識別碼。\n真實 Worker：ffprobe 先檢測來源，FFmpeg 依 CRF／Bitrate、Preset、FPS、GOP 等參數轉檔，再由 ffprobe 驗證成品。\nArtifact：成品寫入靜態服務目錄、計算 SHA-256，並支援 HTTP Range Request 與 <video> 播放。\n處理合約：剪輯起點、長度、編碼設定與處理設定。\n追蹤：POST /v1/render-jobs 接受 W3C traceparent，Trace ID 串起任務、事件、成品與成本。\n驗證：指令與狀態介面使用租戶識別與存取金鑰；事件串流使用同等範圍的查詢憑證。\n治理：每個租戶都有請求限流與 Token 額度，/v1/operations 回傳即時用量與證據鏈。\n冪等性：PostgreSQL 唯一限制加上租戶交易鎖。\n復原：Worker 中斷後可重新取得過期的工作租約。\n重播：從最後事件識別碼繼續持久化事件序列。\n原子性：就緒狀態、成品雜湊、事件與工作完成共用同一交易。\n隔離：每次讀取與指令都限定在已驗證租戶。`;
 export default function ApiReference() {
   return (
     <main>
@@ -63,23 +63,23 @@ export default function ApiReference() {
       <section className="docs">
         <p className="eyebrow">靜態介面規格參考</p>
         <h1>算圖任務介面</h1>
-        <p className="lede">
+        <p className="lede" data-tour="api-overview">
           同一份合約規範 NestJS 介面、Next.js 用戶端、PostgreSQL 工作流、Bruno 集合與回歸測試。
         </p>
-        <div className="endpoint-list" data-tour="api-endpoints">
+        <div className="endpoint-list">
           {endpoints.map((endpoint, index) => (
-            <article key={endpoint.path} data-tour={`api-endpoint-${index + 1}`}>
+            <article key={endpoint.path}>
               <code>{endpoint.method}</code>
               <div>
-                <h2>{endpoint.path}</h2>
+                <h2 data-tour={`api-endpoint-${index + 1}`}>{endpoint.path}</h2>
                 <p>{endpoint.purpose}</p>
                 <small>{endpoint.contract}</small>
               </div>
             </article>
           ))}
         </div>
-        <section className="contract" data-tour="api-guarantees">
-          <h2>運行保證</h2>
+        <section className="contract">
+          <h2 data-tour="api-guarantees">運行保證</h2>
           <pre>{guarantees}</pre>
         </section>
       </section>
