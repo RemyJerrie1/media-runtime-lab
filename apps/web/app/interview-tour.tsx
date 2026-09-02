@@ -10,6 +10,7 @@ const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v3';
 const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 16;
 const TOOLTIP_WIDTH = 320;
+const TOOLTIP_ESTIMATED_HEIGHT = 300;
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
@@ -23,12 +24,27 @@ function readRect(element: HTMLElement): Rect {
 function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']): TooltipPosition {
   const width = Math.min(TOOLTIP_WIDTH, window.innerWidth - VIEWPORT_GAP * 2);
   const gap = 18;
-  const placement =
-    preferred === 'left' && rect.left < width + gap
-      ? 'bottom'
-      : preferred === 'right' && window.innerWidth - rect.right < width + gap
-        ? 'bottom'
-        : preferred;
+  const available = {
+    top: rect.top - gap - VIEWPORT_GAP,
+    right: window.innerWidth - rect.right - gap - VIEWPORT_GAP,
+    bottom: window.innerHeight - rect.bottom - gap - VIEWPORT_GAP,
+    left: rect.left - gap - VIEWPORT_GAP,
+  };
+  const fits = {
+    top: available.top >= TOOLTIP_ESTIMATED_HEIGHT,
+    right: available.right >= width,
+    bottom: available.bottom >= TOOLTIP_ESTIMATED_HEIGHT,
+    left: available.left >= width,
+  };
+  const order: NonNullable<InterviewTourStep['placement']>[] = [
+    preferred ?? 'bottom',
+    'bottom',
+    'top',
+    'right',
+    'left',
+  ];
+  const placement = order.find((candidate, index) => order.indexOf(candidate) === index && fits[candidate]) ??
+    (available.top >= available.bottom ? 'top' : 'bottom');
   const unclampedLeft =
     placement === 'left'
       ? rect.left - width - gap
@@ -38,10 +54,13 @@ function positionTooltip(rect: Rect, preferred: InterviewTourStep['placement']):
   const left = Math.min(Math.max(unclampedLeft, VIEWPORT_GAP), window.innerWidth - width - VIEWPORT_GAP);
   const top =
     placement === 'top'
-      ? Math.max(VIEWPORT_GAP, rect.top - 176)
+      ? Math.max(VIEWPORT_GAP, rect.top - TOOLTIP_ESTIMATED_HEIGHT - gap)
       : placement === 'left' || placement === 'right'
-        ? Math.min(Math.max(rect.top, VIEWPORT_GAP), window.innerHeight - 210)
-        : Math.min(rect.bottom + gap, window.innerHeight - 210);
+        ? Math.min(
+            Math.max(rect.top + rect.height / 2 - TOOLTIP_ESTIMATED_HEIGHT / 2, VIEWPORT_GAP),
+            window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT - VIEWPORT_GAP,
+          )
+        : rect.bottom + gap;
   return { top, left, arrow: placement ?? 'bottom' };
 }
 
