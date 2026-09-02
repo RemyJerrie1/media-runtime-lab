@@ -21,10 +21,14 @@ const TOOLTIP_ESTIMATED_HEIGHT = 300;
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
-  const left = Math.max(rect.left - TARGET_PADDING, VIEWPORT_GAP / 2);
-  const top = Math.max(rect.top - TARGET_PADDING, VIEWPORT_GAP / 2);
-  const right = Math.min(rect.right + TARGET_PADDING, window.innerWidth - VIEWPORT_GAP / 2);
-  const bottom = Math.min(rect.bottom + TARGET_PADDING, window.innerHeight - VIEWPORT_GAP / 2);
+  const viewportLeft = VIEWPORT_GAP / 2;
+  const viewportTop = VIEWPORT_GAP / 2;
+  const viewportRight = window.innerWidth - VIEWPORT_GAP / 2;
+  const viewportBottom = window.innerHeight - VIEWPORT_GAP / 2;
+  const left = Math.min(Math.max(rect.left - TARGET_PADDING, viewportLeft), viewportRight);
+  const top = Math.min(Math.max(rect.top - TARGET_PADDING, viewportTop), viewportBottom);
+  const right = Math.max(Math.min(rect.right + TARGET_PADDING, viewportRight), left);
+  const bottom = Math.max(Math.min(rect.bottom + TARGET_PADDING, viewportBottom), top);
   return { top, left, right, bottom, width: right - left, height: bottom - top };
 }
 
@@ -131,6 +135,10 @@ export function InterviewTour() {
     if (!open) return;
     let target: HTMLElement | null = null;
     let frame = 0;
+    let resizeObserver: ResizeObserver | undefined;
+    const settleTimers: number[] = [];
+    setRect(null);
+    setTooltip(null);
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
@@ -144,13 +152,23 @@ export function InterviewTour() {
       const found = document.querySelector(step.target);
       if (!(found instanceof HTMLElement)) return false;
       target = found;
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      target.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+      target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+      resizeObserver?.disconnect();
+      resizeObserver = new ResizeObserver(update);
+      resizeObserver.observe(target);
       const focusTarget = target.matches('button, input, select, textarea, a[href]')
         ? target
         : target.querySelector<HTMLElement>('button, input, select, textarea, a[href]');
-      window.setTimeout(() => focusTarget?.focus({ preventScroll: true }), 250);
       update();
+      for (const delay of [50, 150, 350]) {
+        settleTimers.push(
+          window.setTimeout(() => {
+            target?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+            update();
+          }, delay),
+        );
+      }
+      settleTimers.push(window.setTimeout(() => focusTarget?.focus({ preventScroll: true }), 180));
       return true;
     };
     if (!attach()) {
@@ -218,6 +236,8 @@ export function InterviewTour() {
     document.addEventListener('focusin', keepFocusInTour);
     return () => {
       observer.disconnect();
+      resizeObserver?.disconnect();
+      settleTimers.forEach((timer) => window.clearTimeout(timer));
       cancelAnimationFrame(frame);
       document.removeEventListener(eventName, onTargetEvent, true);
       if (completion.type === 'event' || completion.type === 'state') {
