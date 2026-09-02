@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { CreateRenderJob, RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts';
 import { Observable } from 'rxjs';
-import { WORKFLOW_STORE, type WorkflowStore } from '../domain/workflow-store';
+import { WORKFLOW_STORE, type ArtifactReceipt, type WorkflowStore } from '../domain/workflow-store';
 import { OperationsTelemetry } from './operations-telemetry';
+import { FfmpegMediaProcessor } from '../infrastructure/ffmpeg-media-processor';
 
 /**
  * The render state machine, as data rather than control flow.
@@ -12,9 +13,7 @@ import { OperationsTelemetry } from './operations-telemetry';
  * the operator-facing label from the job itself, which keeps the encoding parameters the user
  * chose visible in the progress stream instead of a generic "processing".
  *
- * `delay` exists because the worker here simulates the encode. It is the single place the
- * simulation lives: swapping in a real FFmpeg worker means replacing `processNext`'s body,
- * not touching the state machine, the store, or the API.
+ * The state machine remains provider-independent; FFmpeg execution lives behind an adapter.
  */
 const STEPS: Record<
   Exclude<RenderStatus, 'ready' | 'failed'>,
@@ -48,6 +47,7 @@ export class RenderOrchestrator {
   constructor(
     @Inject(WORKFLOW_STORE) private readonly store: WorkflowStore,
     @Inject(OperationsTelemetry) private readonly telemetry: OperationsTelemetry,
+    @Inject(FfmpegMediaProcessor) private readonly processor: FfmpegMediaProcessor,
   ) {}
   async create(tenantId: string, command: CreateRenderJob, traceId: string, quotaTokens: number) {
     const result = await this.store.create({ tenantId, command, traceId, quotaTokens });
@@ -62,15 +62,20 @@ export class RenderOrchestrator {
     if (!work) return false;
     try {
       let current = await this.store.findById(work.tenantId, work.jobId);
+      let artifact: ArtifactReceipt | undefined;
       if (!current || current.status === 'ready' || current.status === 'failed') return false;
       while (current.status !== 'ready' && current.status !== 'failed') {
         const step = STEPS[current.status];
         if (withDelay) await new Promise((resolve) => setTimeout(resolve, step.delay));
+        if (current.status === 'encoding') artifact = await this.processor.render(current);
+        if (current.status === 'packaging' && !artifact)
+          artifact = await this.processor.render(current);
         const next = await this.store.advance(
           work,
           step.status,
           step.progress,
           step.stage(current),
+          step.status === 'ready' ? artifact : undefined,
         );
         if (!next) throw new Error('WORK_LEASE_LOST');
         this.telemetry.transition(next);

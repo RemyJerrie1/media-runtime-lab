@@ -3,6 +3,7 @@ import type { CreateRenderJob } from '@media-lab/contracts';
 import { createMediaProcessingPlan } from './media-processing-plan';
 
 const command: CreateRenderJob = {
+  sourceAssetId: '8eb8e256-8904-4b9f-8488-10b617e7068a',
   projectId: 'media-plan',
   template: 'landscape',
   trimStartSeconds: 12,

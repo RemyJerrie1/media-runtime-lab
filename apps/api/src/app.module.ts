@@ -7,6 +7,9 @@ import { TenantPolicy } from './render/application/tenant-policy';
 import { WORKFLOW_STORE, type WorkflowStore } from './render/domain/workflow-store';
 import { InMemoryWorkflowStore } from './render/infrastructure/in-memory-render.repository';
 import { PostgresWorkflowStore } from './render/infrastructure/postgres-workflow.store';
+import { MediaController } from './render/interfaces/media.controller';
+import { MediaFilesService } from './render/infrastructure/media-files.service';
+import { FfmpegMediaProcessor } from './render/infrastructure/ffmpeg-media-processor';
 
 export async function createWorkflowStore(
   databaseUrl = process.env.DATABASE_URL,
@@ -23,12 +26,14 @@ export async function createWorkflowStore(
 }
 
 @Module({
-  controllers: [RenderController],
+  controllers: [RenderController, MediaController],
   providers: [
     RenderOrchestrator,
     RenderWorker,
     OperationsTelemetry,
     TenantPolicy,
+    MediaFilesService,
+    FfmpegMediaProcessor,
     {
       provide: WORKFLOW_STORE,
       useFactory: createWorkflowStore,

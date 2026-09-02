@@ -4,6 +4,7 @@ import { OperationsTelemetry } from './operations-telemetry';
 import { RenderOrchestrator } from './render-orchestrator';
 const command = {
   projectId: 'portfolio',
+  sourceAssetId: '8eb8e256-8904-4b9f-8488-10b617e7068a',
   template: 'landscape' as const,
   trimStartSeconds: 0,
   durationSeconds: 18,
@@ -30,7 +31,13 @@ const command = {
 };
 function setup() {
   const store = new InMemoryWorkflowStore();
-  const orchestrator = new RenderOrchestrator(store, new OperationsTelemetry());
+  const processor = {
+    render: async (job: { id: string }) => ({
+      url: `/artifacts/${job.id}.mp4`,
+      checksum: `sha256:${'a'.repeat(64)}`,
+    }),
+  };
+  const orchestrator = new RenderOrchestrator(store, new OperationsTelemetry(), processor as never);
   return { store, orchestrator };
 }
 describe('render orchestration', () => {

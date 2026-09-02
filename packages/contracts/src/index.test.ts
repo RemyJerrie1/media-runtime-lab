@@ -23,6 +23,7 @@ describe('public contracts', () => {
     expect(
       createRenderJobSchema.safeParse({
         projectId: 'x',
+        sourceAssetId: crypto.randomUUID(),
         template: 'portrait',
         trimStartSeconds: -1,
         durationSeconds: 999,
@@ -37,6 +38,7 @@ describe('public contracts', () => {
         id: 'j1',
         tenantId: 'tenant-1',
         projectId: 'p1',
+        sourceAssetId: crypto.randomUUID(),
         status: 'ready',
         progress: 100,
         stage: 'ready',
