@@ -30,16 +30,29 @@ const STEPS: Record<
     status: 'encoding',
     progress: 58,
     stage: (job) =>
-      `FFmpeg ${job.encoding.fps}fps · CRF ${job.encoding.crf} · GOP ${job.encoding.gop}`,
+      job.processing.abrLadder === 'standard'
+        ? `建立 360p／540p／720p／1080p ABR Ladder · ${job.encoding.fps}fps`
+        : `FFmpeg ${job.encoding.fps}fps · CRF ${job.encoding.crf} · GOP ${job.encoding.gop}`,
     delay: 240,
   },
   encoding: {
     status: 'packaging',
     progress: 84,
-    stage: () => 'Artifact checksum + encoding receipt',
+    stage: (job) =>
+      job.processing.qualityMetric === 'vmaf'
+        ? '逐一量測 Rendition VMAF 與 SHA-256'
+        : '計算成品 SHA-256 與編碼收據',
     delay: 220,
   },
-  packaging: { status: 'ready', progress: 100, stage: () => 'Delivery-ready artifact', delay: 180 },
+  packaging: {
+    status: 'ready',
+    progress: 100,
+    stage: (job) =>
+      job.processing.deliveryFormat === 'hls-cmaf'
+        ? '完成 HLS Master／Media Playlist 與 CMAF Segments'
+        : '成品已可播放與下載',
+    delay: 180,
+  },
 };
 
 @Injectable()
@@ -49,8 +62,14 @@ export class RenderOrchestrator {
     @Inject(OperationsTelemetry) private readonly telemetry: OperationsTelemetry,
     @Inject(FfmpegMediaProcessor) private readonly processor: FfmpegMediaProcessor,
   ) {}
-  async create(tenantId: string, command: CreateRenderJob, traceId: string, quotaTokens: number) {
-    const result = await this.store.create({ tenantId, command, traceId, quotaTokens });
+  async create(
+    tenantId: string,
+    command: CreateRenderJob,
+    traceId: string,
+    requestId: string,
+    quotaTokens: number,
+  ) {
+    const result = await this.store.create({ tenantId, command, traceId, requestId, quotaTokens });
     this.telemetry.command(result.job, result.created);
     return result.job;
   }

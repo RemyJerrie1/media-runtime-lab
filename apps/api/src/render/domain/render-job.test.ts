@@ -11,6 +11,7 @@ const base = {
   sequence: 1,
   attempt: 0,
   traceId: 'trace-1',
+  requestId: 'request-1',
   estimatedCostUsd: 0.1,
   tokens: 10,
   template: 'landscape' as const,
@@ -33,11 +34,16 @@ const base = {
     watermarkMode: 'visible' as const,
     adInsertion: 'none' as const,
     fastStart: true,
+    deliveryFormat: 'hls-cmaf' as const,
+    abrLadder: 'standard' as const,
+    qualityMetric: 'vmaf' as const,
   },
   ffprobeArgs: ['-show_streams'],
   ffmpegArgs: ['-crf', '23'],
   artifactUrl: null,
   artifactChecksum: null,
+  manifestUrl: null,
+  renditions: [],
   updatedAt: new Date(0).toISOString(),
 };
 describe('render state machine', () => {
@@ -55,8 +61,10 @@ describe('render state machine', () => {
     job = new RenderJobAggregate(job).advance('encoding', 55, 'encode');
     job = new RenderJobAggregate(job).advance('packaging', 85, 'package');
     job = new RenderJobAggregate(job).advance('ready', 100, 'ready', {
-      url: '/artifacts/job-1.mp4',
-      checksum: `sha256:${'a'.repeat(64)}`,
+      artifactUrl: '/artifacts/job-1.mp4',
+      artifactChecksum: `sha256:${'a'.repeat(64)}`,
+      manifestUrl: '/streams/job-1/master.m3u8',
+      renditions: [],
     });
     expect(job).toMatchObject({ artifactUrl: '/artifacts/job-1.mp4' });
     expect(job.artifactChecksum).toMatch(/^sha256:/);

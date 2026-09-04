@@ -31,7 +31,7 @@ export class InMemoryWorkflowStore implements WorkflowStore {
   private jobKey(tenantId: string, id: string) {
     return `${tenantId}:${id}`;
   }
-  async create({ tenantId, traceId, command, quotaTokens }: CreateWorkflow) {
+  async create({ tenantId, traceId, requestId, command, quotaTokens }: CreateWorkflow) {
     const key = `${tenantId}:${command.idempotencyKey}`;
     const existingId = this.keys.get(key);
     if (existingId) {
@@ -59,6 +59,7 @@ export class InMemoryWorkflowStore implements WorkflowStore {
       sequence: 1,
       attempt: 0,
       traceId,
+      requestId,
       estimatedCostUsd: Number((command.durationSeconds * 0.0018).toFixed(3)),
       tokens,
       template: command.template,
@@ -69,6 +70,8 @@ export class InMemoryWorkflowStore implements WorkflowStore {
       ...plan,
       artifactUrl: null,
       artifactChecksum: null,
+      manifestUrl: null,
+      renditions: [],
       updatedAt: now,
     };
     this.jobs.set(this.jobKey(tenantId, id), structuredClone(job));

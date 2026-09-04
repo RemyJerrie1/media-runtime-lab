@@ -29,6 +29,9 @@ export const mediaProcessingSchema = z.object({
   watermarkMode: z.enum(['none', 'visible', 'dynamic']),
   adInsertion: z.enum(['none', 'csai', 'ssai']),
   fastStart: z.boolean(),
+  deliveryFormat: z.enum(['mp4', 'hls-cmaf']),
+  abrLadder: z.enum(['none', 'standard']),
+  qualityMetric: z.enum(['none', 'vmaf']),
 });
 export type MediaProcessing = z.infer<typeof mediaProcessingSchema>;
 
@@ -65,6 +68,7 @@ export const renderJobSchema = z.object({
   sequence: z.number().int().nonnegative(),
   attempt: z.number().int().nonnegative(),
   traceId: z.string(),
+  requestId: z.string(),
   estimatedCostUsd: z.number().nonnegative(),
   tokens: z.number().int().nonnegative(),
   template: z.enum(['story', 'square', 'landscape']),
@@ -76,6 +80,19 @@ export const renderJobSchema = z.object({
   ffmpegArgs: z.array(z.string()),
   artifactUrl: z.string().nullable(),
   artifactChecksum: z.string().nullable(),
+  manifestUrl: z.string().nullable(),
+  renditions: z.array(
+    z.object({
+      id: z.string(),
+      width: z.number().int().positive(),
+      height: z.number().int().positive(),
+      bitrateKbps: z.number().int().positive(),
+      playlistUrl: z.string(),
+      checksum: z.string(),
+      vmaf: z.number().min(0).max(100).nullable(),
+      qualityMetricStatus: z.enum(['measured', 'unavailable', 'not-requested']),
+    }),
+  ),
   updatedAt: z.string(),
 });
 export type RenderJob = z.infer<typeof renderJobSchema>;
@@ -103,10 +120,13 @@ export const operationsSnapshotSchema = z.object({
   latestEvidence: z
     .object({
       traceId: z.string(),
+      requestId: z.string(),
       jobId: z.string(),
       sequence: z.number().int(),
       status: renderStatusSchema,
       artifactChecksum: z.string().nullable(),
+      manifestUrl: z.string().nullable(),
+      renditionCount: z.number().int().nonnegative(),
       estimatedCostUsd: z.number(),
       tokens: z.number().int(),
     })

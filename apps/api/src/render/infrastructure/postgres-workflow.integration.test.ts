@@ -21,6 +21,7 @@ suite('PostgreSQL workflow integration', () => {
     const input = {
       tenantId: 'integration-tenant',
       traceId: 'trace-integration',
+      requestId: 'request-integration',
       quotaTokens: 50000,
       command: {
         projectId: 'integration',
@@ -45,6 +46,9 @@ suite('PostgreSQL workflow integration', () => {
           watermarkMode: 'visible' as const,
           adInsertion: 'none' as const,
           fastStart: true,
+          deliveryFormat: 'mp4' as const,
+          abrLadder: 'none' as const,
+          qualityMetric: 'none' as const,
         },
         narration: 'persistent workflow',
         idempotencyKey: key,

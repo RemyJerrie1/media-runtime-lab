@@ -1,11 +1,15 @@
 import type { CreateRenderJob, RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts';
 
-export type ArtifactReceipt = { url: string; checksum: string };
+export type ArtifactReceipt = Pick<
+  RenderJob,
+  'artifactUrl' | 'artifactChecksum' | 'manifestUrl' | 'renditions'
+>;
 
 export const WORKFLOW_STORE = Symbol('WORKFLOW_STORE');
 export type CreateWorkflow = {
   tenantId: string;
   traceId: string;
+  requestId: string;
   command: CreateRenderJob;
   quotaTokens: number;
 };

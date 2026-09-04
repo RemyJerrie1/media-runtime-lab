@@ -70,6 +70,9 @@ export function CompositionShowcase() {
                   watermarkMode,
                   adInsertion: 'none',
                   fastStart: true,
+                  deliveryFormat: 'mp4',
+                  abrLadder: 'none',
+                  qualityMetric: 'none',
                 },
               })
             }

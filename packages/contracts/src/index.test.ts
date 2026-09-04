@@ -17,6 +17,9 @@ const processing = {
   watermarkMode: 'visible' as const,
   adInsertion: 'none' as const,
   fastStart: true,
+  deliveryFormat: 'hls-cmaf' as const,
+  abrLadder: 'standard' as const,
+  qualityMetric: 'vmaf' as const,
 };
 describe('public contracts', () => {
   it('describes a playable uploaded media asset', () => {
@@ -57,6 +60,7 @@ describe('public contracts', () => {
         sequence: 5,
         attempt: 1,
         traceId: 'trace-1',
+        requestId: 'request-1',
         estimatedCostUsd: 0.04,
         tokens: 120,
         template: 'landscape',
@@ -68,6 +72,19 @@ describe('public contracts', () => {
         ffmpegArgs: ['-crf', '23'],
         artifactUrl: '/a.mp4',
         artifactChecksum: 'sha256:abc',
+        manifestUrl: '/streams/j1/master.m3u8',
+        renditions: [
+          {
+            id: '720p',
+            width: 1280,
+            height: 720,
+            bitrateKbps: 2500,
+            playlistUrl: '/streams/j1/720p.m3u8',
+            checksum: 'sha256:def',
+            vmaf: 94.2,
+            qualityMetricStatus: 'measured',
+          },
+        ],
         updatedAt: new Date().toISOString(),
       }).success,
     ).toBe(true));

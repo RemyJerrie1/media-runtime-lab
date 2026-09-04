@@ -4,8 +4,15 @@ import {
   renditionCandidates,
   type EncodingDecisionInput,
 } from './encoding-decision-model';
+import type { RenderJob } from '@media-lab/contracts';
 
-export function EncodingDecision({ input }: { input: EncodingDecisionInput }) {
+export function EncodingDecision({
+  input,
+  measuredRenditions,
+}: {
+  input: EncodingDecisionInput;
+  measuredRenditions: RenderJob['renditions'];
+}) {
   const current = estimateEncodingDecision(input);
   return (
     <section className="encoding-decision" aria-labelledby="encoding-decision-title">
@@ -15,7 +22,7 @@ export function EncodingDecision({ input }: { input: EncodingDecisionInput }) {
           <h3 id="encoding-decision-title">最高畫質，不一定是最佳播放體驗。</h3>
         </div>
         <p className="decision-disclaimer">
-          VMAF 與成本採預估值；正式環境應以 libvmaf、實際編碼時間及雲端帳單校正。
+          編碼前只呈現容量與效能估算；VMAF 僅在後端完成實際比對後顯示。
         </p>
       </header>
 
@@ -28,8 +35,8 @@ export function EncodingDecision({ input }: { input: EncodingDecisionInput }) {
           </small>
         </article>
         <article>
-          <span>感知品質</span>
-          <strong>VMAF {current.estimatedVmaf}</strong>
+          <span>預估品質指數</span>
+          <strong>{current.estimatedVmaf}</strong>
           <small>碼率增加後效益遞減</small>
         </article>
         <article>
@@ -64,11 +71,7 @@ export function EncodingDecision({ input }: { input: EncodingDecisionInput }) {
         <div className="quality-curve">
           <h4>品質／碼率曲線</h4>
           <p>越往右成本越高；曲線變平後，繼續加碼率通常不划算。</p>
-          <div
-            className="curve-bars"
-            role="img"
-            aria-label="碼率從 2.5 Mbps 增加到 16 Mbps，VMAF 從 90.2 增加到 96.2，但增幅逐漸減少"
-          >
+          <div className="curve-bars" role="img" aria-label="碼率增加時，預估品質增幅逐漸減少">
             {renditionCandidates.map((candidate) => (
               <div key={candidate.id}>
                 <span style={{ height: `${candidate.vmaf - 72}%` }} />
@@ -99,7 +102,7 @@ export function EncodingDecision({ input }: { input: EncodingDecisionInput }) {
             <tr>
               <th scope="col">解析度</th>
               <th scope="col">碼率</th>
-              <th scope="col">VMAF</th>
+              <th scope="col">預估品質</th>
               <th scope="col">編碼成本</th>
               <th scope="col">每小時資料量</th>
               <th scope="col">播放風險</th>
@@ -123,6 +126,29 @@ export function EncodingDecision({ input }: { input: EncodingDecisionInput }) {
           </tbody>
         </table>
       </div>
+      {measuredRenditions.length ? (
+        <section
+          className="measured-renditions"
+          data-tour="vmaf-results"
+          aria-labelledby="vmaf-results-title"
+        >
+          <h4 id="vmaf-results-title">實際交付證據</h4>
+          <p>以下數值來自本次後端工作，不沿用固定範例資料。</p>
+          <ul>
+            {measuredRenditions.map((rendition) => (
+              <li key={rendition.id}>
+                <strong>{rendition.id}</strong>
+                <span>{rendition.bitrateKbps.toLocaleString()} kbps</span>
+                <span>
+                  {rendition.vmaf === null
+                    ? '執行環境未提供 libvmaf'
+                    : `VMAF ${rendition.vmaf.toFixed(1)}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <p className="decision-conclusion">
         <strong>決策：</strong>品質達標後，不再追逐最高碼率；把預算留給更穩定的播放、更多有效
         Rendition 與較低的 Rebuffering。

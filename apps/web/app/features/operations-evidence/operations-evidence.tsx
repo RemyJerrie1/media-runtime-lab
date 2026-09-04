@@ -64,13 +64,13 @@ export function OperationsEvidence() {
       </div>
       <div className={styles.trace} data-tour="operations-trace">
         <div>
-          <span>指令</span>
-          <strong>Trace ID</strong>
+          <span>入口請求</span>
+          <strong>Request ID</strong>
         </div>
         <i aria-hidden="true">→</i>
         <div>
-          <span>任務</span>
-          <strong>Job ID</strong>
+          <span>跨服務追蹤</span>
+          <strong>W3C Trace ID</strong>
         </div>
         <i aria-hidden="true">→</i>
         <div>
@@ -79,8 +79,8 @@ export function OperationsEvidence() {
         </div>
         <i aria-hidden="true">→</i>
         <div>
-          <span>成品</span>
-          <strong>成品雜湊</strong>
+          <span>串流交付</span>
+          <strong>Manifest + SHA-256</strong>
         </div>
         <i aria-hidden="true">→</i>
         <div>

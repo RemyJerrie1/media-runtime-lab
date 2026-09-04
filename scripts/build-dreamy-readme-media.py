@@ -84,7 +84,7 @@ def pipeline(name: str, kicker: str, title: str, stages: list[tuple[str, str]], 
 
 
 def build_api() -> None:
-    items = [("POST", "/v1/media"), ("POST", "/v1/media/demo"), ("POST", "/v1/render-jobs"), ("GET", "/v1/render-jobs/:id"), ("SSE", "/v1/render-jobs/:id/events"), ("GET", "/v1/operations"), ("GET", "/media/:assetId"), ("GET", "/artifacts/:jobId.mp4")]
+    items = [("POST", "/v1/media"), ("POST", "/v1/media/demo"), ("POST", "/v1/render-jobs"), ("GET", "/v1/render-jobs/:id"), ("SSE", "/v1/render-jobs/:id/events"), ("GET", "/v1/operations"), ("GET", "/media/:assetId"), ("GET", "/artifacts/:jobId.mp4"), ("HLS", "/streams/:jobId/master.m3u8")]
     folder = Path(tempfile.gettempdir()) / "dreamy-api"
     if folder.exists(): shutil.rmtree(folder)
     folder.mkdir()
@@ -93,12 +93,12 @@ def build_api() -> None:
         image, draw = base("INTERFACE CONTRACT", "從素材進站到成品交付，都有清楚合約", step, len(items))
         for index, (method, path) in enumerate(items):
             row, col = divmod(index, 2)
-            x, y = 66 + col * 540, 176 + row * 103
+            x, y = 66 + col * 540, 168 + row * 92
             active = index == step
-            draw.rounded_rectangle((x, y, x + 512, y + 82), radius=18, fill="#ffffff", outline=CYAN if active else "#d5e1e6", width=4 if active else 2)
-            draw.rounded_rectangle((x + 14, y + 17, x + 104, y + 65), radius=12, fill=CYAN if active else "#e4f4f6")
-            draw.text((x + 31, y + 28), method, font=font(15, True), fill=INK)
-            draw.text((x + 124, y + 25), path, font=font(18, True), fill=INK)
+            draw.rounded_rectangle((x, y, x + 512, y + 74), radius=18, fill="#ffffff", outline=CYAN if active else "#d5e1e6", width=4 if active else 2)
+            draw.rounded_rectangle((x + 14, y + 13, x + 104, y + 61), radius=12, fill=CYAN if active else "#e4f4f6")
+            draw.text((x + 31, y + 24), method, font=font(15, True), fill=INK)
+            draw.text((x + 124, y + 21), path, font=font(18, True), fill=INK)
         target = folder / f"frame-{step:02d}.png"
         image.save(target, optimize=True); frames.append(target)
     encode(frames, "api-contract", 480)
@@ -129,6 +129,7 @@ def main() -> None:
     pipeline("reliability-recovery", "RELIABILITY", "一次請求，從 Trace ID 追到交付結果", [("Trace ID", "W3C traceparent"), ("Job ID", "唯一任務識別"), ("事件序列", "斷線後接續"), ("成品雜湊", "驗證輸出一致"), ("成本歸因", "回到租戶與功能")], MINT)
     pipeline("ai-cost-governance", "COST GOVERNANCE", "把每次模型用量歸因到功能與預算", [("請求脈絡", "租戶與工作區"), ("供應商收據", "輸入與輸出用量"), ("用量帳本", "不可變事件"), ("成本歸因", "功能與專案"), ("預算閘門", "告警、限流與降級")], PEACH)
     pipeline("bruno-contract-tests", "CONTRACT VERIFICATION", "同一份介面合約，由自動化回歸驗證", [("媒體上傳", "格式與大小限制"), ("建立任務", "冪等與配額"), ("狀態讀取", "租戶隔離"), ("事件重播", "游標接續"), ("成品播放", "Range 與雜湊")], CYAN)
+    pipeline("streaming-delivery", "ADAPTIVE STREAMING", "從畫質決策到播放切換，每一步都有交付證據", [("ABR Ladder", "360p 到 1080p"), ("多畫質編碼", "各自碼率與解析度"), ("HLS + CMAF", "Manifest 與 fMP4"), ("播放器切換", "依網路選擇畫質"), ("VMAF 決策", "畫質與成本取捨")], MINT)
     build_api(); build_design()
 
 

@@ -153,6 +153,42 @@
 .candidate-table tr[data-decision='淘汰'] td:last-child {
   color: var(--color-danger);
 }
+.measured-renditions {
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.measured-renditions h4,
+.measured-renditions p {
+  margin: 0;
+}
+.measured-renditions p {
+  margin-top: 6px;
+  color: var(--color-text-muted);
+}
+.measured-renditions ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.measured-renditions li {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+}
+.measured-renditions li span {
+  color: var(--color-text-muted);
+  font-size: var(--type-caption);
+}
 .decision-conclusion {
   margin: var(--space-4) 0 0;
   padding: var(--space-4);
@@ -168,6 +204,9 @@
   .decision-summary {
     grid-template-columns: 1fr 1fr;
   }
+  .measured-renditions ul {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 @media (max-width: 620px) {
   .decision-summary {
@@ -178,5 +217,8 @@
   }
   .curve-bars {
     gap: 8px;
+  }
+  .measured-renditions ul {
+    grid-template-columns: 1fr;
   }
 }

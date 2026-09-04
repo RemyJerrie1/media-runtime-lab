@@ -47,8 +47,14 @@ const endpoints = [
     purpose: '以 HTTP Range Request 串流實際 FFmpeg 成品',
     contract: '位元組範圍 → MP4 Partial Content',
   },
+  {
+    method: 'HLS',
+    path: '/streams/:jobId/master.m3u8',
+    purpose: '交付 ABR Master Playlist、各畫質 Playlist 與 CMAF Segments',
+    contract: 'Master Manifest → 360p／540p／720p／1080p 自適應串流',
+  },
 ];
-const guarantees = `已接受 → 合成中 → 編碼中 → 封裝中 → 已就緒\n       ↘ 失敗     ↘ 失敗     ↘ 失敗\n\n來源素材：受驗證的影片上傳後取得媒體資產識別碼。\n真實 Worker：ffprobe 先檢測來源，FFmpeg 依 CRF／Bitrate、Preset、FPS、GOP 等參數轉檔，再由 ffprobe 驗證成品。\nArtifact：成品寫入靜態服務目錄、計算 SHA-256，並支援 HTTP Range Request 與 <video> 播放。\n處理合約：剪輯起點、長度、編碼設定與處理設定。\n追蹤：POST /v1/render-jobs 接受 W3C traceparent，Trace ID 串起任務、事件、成品與成本。\n驗證：指令與狀態介面使用租戶識別與存取金鑰；事件串流使用同等範圍的查詢憑證。\n治理：每個租戶都有請求限流與 Token 額度，/v1/operations 回傳即時用量與證據鏈。\n冪等性：PostgreSQL 唯一限制加上租戶交易鎖。\n復原：Worker 中斷後可重新取得過期的工作租約。\n重播：從最後事件識別碼繼續持久化事件序列。\n原子性：就緒狀態、成品雜湊、事件與工作完成共用同一交易。\n隔離：每次讀取與指令都限定在已驗證租戶。`;
+const guarantees = `已接受 → 合成中 → ABR 編碼 → VMAF 驗證 → CMAF 封裝 → 已就緒\n       ↘ 失敗       ↘ 失敗       ↘ 失敗       ↘ 失敗\n\n來源素材：受驗證的影片上傳後取得媒體資產識別碼。\nABR Ladder：實際產生 360p／540p／720p／1080p 四個 H.264 + AAC Rendition。\nHLS + CMAF：輸出 Master Playlist、各畫質 Media Playlist、初始化片段與 fragmented MP4 Segments。\nVMAF：以來源與各 Rendition 實際比對；執行環境缺少 libvmaf 時回報 unavailable，不填入範例分數。\n證據鏈：任務 JSON 回傳解析度、碼率、VMAF、Manifest URL、SHA-256、Trace ID 與 Request ID。\n追蹤：POST /v1/render-jobs 接受 W3C traceparent 與 x-request-id，串起任務、事件、成品與成本。\n驗證：指令與狀態介面使用租戶識別與存取金鑰；事件串流使用同等範圍的查詢憑證。\n治理：每個租戶都有請求限流與 Token 額度，/v1/operations 回傳即時用量與證據鏈。\n冪等性：PostgreSQL 唯一限制加上租戶交易鎖。\n復原：Worker 中斷後可重新取得過期的工作租約。\n重播：從最後事件識別碼繼續持久化事件序列。\n原子性：就緒狀態、Manifest、Rendition 收據、雜湊與事件共用同一交易。\n隔離：每次讀取與指令都限定在已驗證租戶。`;
 export default function ApiReference() {
   return (
     <main>

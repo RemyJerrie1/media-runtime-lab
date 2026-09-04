@@ -102,6 +102,33 @@ export class MediaFilesService {
     return resolve(this.artifacts, `${jobId}.mp4`);
   }
 
+  async streamDirectory(jobId: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(jobId)) throw new NotFoundException('STREAM_NOT_FOUND');
+    const directory = resolve(this.artifacts, jobId);
+    await mkdir(directory, { recursive: true });
+    return directory;
+  }
+
+  async streamAsset(jobId: string, filename: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(jobId) || !/^[a-zA-Z0-9._-]+$/.test(filename))
+      throw new NotFoundException('STREAM_ASSET_NOT_FOUND');
+    const directory = resolve(this.artifacts, jobId);
+    const path = resolve(directory, filename);
+    const details = await stat(path).catch(() => {
+      throw new NotFoundException('STREAM_ASSET_NOT_FOUND');
+    });
+    const extension = filename.split('.').pop()?.toLowerCase();
+    const mimeType =
+      extension === 'm3u8'
+        ? 'application/vnd.apple.mpegurl'
+        : extension === 'm4s'
+          ? 'video/iso.segment'
+          : extension === 'mp4'
+            ? 'video/mp4'
+            : 'application/octet-stream';
+    return { path, size: details.size, mimeType, stream: () => createReadStream(path) };
+  }
+
   async artifact(jobId: string) {
     const path = this.artifactPath(jobId);
     const details = await stat(path).catch(() => {
