@@ -213,6 +213,48 @@ legend {
   border-radius: 12px;
   background: #000;
 }
+.artifact-preview > div > label {
+  display: grid;
+  max-width: 420px;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+}
+.artifact-preview > div > label select {
+  min-height: 48px;
+}
+.artifact-preview > div > a {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-accent-strong);
+  font-weight: var(--weight-bold);
+}
+.rendition-receipt {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.rendition-receipt > div {
+  display: block !important;
+  min-width: 0;
+  padding: var(--space-3) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+}
+.rendition-receipt dd {
+  margin-top: 5px !important;
+  overflow-wrap: anywhere;
+  font-size: var(--type-caption);
+}
+@media (max-width: 900px) {
+  .rendition-receipt {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 .artifact-empty { border: 1px dashed var(--line); border-radius: 10px; padding: 28px; text-align: center; }
 .source-upload { border-color: var(--color-accent) !important; }
 .source-picker {

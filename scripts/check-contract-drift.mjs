@@ -32,6 +32,9 @@ for (const field of [
   'durationSeconds',
   'encoding',
   'processing',
+  'deliveryFormat',
+  'abrLadder',
+  'qualityMetric',
   'narration',
   'idempotencyKey',
 ])
@@ -39,7 +42,12 @@ for (const field of [
     console.error(`Contract drift: ${field}`);
     process.exit(1);
   }
-for (const route of ['/v1/render-jobs', ':id/events', '/v1/operations'])
+for (const route of [
+  '/v1/render-jobs',
+  ':id/events',
+  '/v1/operations',
+  '/streams/:jobId/master.m3u8',
+])
   if (!docs.includes(route)) {
     console.error(`Reference drift: ${route}`);
     process.exit(1);

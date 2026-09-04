@@ -3,7 +3,7 @@ import { interviewTourSteps, moveTourStep } from './interview-tour-model';
 
 describe('guided product tour', () => {
   it('binds every step to a real data-tour target and a completion condition', () => {
-    expect(interviewTourSteps).toHaveLength(45);
+    expect(interviewTourSteps).toHaveLength(52);
     for (const step of interviewTourSteps) {
       expect(step.target).toMatch(/^\[data-tour="[a-z0-9-]+"\]$/);
       expect(step.completion.type).toBeTruthy();
@@ -11,7 +11,7 @@ describe('guided product tour', () => {
   });
 
   it('covers click, input and application-state completion', () => {
-    expect(interviewTourSteps.filter((step) => step.completion.type === 'manual')).toHaveLength(31);
+    expect(interviewTourSteps.filter((step) => step.completion.type === 'manual')).toHaveLength(38);
     expect(interviewTourSteps.filter((step) => step.completion.type === 'click')).toHaveLength(13);
     expect(interviewTourSteps.filter((step) => step.completion.type === 'input')).toHaveLength(0);
     expect(interviewTourSteps.filter((step) => step.completion.type === 'state')).toHaveLength(1);

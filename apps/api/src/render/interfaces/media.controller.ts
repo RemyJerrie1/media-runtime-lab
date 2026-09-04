@@ -65,6 +65,20 @@ export class MediaController {
     this.streamMedia({ ...artifact, mimeType: 'video/mp4' }, range, response);
   }
 
+  @Get('streams/:jobId/:filename')
+  async stream(
+    @Param('jobId') jobId: string,
+    @Param('filename') filename: string,
+    @Headers('range') range: string | undefined,
+    @Res() response: Response,
+  ) {
+    const asset = await this.files.streamAsset(jobId, filename);
+    if (asset.mimeType === 'application/vnd.apple.mpegurl') {
+      response.setHeader('Cache-Control', 'no-store');
+    }
+    this.streamMedia(asset, range, response);
+  }
+
   private streamMedia(
     media: { path: string; size: number; mimeType: string; stream: () => NodeJS.ReadableStream },
     range: string | undefined,

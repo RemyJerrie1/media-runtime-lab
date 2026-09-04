@@ -104,7 +104,7 @@ export class PostgresWorkflowStore implements WorkflowStore {
       client.release();
     }
   }
-  async create({ tenantId, traceId, command, quotaTokens }: CreateWorkflow) {
+  async create({ tenantId, traceId, requestId, command, quotaTokens }: CreateWorkflow) {
     return this.transaction(async (client) => {
       await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [tenantId]);
       const existing = await client.query<{ snapshot: RenderJob }>(
@@ -133,6 +133,7 @@ export class PostgresWorkflowStore implements WorkflowStore {
         sequence: 1,
         attempt: 0,
         traceId,
+        requestId,
         estimatedCostUsd: Number((command.durationSeconds * 0.0018).toFixed(3)),
         tokens,
         template: command.template,
@@ -143,6 +144,8 @@ export class PostgresWorkflowStore implements WorkflowStore {
         ...plan,
         artifactUrl: null,
         artifactChecksum: null,
+        manifestUrl: null,
+        renditions: [],
         updatedAt: now,
       };
       const inserted = await client.query<{ snapshot: RenderJob }>(

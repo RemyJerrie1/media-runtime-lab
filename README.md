@@ -47,11 +47,18 @@
 - `POST /v1/render-jobs`：以媒體資產建立或重播同一個指令
 - `GET /v1/render-jobs/:id`：讀取目前狀態
 - `SSE /v1/render-jobs/:id/events`：接收與重播進度事件
+- `GET /streams/:jobId/master.m3u8`：讀取 HLS Master Playlist，並延伸至各畫質 Playlist 與 CMAF Segments
 - `GET /v1/operations`：讀取任務、復原、追蹤與成本證據
 - `GET /media/:assetId`：以 HTTP Range Request 預覽來源影片
 - `GET /artifacts/:jobId.mp4`：用 HTTP Range Request 傳送轉檔成品
 
-Worker 會以 `ffprobe` 檢測來源、實際執行 FFmpeg、再次檢測輸出，並計算成品 SHA-256。Web 端使用真實 `<video>` 播放產生的 MP4。HLS/DASH、ABR、DRM 與直播仍不在目前範圍內。
+Worker 會以 `ffprobe` 檢測來源、實際執行 FFmpeg，產生 360p／540p／720p／1080p ABR Ladder，再封裝為 HLS + CMAF（Master Playlist、各畫質 Playlist、初始化片段與 fragmented MP4 Segments）。每個 Rendition 都會計算 SHA-256，並在可用 `libvmaf` 的 FFmpeg 環境中，實際比較來源與輸出畫質；若環境未提供 `libvmaf`，API 會明確回傳 `unavailable`，不使用固定示範分數。
+
+<a href="./docs/media/streaming-delivery.mp4"><img src="./docs/media/streaming-delivery.gif" width="760" alt="ABR Ladder、HLS CMAF 封裝、播放器切換與 VMAF 決策示範" /></a>
+
+建立任務時可設定 `deliveryFormat: "hls-cmaf"`、`abrLadder: "standard"` 與 `qualityMetric: "vmaf"`。完成後的任務 JSON 會包含各 Rendition 的解析度、碼率、Playlist URL、VMAF、Checksum，以及 Master Manifest URL、Trace ID 與 Request ID。`GET /streams/:jobId/master.m3u8` 提供播放器使用的自適應串流入口。
+
+預設使用專案附帶的 FFmpeg；部署時也可用 `FFMPEG_BINARY` 與 `FFPROBE_BINARY` 指向完整建置。若要求 VMAF，指定的 FFmpeg 必須包含 `libvmaf` filter。
 
 ## API 回歸測試
 

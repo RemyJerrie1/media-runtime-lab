@@ -32,8 +32,10 @@ export class RenderJobAggregate {
       stage,
       sequence: this.state.sequence + 1,
       updatedAt: new Date().toISOString(),
-      artifactUrl: ready ? artifact!.url : this.state.artifactUrl,
-      artifactChecksum: ready ? artifact!.checksum : this.state.artifactChecksum,
+      artifactUrl: ready ? artifact!.artifactUrl : this.state.artifactUrl,
+      artifactChecksum: ready ? artifact!.artifactChecksum : this.state.artifactChecksum,
+      manifestUrl: ready ? artifact!.manifestUrl : this.state.manifestUrl,
+      renditions: ready ? artifact!.renditions : this.state.renditions,
     };
     return this.snapshot();
   }

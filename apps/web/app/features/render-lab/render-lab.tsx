@@ -18,6 +18,9 @@ const defaults: MediaProcessing = {
   watermarkMode: 'visible',
   adInsertion: 'none',
   fastStart: true,
+  deliveryFormat: 'hls-cmaf',
+  abrLadder: 'standard',
+  qualityMetric: 'vmaf',
 };
 
 export function RenderLab() {
@@ -38,6 +41,8 @@ export function RenderLab() {
   const [usingDemo, setUsingDemo] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [playbackRendition, setPlaybackRendition] = useState('720p');
+  const selectedRendition = job?.renditions.find((rendition) => rendition.id === playbackRendition);
   useEffect(() => {
     if (!job?.status) return;
     window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: job.status }));
@@ -103,7 +108,7 @@ export function RenderLab() {
             </span>
           ))}
         </div>
-        <EncodingDecision input={encoding} />
+        <EncodingDecision input={encoding} measuredRenditions={job?.renditions ?? []} />
         <fieldset className="source-upload" data-tour="choose-source">
           <legend>1. 選擇來源素材</legend>
           <div className="source-picker">
@@ -362,6 +367,43 @@ export function RenderLab() {
               />
               MP4 快速啟播（Faststart）<small>將 moov 移至 mdat 前方</small>
             </label>
+            <label data-tour="delivery-format">
+              交付格式
+              <select
+                aria-label="交付格式"
+                value={processing.deliveryFormat}
+                onChange={process('deliveryFormat')}
+              >
+                <option value="mp4">單一 MP4</option>
+                <option value="hls-cmaf">HLS + CMAF 串流</option>
+              </select>
+              <small>Master Playlist 搭配 fragmented MP4 分段</small>
+            </label>
+            <label data-tour="abr-ladder">
+              ABR Ladder
+              <select
+                aria-label="多碼率階梯"
+                value={processing.abrLadder}
+                disabled={processing.deliveryFormat !== 'hls-cmaf'}
+                onChange={process('abrLadder')}
+              >
+                <option value="none">不建立</option>
+                <option value="standard">360p／540p／720p／1080p</option>
+              </select>
+              <small>覆蓋不同頻寬與裝置解析度</small>
+            </label>
+            <label data-tour="quality-metric">
+              畫質驗證
+              <select
+                aria-label="畫質驗證指標"
+                value={processing.qualityMetric}
+                onChange={process('qualityMetric')}
+              >
+                <option value="none">不測量</option>
+                <option value="vmaf">VMAF 實測</option>
+              </select>
+              <small>逐一比較來源與每個 Rendition</small>
+            </label>
           </div>
         </fieldset>
         <div className="ffmpeg-command">
@@ -404,24 +446,84 @@ export function RenderLab() {
         >
           <div>
             <span className={job?.artifactUrl ? 'artifact-badge' : 'simulation-badge'}>
-              {job?.artifactUrl ? '真實 FFmpeg Artifact' : '等待處理'}
+              {job?.artifactUrl ? '已完成串流交付' : '等待處理'}
             </span>
-            <h3 id="artifact-preview-title">後端成品（Artifact）</h3>
-            <p>上傳素材後由後端 worker 執行 FFmpeg；完成後直接播放本次任務產生的 MP4。</p>
+            <h3 id="artifact-preview-title">自適應串流成品</h3>
+            <p>
+              四個畫質版本由 FFmpeg 實際產生；可切換預覽，並查看本次任務的 HLS Master Playlist。
+            </p>
           </div>
           {job?.artifactUrl ? (
-            <video
-              key={job.artifactUrl}
-              controls
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              src={artifactUrl(job.artifactUrl)}
-            >
-              您的瀏覽器不支援影片播放。
-            </video>
+            <>
+              {job.renditions.length ? (
+                <label data-tour="rendition-switcher">
+                  預覽 Rendition
+                  <select
+                    aria-label="選擇預覽畫質"
+                    value={playbackRendition}
+                    onChange={(event) => setPlaybackRendition(event.target.value)}
+                  >
+                    {job.renditions.map((rendition) => (
+                      <option key={rendition.id} value={rendition.id}>
+                        {rendition.id} · {rendition.bitrateKbps.toLocaleString()} kbps
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <video
+                key={`${job.id}-${playbackRendition}`}
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                src={artifactUrl(
+                  job.renditions.length
+                    ? `/streams/${job.id}/${playbackRendition}.mp4`
+                    : job.artifactUrl,
+                )}
+              >
+                您的瀏覽器不支援影片播放。
+              </video>
+              {selectedRendition ? (
+                <dl className="rendition-receipt" aria-label="目前畫質的交付證據">
+                  <div>
+                    <dt>解析度</dt>
+                    <dd>
+                      {selectedRendition.width} × {selectedRendition.height}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>碼率</dt>
+                    <dd>{selectedRendition.bitrateKbps.toLocaleString()} kbps</dd>
+                  </div>
+                  <div>
+                    <dt>VMAF</dt>
+                    <dd>
+                      {selectedRendition.vmaf === null
+                        ? '此環境無法量測'
+                        : selectedRendition.vmaf.toFixed(1)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Checksum</dt>
+                    <dd>{selectedRendition.checksum}</dd>
+                  </div>
+                </dl>
+              ) : null}
+              {job.manifestUrl ? (
+                <a
+                  data-tour="hls-manifest"
+                  href={artifactUrl(job.manifestUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  開啟 HLS Master Playlist
+                </a>
+              ) : null}
+            </>
           ) : (
             <p className="artifact-empty">尚未產生實體影片。</p>
           )}
@@ -489,6 +591,8 @@ export function RenderLab() {
             </strong>
             <code>ffprobe {job.ffprobeArgs.join(' ')}</code>
             <code>ffmpeg {job.ffmpegArgs.join(' ')}</code>
+            <code>request-id {job.requestId}</code>
+            {job.manifestUrl ? <code>manifest {job.manifestUrl}</code> : null}
           </div>
         ) : null}
       </div>

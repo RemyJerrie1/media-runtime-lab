@@ -41,10 +41,13 @@ export class OperationsTelemetry {
       latestEvidence: this.latestJob
         ? {
             traceId: this.latestJob.traceId,
+            requestId: this.latestJob.requestId,
             jobId: this.latestJob.id,
             sequence: this.latestJob.sequence,
             status: this.latestJob.status,
             artifactChecksum: this.latestJob.artifactChecksum,
+            manifestUrl: this.latestJob.manifestUrl,
+            renditionCount: this.latestJob.renditions.length,
             estimatedCostUsd: this.latestJob.estimatedCostUsd,
             tokens: this.latestJob.tokens,
           }
@@ -63,6 +66,7 @@ export class OperationsTelemetry {
       JSON.stringify({
         event,
         traceId: job.traceId,
+        requestId: job.requestId,
         tenantId: job.tenantId,
         jobId: job.id,
         projectId: job.projectId,

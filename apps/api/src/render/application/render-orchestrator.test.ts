@@ -25,6 +25,9 @@ const command = {
     watermarkMode: 'visible' as const,
     adInsertion: 'none' as const,
     fastStart: true,
+    deliveryFormat: 'mp4' as const,
+    abrLadder: 'none' as const,
+    qualityMetric: 'none' as const,
   },
   narration: 'Deterministic media execution',
   idempotencyKey: 'same-command',
@@ -33,8 +36,10 @@ function setup() {
   const store = new InMemoryWorkflowStore();
   const processor = {
     render: async (job: { id: string }) => ({
-      url: `/artifacts/${job.id}.mp4`,
-      checksum: `sha256:${'a'.repeat(64)}`,
+      artifactUrl: `/artifacts/${job.id}.mp4`,
+      artifactChecksum: `sha256:${'a'.repeat(64)}`,
+      manifestUrl: null,
+      renditions: [],
     }),
   };
   const orchestrator = new RenderOrchestrator(store, new OperationsTelemetry(), processor as never);
@@ -44,8 +49,8 @@ describe('render orchestration', () => {
   it('returns one identity under concurrent duplicate commands', async () => {
     const { orchestrator } = setup();
     const [first, repeated] = await Promise.all([
-      orchestrator.create('tenant-1', command, 'trace-1', 50000),
-      orchestrator.create('tenant-1', command, 'trace-2', 50000),
+      orchestrator.create('tenant-1', command, 'trace-1', 'request-1', 50000),
+      orchestrator.create('tenant-1', command, 'trace-2', 'request-2', 50000),
     ]);
     expect(repeated.id).toBe(first.id);
   });
@@ -55,6 +60,7 @@ describe('render orchestration', () => {
       'tenant-1',
       { ...command, idempotencyKey: 'complete-command' },
       'trace-1',
+      'request-1',
       50000,
     );
     expect(job.ffmpegArgs).toContain('-crf');
@@ -71,13 +77,14 @@ describe('render orchestration', () => {
   });
   it('enforces tenant isolation and attributed token quota', async () => {
     const { orchestrator } = setup();
-    const job = await orchestrator.create('tenant-a', command, 'trace-1', 50000);
+    const job = await orchestrator.create('tenant-a', command, 'trace-1', 'request-1', 50000);
     expect(await orchestrator.get('tenant-b', job.id)).toBeUndefined();
     await expect(
       orchestrator.create(
         'tenant-a',
         { ...command, idempotencyKey: 'quota-command' },
         'trace-2',
+        'request-2',
         1,
       ),
     ).rejects.toThrow('TENANT_QUOTA_EXCEEDED');

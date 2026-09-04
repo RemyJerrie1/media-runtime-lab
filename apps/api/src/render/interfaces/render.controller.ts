@@ -31,12 +31,14 @@ export class RenderController {
     @Headers('x-tenant-id') tenantHeader: string | undefined,
     @Headers('x-api-key') apiKey: string | undefined,
     @Headers('x-trace-id') traceHeader: string | undefined,
+    @Headers('x-request-id') requestHeader: string | undefined,
     @Headers('traceparent') traceParent: string | undefined,
   ) {
     const tenantId = this.tenant(tenantHeader, apiKey);
     this.policy.rateLimit(tenantId);
     const w3cTraceId = traceParent?.match(/^00-([0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}$/i)?.[1];
     const traceId = w3cTraceId ?? traceHeader ?? crypto.randomUUID();
+    const requestId = requestHeader ?? crypto.randomUUID();
     const parsed = createRenderJobSchema.safeParse(body);
     if (!parsed.success)
       throw new BadRequestException({
@@ -45,7 +47,13 @@ export class RenderController {
         traceId,
       });
     try {
-      return await this.renders.create(tenantId, parsed.data, traceId, this.policy.quotaTokens);
+      return await this.renders.create(
+        tenantId,
+        parsed.data,
+        traceId,
+        requestId,
+        this.policy.quotaTokens,
+      );
     } catch (error) {
       if (error instanceof Error && error.message === 'TENANT_QUOTA_EXCEEDED')
         throw new BadRequestException({
