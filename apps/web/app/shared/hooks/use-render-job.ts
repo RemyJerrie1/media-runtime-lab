@@ -5,6 +5,7 @@ import type { RenderJob } from '@media-lab/contracts';
 import {
   createRenderJob,
   getRenderJob,
+  parseRenderJobEvent,
   renderJobEvents,
   type RenderEditorCommand,
 } from '../api/render-jobs';
@@ -29,7 +30,7 @@ export function useRenderJob() {
     stream.current = events;
     events.addEventListener('render.progress', (event) => {
       if (stream.current !== events) return;
-      const next = JSON.parse((event as MessageEvent).data) as RenderJob;
+      const next = parseRenderJobEvent((event as MessageEvent).data);
       lastReceivedSequence.current = Math.max(lastReceivedSequence.current, next.sequence);
       setJob(next);
       if (next.status === 'ready' || next.status === 'failed') events.close();

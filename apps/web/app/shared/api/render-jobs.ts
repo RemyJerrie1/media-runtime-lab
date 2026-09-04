@@ -9,6 +9,15 @@ import { MEDIA_RUNTIME } from '../../config/media';
 const API = MEDIA_RUNTIME.apiBaseUrl;
 const tenantHeaders = { 'x-tenant-id': 'portfolio', 'x-api-key': 'local-demo-key' };
 
+function normalizeRenderJob(job: RenderJob): RenderJob {
+  return {
+    ...job,
+    requestId: job.requestId ?? job.traceId,
+    manifestUrl: job.manifestUrl ?? null,
+    renditions: job.renditions ?? [],
+  };
+}
+
 export type RenderEditorCommand = Pick<
   CreateRenderJob,
   'sourceAssetId' | 'template' | 'trimStartSeconds' | 'durationSeconds' | 'encoding' | 'processing'
@@ -51,7 +60,7 @@ export async function createRenderJob(editor: RenderEditorCommand): Promise<Rend
     }),
   });
   if (!response.ok) throw new Error(`Render command rejected (${response.status})`);
-  return response.json() as Promise<RenderJob>;
+  return normalizeRenderJob((await response.json()) as RenderJob);
 }
 
 export async function getRenderJob(id: string): Promise<RenderJob> {
@@ -60,7 +69,11 @@ export async function getRenderJob(id: string): Promise<RenderJob> {
     headers: tenantHeaders,
   });
   if (!response.ok) throw new Error(`Unable to recover render state (${response.status})`);
-  return response.json() as Promise<RenderJob>;
+  return normalizeRenderJob((await response.json()) as RenderJob);
+}
+
+export function parseRenderJobEvent(value: string): RenderJob {
+  return normalizeRenderJob(JSON.parse(value) as RenderJob);
 }
 
 export function renderJobEvents(id: string, after = 0) {
