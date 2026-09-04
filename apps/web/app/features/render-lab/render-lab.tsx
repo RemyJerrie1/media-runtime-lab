@@ -42,7 +42,8 @@ export function RenderLab() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [playbackRendition, setPlaybackRendition] = useState('720p');
-  const selectedRendition = job?.renditions.find((rendition) => rendition.id === playbackRendition);
+  const renditions = job?.renditions ?? [];
+  const selectedRendition = renditions.find((rendition) => rendition.id === playbackRendition);
   useEffect(() => {
     if (!job?.status) return;
     window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: job.status }));
@@ -108,7 +109,7 @@ export function RenderLab() {
             </span>
           ))}
         </div>
-        <EncodingDecision input={encoding} measuredRenditions={job?.renditions ?? []} />
+        <EncodingDecision input={encoding} measuredRenditions={renditions} />
         <fieldset className="source-upload" data-tour="choose-source">
           <legend>1. 選擇來源素材</legend>
           <div className="source-picker">
@@ -455,7 +456,7 @@ export function RenderLab() {
           </div>
           {job?.artifactUrl ? (
             <>
-              {job.renditions.length ? (
+              {renditions.length ? (
                 <label data-tour="rendition-switcher">
                   預覽 Rendition
                   <select
@@ -463,7 +464,7 @@ export function RenderLab() {
                     value={playbackRendition}
                     onChange={(event) => setPlaybackRendition(event.target.value)}
                   >
-                    {job.renditions.map((rendition) => (
+                    {renditions.map((rendition) => (
                       <option key={rendition.id} value={rendition.id}>
                         {rendition.id} · {rendition.bitrateKbps.toLocaleString()} kbps
                       </option>
@@ -480,7 +481,7 @@ export function RenderLab() {
                 playsInline
                 preload="metadata"
                 src={artifactUrl(
-                  job.renditions.length
+                  renditions.length
                     ? `/streams/${job.id}/${playbackRendition}.mp4`
                     : job.artifactUrl,
                 )}
