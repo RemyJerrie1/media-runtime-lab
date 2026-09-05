@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { RenderJob } from '@media-lab/contracts';
 import ffprobe from '@ffprobe-installer/ffprobe';
 import ffmpegPath from 'ffmpeg-static';
@@ -11,7 +11,7 @@ import { MediaFilesService } from './media-files.service';
 @Injectable()
 export class FfmpegMediaProcessor {
   private vmafAvailable: boolean | undefined;
-  constructor(private readonly files: MediaFilesService) {}
+  constructor(@Inject(MediaFilesService) private readonly files: MediaFilesService) {}
 
   async render(job: RenderJob): Promise<ArtifactReceipt> {
     const binary = process.env.FFMPEG_BINARY || ffmpegPath;

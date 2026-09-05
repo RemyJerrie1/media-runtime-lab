@@ -140,7 +140,45 @@ canvas {
   display: grid;
   grid-template-columns: 1fr 1.5fr 1fr;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 0;
+}
+.render-status-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+}
+.render-status-panel .metric-card {
+  min-height: 104px;
+  padding: 16px;
+}
+.render-status-panel .metric-card strong {
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.render-status-panel .ds-progress {
+  margin: 0;
+}
+.demo-speed-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 55%, var(--line));
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--color-success) 9%, var(--panel));
+}
+.demo-speed-note strong {
+  color: var(--color-success);
+  white-space: nowrap;
+}
+.demo-speed-note span {
+  color: var(--muted);
 }
 .job div {
   background: var(--panel);
@@ -239,7 +277,7 @@ small {
   border-radius: 14px;
   padding: 25px;
   color: #cdd8e3;
-    font-size: 16px;
+  font-size: 16px;
 }
 @media (max-width: 850px) {
   body {
@@ -263,6 +301,11 @@ small {
   }
   .job {
     grid-template-columns: 1fr;
+  }
+  .demo-speed-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
   }
   .nav nav {
     display: none;

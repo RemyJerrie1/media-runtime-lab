@@ -18,18 +18,18 @@ const defaults: MediaProcessing = {
   watermarkMode: 'visible',
   adInsertion: 'none',
   fastStart: true,
-  deliveryFormat: 'hls-cmaf',
-  abrLadder: 'standard',
-  qualityMetric: 'vmaf',
+  deliveryFormat: 'mp4',
+  abrLadder: 'none',
+  qualityMetric: 'none',
 };
 
 export function RenderLab() {
   const { job, busy, error, run } = useRenderJob();
   const [trimStartSeconds, setTrimStartSeconds] = useState(0);
-  const [durationSeconds, setDurationSeconds] = useState(18);
+  const [durationSeconds, setDurationSeconds] = useState(1);
   const [encoding, setEncoding] = useState<FfmpegEncoding>({
     codec: 'libx264',
-    preset: 'medium',
+    preset: 'ultrafast',
     rateControl: 'crf',
     crf: 23,
     bitrateKbps: 4000,
@@ -187,6 +187,10 @@ export function RenderLab() {
         </fieldset>
         <fieldset>
           <legend>剪輯與編碼</legend>
+          <div className="demo-speed-note">
+            <strong>Demo 快速設定</strong>
+            <span>1 秒、Ultrafast、單一 MP4；約 5 秒完成。ABR／HLS／VMAF 可在下方開啟。</span>
+          </div>
           <div className="editor-grid">
             <label>
               剪輯起點
@@ -206,7 +210,7 @@ export function RenderLab() {
               <input
                 aria-label="輸出長度秒數"
                 type="number"
-                min="3"
+                min="1"
                 max="120"
                 value={durationSeconds}
                 onChange={(event) => setDurationSeconds(Number(event.target.value))}
@@ -256,6 +260,7 @@ export function RenderLab() {
                 value={encoding.preset}
                 onChange={encode('preset')}
               >
+                <option value="ultrafast">展示最快</option>
                 <option value="fast">快速</option>
                 <option value="medium">平衡</option>
                 <option value="slow">精細</option>
@@ -541,35 +546,41 @@ export function RenderLab() {
             <p className="artifact-empty">尚未產生實體影片。</p>
           )}
         </section>
-        <div className="job" data-tour="render-result">
-          <MetricCard
-            label="任務狀態（Job Status）"
-            value={job?.status.toUpperCase() ?? '尚未開始'}
+        <section
+          className="render-status-panel"
+          data-tour="render-result"
+          aria-label="任務處理狀態"
+        >
+          <div className="job">
+            <MetricCard
+              label="任務狀態（Job Status）"
+              value={job?.status.toUpperCase() ?? '尚未開始'}
+              tone={job?.status === 'ready' ? 'success' : 'accent'}
+            />
+            <MetricCard
+              label="處理階段（Stage）"
+              value={
+                job
+                  ? `${job.stage} · ${job.status === 'ready' ? '已完成' : `已處理 ${elapsedSeconds} 秒`}`
+                  : '等待指令'
+              }
+            />
+            <MetricCard
+              label="預估處理成本／Token 用量"
+              value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'}
+            />
+            {error ? (
+              <p className="error job-error" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+          <ProgressBar
+            label="算圖進度（Render Progress）"
+            value={job?.progress ?? 0}
             tone={job?.status === 'ready' ? 'success' : 'accent'}
           />
-          <MetricCard
-            label="處理階段（Stage）"
-            value={
-              job
-                ? `${job.stage} · ${job.status === 'ready' ? '已完成' : `已處理 ${elapsedSeconds} 秒`}`
-                : '等待指令'
-            }
-          />
-          <MetricCard
-            label="預估處理成本／Token 用量"
-            value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'}
-          />
-          {error ? (
-            <p className="error job-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </div>
-        <ProgressBar
-          label="算圖進度（Render Progress）"
-          value={job?.progress ?? 0}
-          tone={job?.status === 'ready' ? 'success' : 'accent'}
-        />
+        </section>
         <div className="review-grid">
           <article data-tour="evidence-probe">
             <span>素材檢測（Probe）</span>

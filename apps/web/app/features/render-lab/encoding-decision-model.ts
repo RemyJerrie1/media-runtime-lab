@@ -4,7 +4,7 @@ export type EncodingDecisionInput = {
   bitrateKbps: number;
   fps: number;
   gop: number;
-  preset: 'fast' | 'medium' | 'slow';
+  preset: 'ultrafast' | 'fast' | 'medium' | 'slow';
 };
 
 export type PlaybackRisk = '低' | '中' | '高';
