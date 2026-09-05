@@ -36,6 +36,7 @@ export class RenderJobAggregate {
       artifactChecksum: ready ? artifact!.artifactChecksum : this.state.artifactChecksum,
       manifestUrl: ready ? artifact!.manifestUrl : this.state.manifestUrl,
       renditions: ready ? artifact!.renditions : this.state.renditions,
+      evidence: ready ? artifact!.evidence : this.state.evidence,
     };
     return this.snapshot();
   }

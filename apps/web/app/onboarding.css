@@ -86,6 +86,7 @@ body:has(.tour-layer) .theme-toggle { display: none; }
   color: var(--ink);
   box-shadow: 0 20px 64px rgba(2, 8, 23, 0.42);
   pointer-events: auto;
+  overflow-wrap: anywhere;
 }
 .tour-tooltip::before {
   display: none;
@@ -160,6 +161,11 @@ body:has(.tour-layer) .theme-toggle { display: none; }
   border-color: #006878;
   background: #006878;
   color: #ffffff;
+}
+.tour-navigation button:last-child:disabled {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-raised);
+  color: var(--muted);
 }
 .tour-navigation button:not(:disabled):hover { filter: brightness(1.12); }
 .tour-navigation button:disabled { opacity: 0.45; cursor: not-allowed; }

@@ -31,6 +31,14 @@ const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 16;
 const TOOLTIP_WIDTH = 280;
 const TOOLTIP_ESTIMATED_HEIGHT = 340;
+const RENDER_WAIT_STEP = interviewTourSteps.findIndex(
+  (candidate) => candidate.id === 'render-result',
+);
+const RENDER_DEPENDENT_STEPS = new Set([
+  'switch-rendition',
+  'inspect-manifest',
+  'inspect-vmaf-results',
+]);
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
@@ -251,6 +259,12 @@ export function InterviewTour() {
     settleTimers.push(
       window.setTimeout(() => {
         if (targetFound) return;
+        if (RENDER_DEPENDENT_STEPS.has(step.id) && RENDER_WAIT_STEP >= 0) {
+          setFeedback('轉檔仍在進行，導覽已回到處理進度，完成後會自動繼續。');
+          window.sessionStorage.setItem(TOUR_STEP_KEY, String(RENDER_WAIT_STEP));
+          setStepIndex(RENDER_WAIT_STEP);
+          return;
+        }
         setFeedback('找不到導覽目標，已結束導覽並恢復頁面操作。');
         window.setTimeout(finish, 900);
       }, 3500),
@@ -367,6 +381,10 @@ export function InterviewTour() {
         return;
       }
     }
+    if (step.completion.type === 'state') {
+      setFeedback('轉檔正在進行；完成後導覽會自動前往成品、HLS 與 VMAF 證據。');
+      return;
+    }
     advance();
   }, [advance, step]);
 
@@ -433,8 +451,19 @@ export function InterviewTour() {
                 <button type="button" onClick={goBack} disabled={stepIndex === 0}>
                   ← 上一步
                 </button>
-                <button type="button" onClick={continueTour}>
-                  {stepIndex === interviewTourSteps.length - 1 ? '完成導覽' : '繼續導覽 →'}
+                <button
+                  type="button"
+                  onClick={continueTour}
+                  disabled={step.completion.type === 'state'}
+                  aria-describedby={
+                    step.completion.type === 'state' ? 'tour-step-instruction' : undefined
+                  }
+                >
+                  {step.completion.type === 'state'
+                    ? '處理中，請稍候…'
+                    : stepIndex === interviewTourSteps.length - 1
+                      ? '完成導覽'
+                      : '繼續導覽 →'}
                 </button>
               </div>
             </aside>

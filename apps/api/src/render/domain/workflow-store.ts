@@ -2,7 +2,7 @@ import type { CreateRenderJob, RenderEvent, RenderJob, RenderStatus } from '@med
 
 export type ArtifactReceipt = Pick<
   RenderJob,
-  'artifactUrl' | 'artifactChecksum' | 'manifestUrl' | 'renditions'
+  'artifactUrl' | 'artifactChecksum' | 'manifestUrl' | 'renditions' | 'evidence'
 >;
 
 export const WORKFLOW_STORE = Symbol('WORKFLOW_STORE');
