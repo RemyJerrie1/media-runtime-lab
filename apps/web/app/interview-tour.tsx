@@ -28,9 +28,12 @@ type TooltipPosition = {
 const TOUR_SESSION_KEY = 'media-runtime-guided-tour-v4';
 const TOUR_STEP_KEY = 'media-runtime-guided-tour-step-v1';
 const TARGET_PADDING = 8;
-const VIEWPORT_GAP = 16;
-const TOOLTIP_WIDTH = 280;
+const VIEWPORT_GAP = 12;
+// Keep this in sync with `.tour-tooltip`; positioning with a narrower width lets
+// the rendered card intrude into the spotlight on left/right placements.
+const TOOLTIP_WIDTH = 320;
 const TOOLTIP_ESTIMATED_HEIGHT = 340;
+const TOOLTIP_TARGET_GAP = 8;
 const RENDER_WAIT_STEP = interviewTourSteps.findIndex(
   (candidate) => candidate.id === 'render-result',
 );
@@ -59,7 +62,7 @@ function positionTooltip(
   tooltipHeight = TOOLTIP_ESTIMATED_HEIGHT,
 ): TooltipPosition {
   const width = Math.min(TOOLTIP_WIDTH, window.innerWidth - VIEWPORT_GAP * 2);
-  const gap = 18;
+  const gap = TOOLTIP_TARGET_GAP;
   const available = {
     top: rect.top - gap - VIEWPORT_GAP,
     right: window.innerWidth - rect.right - gap - VIEWPORT_GAP,
@@ -228,7 +231,18 @@ export function InterviewTour() {
       if (!(found instanceof HTMLElement)) return false;
       target = found;
       targetFound = true;
-      target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+      const scrollTargetIntoView = () =>
+        target?.scrollIntoView({
+          behavior: 'auto',
+          block:
+            target.offsetHeight > window.innerHeight * 0.42 || step.placement === 'top'
+              ? 'end'
+              : step.placement === 'bottom'
+                ? 'start'
+                : 'center',
+          inline: 'nearest',
+        });
+      scrollTargetIntoView();
       resizeObserver?.disconnect();
       resizeObserver = new ResizeObserver(update);
       resizeObserver.observe(target);
@@ -239,7 +253,7 @@ export function InterviewTour() {
       for (const delay of [50, 150, 350]) {
         settleTimers.push(
           window.setTimeout(() => {
-            target?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+            scrollTargetIntoView();
             update();
           }, delay),
         );
@@ -318,6 +332,14 @@ export function InterviewTour() {
       document.addEventListener(eventName, onTargetEvent, true);
     } else if (completion.type === 'event' || completion.type === 'state') {
       window.addEventListener(completion.name, onCustomEvent);
+    }
+    const currentTarget = document.querySelector<HTMLElement>(step.target);
+    if (
+      completion.type === 'state' &&
+      completion.name === 'media-lab:render-state' &&
+      currentTarget?.textContent?.includes('READY')
+    ) {
+      settleTimers.push(window.setTimeout(advance, 350));
     }
     const routeTimer =
       completion.type === 'route'
