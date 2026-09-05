@@ -95,6 +95,16 @@ legend {
 .editor-grid output {
   color: var(--color-warning);
 }
+@media (max-width: 1180px) {
+  .editor-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .ffmpeg-command,
 .encode-receipt {
   display: grid;

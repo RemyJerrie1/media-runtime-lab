@@ -14,7 +14,7 @@
 
 ## Dreamy 預設影片
 
-內建一支八秒療癒系倉鼠短片：角色由左向右移動，搭配三段中文字幕與柔和提示音。它會實際送進後端 FFmpeg，供剪輯、編碼、合成與成品播放流程使用。
+內建一支八秒療癒系倉鼠短片：六格走路循環呈現手腳交替、身體起伏、風吹毛與書包慣性擺動；角色沿下方步道前進，三段中文字幕固定在上方安全區，並搭配柔和提示音。影片會實際送進後端 FFmpeg，供剪輯、編碼、合成與成品播放流程使用。
 
 <a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="影音處理工作台操作示範" /></a>
 
@@ -56,7 +56,7 @@ Worker 會以 `ffprobe` 檢測來源、實際執行 FFmpeg，產生 360p／540p�
 
 <a href="./docs/media/streaming-delivery.mp4"><img src="./docs/media/streaming-delivery.gif" width="760" alt="ABR Ladder、HLS CMAF 封裝、播放器切換與 VMAF 決策示範" /></a>
 
-建立任務時可設定 `deliveryFormat: "hls-cmaf"`、`abrLadder: "standard"` 與 `qualityMetric: "vmaf"`。完成後的任務 JSON 會包含各 Rendition 的解析度、碼率、Playlist URL、VMAF、Checksum，以及 Master Manifest URL、Trace ID 與 Request ID。`GET /streams/:jobId/master.m3u8` 提供播放器使用的自適應串流入口。
+建立任務時可設定 `deliveryFormat: "hls-cmaf"`、`abrLadder: "standard"` 與 `qualityMetric: "vmaf"`。完成後的任務 JSON 會包含各 Rendition 的解析度、碼率、Playlist URL、VMAF、Checksum，以及 Master Manifest URL、Trace ID 與 Request ID。`evidence` 同步保存 ffprobe 媒體規格、關鍵影格間隔、音畫長度差、成品播放檢查、水印模式及實際 Playlist／CMAF 分段數量。`GET /streams/:jobId/master.m3u8` 提供播放器使用的自適應串流入口。
 
 預設使用專案附帶的 FFmpeg；部署時也可用 `FFMPEG_BINARY` 與 `FFPROBE_BINARY` 指向完整建置。若要求 VMAF，指定的 FFmpeg 必須包含 `libvmaf` filter。
 

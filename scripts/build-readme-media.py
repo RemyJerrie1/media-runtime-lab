@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import math
 import shutil
 import subprocess
 import tempfile
@@ -46,16 +47,63 @@ def encode_video(frames: list[Path], target: Path, fps: int = 4) -> None:
 
 
 def build_product_media() -> None:
-    frames = sorted(FRAMES.glob("frame-*.png"))
-    overview = MEDIA / "product-overview.png"
-    overview_image = Image.open(frames[-1]).convert("RGB")
-    frame_width, frame_height = Image.open(frames[0]).size
-    overview_image = overview_image.crop((0, 0, frame_width, frame_height))
-    overview_image.save(overview, format="PNG", optimize=True)
-    images = [Image.open(path).convert("P", palette=Image.Palette.ADAPTIVE, colors=128) for path in frames]
-    images[0].save(MEDIA / "product-demo.gif", save_all=True, append_images=images[1:], duration=1400, loop=0, optimize=True)
-    encode_video(frames, MEDIA / "product-demo.mp4", fps=1)
+    width, height, fps, seconds = 1280, 720, 12, 8
+    meadow = Image.open(MEDIA / "demo-assets" / "healing-meadow.png").convert("RGB")
+    meadow = meadow.resize((width, height), Image.Resampling.LANCZOS)
+    sheet = Image.open(MEDIA / "demo-assets" / "hamster-walk-cycle.png").convert("RGBA")
+    cell_width = sheet.width // 6
+    poses = [sheet.crop((index * cell_width, 0, (index + 1) * cell_width, sheet.height)) for index in range(6)]
+    title_font = ImageFont.truetype("C:/Windows/Fonts/msjhbd.ttc", 42)
+    caption_font = ImageFont.truetype("C:/Windows/Fonts/msjh.ttc", 25)
+    captions = [
+        (0, 32, "帶著好心情，出發。"),
+        (32, 64, "每一步，都有可靠流程接住。"),
+        (64, 96, "從素材到串流，安心交付。"),
+    ]
+    staging = Path(tempfile.gettempdir()) / "media-runtime-hamster-walk"
+    if staging.exists():
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True)
+    video_frames: list[Path] = []
+    gif_images: list[Image.Image] = []
+    for index in range(fps * seconds):
+        image = meadow.copy().convert("RGBA")
+        draw = ImageDraw.Draw(image, "RGBA")
+        pose = poses[index % len(poses)]
+        pose_height = 285
+        pose_width = round(pose.width * pose_height / pose.height)
+        pose = pose.resize((pose_width, pose_height), Image.Resampling.LANCZOS)
+        progress = index / (fps * seconds - 1)
+        x = round(-pose_width * 0.55 + progress * (width + pose_width * 0.2))
+        y = 414 + round(math.sin(index * math.pi / 3) * 4)
+        image.alpha_composite(pose, (x, y))
+        caption = next(text for start, end, text in captions if start <= index < end)
+        box = draw.textbbox((0, 0), caption, font=title_font)
+        text_width = box[2] - box[0]
+        panel_left = (width - text_width) // 2 - 30
+        panel_right = (width + text_width) // 2 + 30
+        draw.rounded_rectangle((panel_left, 48, panel_right, 120), radius=20, fill=(8, 23, 33, 188))
+        draw.text(((width - text_width) // 2, 60), caption, font=title_font, fill=(255, 255, 255, 255))
+        draw.text((48, 654), "DREAMY MEDIA DELIVERY", font=caption_font, fill=(255, 255, 255, 225))
+        frame = image.convert("RGB")
+        target = staging / f"frame-{index:03d}.png"
+        frame.save(target, optimize=True)
+        video_frames.append(target)
+        if index % 2 == 0:
+            gif_images.append(frame.resize((768, 432), Image.Resampling.LANCZOS).convert("P", palette=Image.Palette.ADAPTIVE, colors=128))
+    gif_images[0].save(MEDIA / "product-demo.gif", save_all=True, append_images=gif_images[1:], duration=round(2000 / fps), loop=0, optimize=True)
+    shutil.copy2(video_frames[-1], MEDIA / "product-overview.png")
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    silent = staging / "silent.mp4"
+    subprocess.run([ffmpeg, "-y", "-framerate", str(fps), "-i", str(staging / "frame-%03d.png"), "-c:v", "libx264", "-pix_fmt", "yuv420p", str(silent)], check=True, capture_output=True)
+    subprocess.run([
+        ffmpeg, "-y", "-i", str(silent), "-f", "lavfi", "-i", "sine=frequency=523:duration=8:sample_rate=48000",
+        "-filter_complex", "[1:a]volume=0.035,afade=t=in:st=0:d=0.8,afade=t=out:st=7:d=1[a]",
+        "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-shortest", "-movflags", "+faststart", str(MEDIA / "product-demo.mp4")
+    ], check=True, capture_output=True)
+    shutil.rmtree(staging)
 
+    frames = sorted(FRAMES.glob("frame-*.png"))
     lifecycle_dir = MEDIA / "lifecycle-frames"
     lifecycle_dir.mkdir(parents=True, exist_ok=True)
     lifecycle_frames: list[Path] = []

@@ -42,12 +42,22 @@ export function RenderLab() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [playbackRendition, setPlaybackRendition] = useState('720p');
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const renditions = job?.renditions ?? [];
   const selectedRendition = renditions.find((rendition) => rendition.id === playbackRendition);
   useEffect(() => {
     if (!job?.status) return;
     window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: job.status }));
   }, [job?.status]);
+  useEffect(() => {
+    if (startedAt === null || job?.status === 'ready' || job?.status === 'failed') return;
+    const updateElapsed = () =>
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+    updateElapsed();
+    const timer = window.setInterval(updateElapsed, 1000);
+    return () => window.clearInterval(timer);
+  }, [job?.status, startedAt]);
   useEffect(() => {
     let active = true;
     setUploading(true);
@@ -389,7 +399,7 @@ export function RenderLab() {
                 onChange={process('abrLadder')}
               >
                 <option value="none">不建立</option>
-                <option value="standard">360p／540p／720p／1080p</option>
+                <option value="standard">標準階梯（360p–1080p）</option>
               </select>
               <small>覆蓋不同頻寬與裝置解析度</small>
             </label>
@@ -417,6 +427,8 @@ export function RenderLab() {
           onClick={async () => {
             if (!sourceAsset) return;
             setUploadError(null);
+            setStartedAt(Date.now());
+            setElapsedSeconds(0);
             try {
               await run({
                 sourceAssetId: sourceAsset.id,
@@ -535,7 +547,14 @@ export function RenderLab() {
             value={job?.status.toUpperCase() ?? '尚未開始'}
             tone={job?.status === 'ready' ? 'success' : 'accent'}
           />
-          <MetricCard label="處理階段（Stage）" value={job?.stage ?? '等待指令'} />
+          <MetricCard
+            label="處理階段（Stage）"
+            value={
+              job
+                ? `${job.stage} · ${job.status === 'ready' ? '已完成' : `已處理 ${elapsedSeconds} 秒`}`
+                : '等待指令'
+            }
+          />
           <MetricCard
             label="預估處理成本／Token 用量"
             value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'}
@@ -552,39 +571,83 @@ export function RenderLab() {
           tone={job?.status === 'ready' ? 'success' : 'accent'}
         />
         <div className="review-grid">
-          <article>
+          <article data-tour="evidence-probe">
             <span>素材檢測（Probe）</span>
-            <strong>Codec · 解析度 · FPS · 長度 · Bitrate · Streams</strong>
-            <p>先檢測再決定串流複製（Stream Copy）或轉碼（Transcode），不可一律重編碼。</p>
+            <strong>
+              {job?.evidence
+                ? `${job.evidence.probe.codec.toUpperCase()} · ${job.evidence.probe.width}×${job.evidence.probe.height} · ${job.evidence.probe.fps} fps`
+                : '等待 ffprobe 實測'}
+            </strong>
+            <p>
+              {job?.evidence
+                ? `${job.evidence.probe.durationSeconds} 秒 · ${job.evidence.probe.bitrateKbps.toLocaleString()} kbps · ${job.evidence.probe.streamCount} 個串流`
+                : '任務完成後顯示來源檔的真實檢測結果。'}
+            </p>
           </article>
-          <article>
+          <article data-tour="evidence-gop">
             <span>GOP／跳轉（Seek）</span>
-            <strong>I/P/B 影格 · 隨機存取 · {keyframeSeconds} 秒間隔</strong>
-            <p>短 GOP 通常提升跳轉速度；長 GOP 通常有較佳壓縮效率。</p>
+            <strong>
+              {job?.evidence
+                ? `每 ${job.evidence.keyframeIntervalSeconds} 秒建立關鍵影格`
+                : '等待編碼驗證'}
+            </strong>
+            <p>
+              {job?.evidence
+                ? `GOP ${job.encoding.gop}／${job.encoding.fps} fps，支援分段隨機存取。`
+                : `目前設定為 ${keyframeSeconds} 秒間隔。`}
+            </p>
           </article>
-          <article>
+          <article data-tour="evidence-sync">
             <span>時間與同步（Time & Sync）</span>
-            <strong>PTS · DTS · Timebase · VFR/CFR · A/V Drift</strong>
-            <p>驗證時間戳單調遞增，並比較音訊與影片長度。</p>
+            <strong>
+              {job?.evidence
+                ? `A/V 長度差 ${job.evidence.audioVideoDriftSeconds.toFixed(3)} 秒`
+                : '等待時間軸驗證'}
+            </strong>
+            <p>
+              {job?.evidence
+                ? `${job.processing.frameRateMode.toUpperCase()} · ${job.processing.audioSampleRate / 1000} kHz · ${job.processing.audioSync}`
+                : '任務完成後顯示音畫同步結果。'}
+            </p>
           </article>
-          <article>
+          <article data-tour="evidence-playback">
             <span>播放（Playback）</span>
-            <strong>moov · Range · Buffer · Demux／Decode</strong>
-            <p>成品編碼成功，不代表啟播速度與緩衝體驗一定正常。</p>
+            <strong>
+              {job?.evidence?.playbackVerified ? '成品已通過解封裝與播放檢查' : '等待成品播放檢查'}
+            </strong>
+            <p>
+              {job?.evidence?.playbackVerified
+                ? 'FFmpeg 已重新讀取成品，播放器可載入實體輸出。'
+                : '尚未用未完成的檔案宣告成功。'}
+            </p>
           </article>
-          <article>
+          <article data-tour="evidence-watermark">
             <span>影音水印（Watermark）</span>
-            <strong>可視 · 隱形 · 動態／鑑識</strong>
-            <p>此 Demo 規劃可視與動態疊加；高韌性的隱形水印需要獨立服務。</p>
+            <strong>
+              {job?.evidence
+                ? `本次套用：${job.evidence.watermarkApplied === 'none' ? '不加水印' : job.evidence.watermarkApplied === 'dynamic' ? '動態水印' : '可視水印'}`
+                : '等待合成結果'}
+            </strong>
+            <p>
+              {job?.evidence ? '結果取自本次後端處理參數與成品收據。' : '執行後顯示實際採用模式。'}
+            </p>
           </article>
-          <article>
-            <span>廣告與交付（Ads & Delivery）</span>
-            <strong>CSAI · SSAI · HLS/DASH · CDN</strong>
-            <p>明確區分廣告決策、Manifest、追蹤、儲存與播放器責任。</p>
+          <article data-tour="evidence-delivery">
+            <span>HLS／CMAF 交付</span>
+            <strong>
+              {job?.evidence
+                ? `${job.evidence.playlistCount} 份 Playlist · ${job.evidence.segmentCount} 個 fMP4 分段`
+                : '等待封裝證據'}
+            </strong>
+            <p>
+              {job?.manifestUrl
+                ? `Master Playlist：${job.manifestUrl}`
+                : '完成後顯示實際 Manifest 與分段數量。'}
+            </p>
           </article>
         </div>
         {job ? (
-          <div className="encode-receipt" aria-live="polite">
+          <div className="encode-receipt" aria-live="polite" data-tour="processing-receipt">
             <span>後端處理收據（Backend Processing Receipt）</span>
             <strong>
               {job.encoding.codec} · {job.encoding.fps}fps · CRF {job.encoding.crf} · GOP{' '}

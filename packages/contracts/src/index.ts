@@ -93,6 +93,26 @@ export const renderJobSchema = z.object({
       qualityMetricStatus: z.enum(['measured', 'unavailable', 'not-requested']),
     }),
   ),
+  evidence: z
+    .object({
+      probe: z.object({
+        codec: z.string(),
+        width: z.number().int().positive(),
+        height: z.number().int().positive(),
+        fps: z.number().nonnegative(),
+        durationSeconds: z.number().nonnegative(),
+        bitrateKbps: z.number().int().nonnegative(),
+        streamCount: z.number().int().positive(),
+      }),
+      keyframeIntervalSeconds: z.number().positive(),
+      audioVideoDriftSeconds: z.number().nonnegative(),
+      playbackVerified: z.boolean(),
+      watermarkApplied: z.enum(['none', 'visible', 'dynamic']),
+      playlistCount: z.number().int().nonnegative(),
+      segmentCount: z.number().int().nonnegative(),
+    })
+    .nullable()
+    .optional(),
   updatedAt: z.string(),
 });
 export type RenderJob = z.infer<typeof renderJobSchema>;
