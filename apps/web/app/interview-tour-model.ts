@@ -30,8 +30,8 @@ export const interviewTourSteps: InterviewTourStep[] = [
   {
     id: 'overview-summary',
     target: '[data-tour="overview-summary"]',
-    title: '平台解決什麼？',
-    instruction: '從媒體處理、工作流復原到成本治理，先掌握完整範圍。',
+    title: '認識影音營運後台',
+    instruction: '先看平台範圍，再進入實際操作。',
     completion: { type: 'manual' },
     tab: 'overview',
     placement: 'left',

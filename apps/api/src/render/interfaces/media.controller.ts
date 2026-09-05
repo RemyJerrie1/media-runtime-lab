@@ -19,7 +19,7 @@ import { TenantPolicy } from '../application/tenant-policy';
 @Controller()
 export class MediaController {
   constructor(
-    private readonly files: MediaFilesService,
+    @Inject(MediaFilesService) private readonly files: MediaFilesService,
     @Inject(TenantPolicy) private readonly policy: TenantPolicy,
   ) {}
 
