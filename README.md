@@ -99,6 +99,34 @@ bruno/                    API 回歸測試
 
 ## 本機執行
 
+面試現場開機後，在專案目錄開啟 PowerShell，只需執行：
+
+```powershell
+pnpm demo
+```
+
+Windows 也可以直接雙擊專案根目錄的 `START-MEDIA-LAB.cmd`；展示結束後雙擊 `STOP-MEDIA-LAB.cmd`。
+
+也可使用專案 CLI：`./media-lab start`、`./media-lab stop`、`./media-lab restart`、`./media-lab status`。
+
+此指令會建立缺少的 `.env`、安裝首次啟動所需套件、啟動並檢查 PostgreSQL、API 與 Web，確認兩端皆回傳成功後才開啟瀏覽器。啟動紀錄保存在 `.demo-logs`，方便現場直接查看錯誤。若已經有健康的服務正在執行，指令會沿用；若 3000 或 4000 被其他程序占用，會指出衝突，不會再啟動一份服務。
+
+不需要自動開啟瀏覽器時可執行 `pnpm demo -- -NoBrowser`。
+
+展示結束後完整停止 Web、API 與本專案 PostgreSQL：
+
+```powershell
+pnpm demo:stop
+```
+
+需要清掉前一次由啟動器建立的程序並重新啟動時：
+
+```powershell
+pnpm demo:restart
+```
+
+完整開發與檢查流程：
+
 ```powershell
 pnpm install
 Copy-Item .env.example .env

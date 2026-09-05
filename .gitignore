@@ -15,3 +15,5 @@ docs/media/reliability-frames/
 !.env.example
 docs/media/design-system-frames/
 **/.runtime/
+.demo-logs/
+**/__pycache__/

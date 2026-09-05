@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
 import { CompositionShowcase } from './features/composition-showcase/composition-showcase';
 import { CostGovernance } from './features/cost-governance/cost-governance';
 import { OperationsEvidence } from './features/operations-evidence/operations-evidence';
 import { RenderLab } from './features/render-lab/render-lab';
 import type { TourTabId } from './interview-tour-model';
+import { isWorkspaceSection, type WorkspaceSection } from './workspace-sections';
 
-type TabId = TourTabId;
+type TabId = TourTabId & WorkspaceSection;
 const tabs: [TabId, string, string][] = [
   ['overview', '平台概覽', '核心價值與系統範圍'],
   ['render', '影音工作台', '剪輯、編碼與交付'],
@@ -21,15 +22,8 @@ function Overview() {
   return (
     <section className="workspace-overview">
       <p className="eyebrow">媒體運行實驗室</p>
-      <h1>
-        可復原的影音處理，
-        <br />
-        從指令到工作完成。
-      </h1>
-      <p className="lede">
-        同一個指令送幾次都只有一個工作；worker 掛掉後由另一個 worker
-        接手；連線中斷後從斷點接回事件。
-      </p>
+      <h1>影音平台營運後台</h1>
+      <p className="lede">集中管理媒體處理、串流交付、品質與成本。</p>
       <div className="overview-grid" data-tour="overview-summary">
         <article>
           <span>媒體生命週期</span>
@@ -86,11 +80,18 @@ function Architecture() {
   );
 }
 
-export function ProductWorkspace() {
-  const [active, setActive] = useState<TabId>('overview');
+export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: TabId }) {
+  const [active, setActive] = useState<TabId>(initialTab);
+  const selectActive = useCallback((next: TabId, historyMode: 'push' | 'replace' = 'push') => {
+    setActive(next);
+    const nextPath = `/${next}`;
+    if (window.location.pathname !== nextPath) {
+      window.history[historyMode === 'replace' ? 'replaceState' : 'pushState']({}, '', nextPath);
+    }
+  }, []);
   useEffect(() => {
-    const requested = window.location.hash.slice(1) as TabId;
-    if (tabs.some(([id]) => id === requested)) {
+    const requested = window.location.pathname.slice(1);
+    if (isWorkspaceSection(requested)) {
       setActive(requested);
       if (new URLSearchParams(window.location.search).get('focus') === 'decision') {
         window.setTimeout(
@@ -99,28 +100,34 @@ export function ProductWorkspace() {
         );
       }
     }
+    const restoreFromHistory = () => {
+      const section = window.location.pathname.slice(1);
+      if (isWorkspaceSection(section)) setActive(section);
+    };
+    window.addEventListener('popstate', restoreFromHistory);
+    return () => window.removeEventListener('popstate', restoreFromHistory);
   }, []);
   useEffect(() => {
     const selectTab = (event: Event) => {
       const requested = event instanceof CustomEvent ? (event.detail as TabId) : undefined;
-      if (requested && tabs.some(([id]) => id === requested)) setActive(requested);
+      if (requested && tabs.some(([id]) => id === requested)) selectActive(requested, 'replace');
     };
     window.addEventListener('media-lab:select-tab', selectTab);
     return () => window.removeEventListener('media-lab:select-tab', selectTab);
-  }, []);
+  }, [selectActive]);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
     const current = tabs.findIndex(([id]) => id === active);
     const direction = event.key === 'ArrowDown' ? 1 : -1;
     const next = tabs[(current + direction + tabs.length) % tabs.length]![0];
-    setActive(next);
+    selectActive(next);
     requestAnimationFrame(() => document.getElementById(`tab-${next}`)?.focus());
   };
   return (
     <main className="workspace-shell">
       <aside className="workspace-sidebar">
-        <a className="workspace-brand" href="/">
+        <a className="workspace-brand" href="/overview">
           媒體運行實驗室
         </a>
         <button
@@ -148,7 +155,7 @@ export function ProductWorkspace() {
               aria-controls={`panel-${id}`}
               tabIndex={active === id ? 0 : -1}
               data-tour={`tab-${id}`}
-              onClick={() => setActive(id)}
+              onClick={() => selectActive(id)}
             >
               <strong>{label}</strong>
               <span>{description}</span>

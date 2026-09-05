@@ -3,6 +3,9 @@
   "private": true,
   "packageManager": "pnpm@11.16.0",
   "scripts": {
+    "demo": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-demo.ps1",
+    "demo:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop-demo.ps1",
+    "demo:restart": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop-demo.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-demo.ps1",
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",

@@ -70,21 +70,21 @@ def build_product_media() -> None:
         image = meadow.copy().convert("RGBA")
         draw = ImageDraw.Draw(image, "RGBA")
         pose = poses[index % len(poses)]
-        pose_height = 285
+        pose_height = 350
         pose_width = round(pose.width * pose_height / pose.height)
         pose = pose.resize((pose_width, pose_height), Image.Resampling.LANCZOS)
         progress = index / (fps * seconds - 1)
-        x = round(-pose_width * 0.55 + progress * (width + pose_width * 0.2))
-        y = 414 + round(math.sin(index * math.pi / 3) * 4)
+        x = round(70 + progress * (width - pose_width - 140))
+        y = 244 + round(math.sin(index * math.pi / 3) * 5)
         image.alpha_composite(pose, (x, y))
         caption = next(text for start, end, text in captions if start <= index < end)
         box = draw.textbbox((0, 0), caption, font=title_font)
         text_width = box[2] - box[0]
         panel_left = (width - text_width) // 2 - 30
         panel_right = (width + text_width) // 2 + 30
-        draw.rounded_rectangle((panel_left, 48, panel_right, 120), radius=20, fill=(8, 23, 33, 188))
-        draw.text(((width - text_width) // 2, 60), caption, font=title_font, fill=(255, 255, 255, 255))
-        draw.text((48, 654), "DREAMY MEDIA DELIVERY", font=caption_font, fill=(255, 255, 255, 225))
+        draw.rounded_rectangle((panel_left, 618, panel_right, 690), radius=20, fill=(8, 23, 33, 205))
+        draw.text(((width - text_width) // 2, 630), caption, font=title_font, fill=(255, 255, 255, 255))
+        draw.text((42, 34), "DREAMY MEDIA DELIVERY", font=caption_font, fill=(8, 23, 33, 220))
         frame = image.convert("RGB")
         target = staging / f"frame-{index:03d}.png"
         frame.save(target, optimize=True)
