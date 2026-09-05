@@ -201,7 +201,7 @@ export class PostgresWorkflowStore implements WorkflowStore {
       tenant_id: string;
       attempt: number;
     }>(
-      `WITH candidate AS (SELECT id FROM render_outbox WHERE (state='pending' AND available_at<=now()) OR (state='leased' AND lease_until<now()) ORDER BY available_at FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE render_outbox o SET state='leased',worker_id=$1,lease_until=now()+($2::text||' milliseconds')::interval,attempt=o.attempt+1,updated_at=now() FROM candidate WHERE o.id=candidate.id RETURNING o.id,o.job_id,o.tenant_id,o.attempt`,
+      `WITH candidate AS (SELECT id FROM render_outbox WHERE attempt < 10 AND ((state='pending' AND available_at<=now()) OR (state='leased' AND lease_until<now())) ORDER BY available_at FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE render_outbox o SET state='leased',worker_id=$1,lease_until=now()+($2::text||' milliseconds')::interval,attempt=o.attempt+1,updated_at=now() FROM candidate WHERE o.id=candidate.id RETURNING o.id,o.job_id,o.tenant_id,o.attempt`,
       [workerId, leaseMs],
     );
     const row = result.rows[0];

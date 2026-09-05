@@ -12,7 +12,7 @@ export type RenderStatus = z.infer<typeof renderStatusSchema>;
 
 export const ffmpegEncodingSchema = z.object({
   codec: z.literal('libx264'),
-  preset: z.enum(['fast', 'medium', 'slow']),
+  preset: z.enum(['ultrafast', 'fast', 'medium', 'slow']),
   rateControl: z.enum(['crf', 'bitrate']),
   crf: z.number().int().min(0).max(51),
   bitrateKbps: z.number().int().min(200).max(50000),
@@ -49,7 +49,7 @@ export const createRenderJobSchema = z.object({
   sourceAssetId: z.string().uuid(),
   template: z.enum(['story', 'square', 'landscape']),
   trimStartSeconds: z.number().min(0).max(3600),
-  durationSeconds: z.number().int().min(3).max(120),
+  durationSeconds: z.number().int().min(1).max(120),
   encoding: ffmpegEncodingSchema,
   processing: mediaProcessingSchema,
   narration: z.string().min(3).max(600),
