@@ -260,10 +260,10 @@ export function RenderLab() {
                 value={encoding.preset}
                 onChange={encode('preset')}
               >
-                <option value="ultrafast">展示最快</option>
-                <option value="fast">快速</option>
-                <option value="medium">平衡</option>
-                <option value="slow">精細</option>
+                <option value="ultrafast">Ultrafast（最低延遲）</option>
+                <option value="fast">Fast（快速編碼）</option>
+                <option value="medium">Medium（標準）</option>
+                <option value="slow">Slow（高壓縮效率）</option>
               </select>
               <small>編碼速度與壓縮效率的取捨</small>
             </label>
