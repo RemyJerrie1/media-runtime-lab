@@ -26,6 +26,7 @@
 .artifact video { width: 100%; max-height: 420px; border-radius: 12px; background: #000; }
 .stage {
   position: relative;
+  container-type: inline-size;
   aspect-ratio: 16/9;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -80,40 +81,19 @@
 .bottom {
   transform: rotateX(-90deg) translateZ(47px);
 }
-.subtitle {
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 17%;
-  margin: 0;
-  padding: 10px 16px;
-  text-align: center;
-  border-radius: 8px;
-  background: #05070bd9;
-  color: white;
-  font-size: clamp(16px, 1.7vw, 21px);
-  font-weight: 650;
-  letter-spacing: 0.03em;
-  text-shadow: 0 2px 5px #000;
-}
 .watermarkPreview {
   position: absolute;
-  top: 8%;
-  right: 5%;
+  right: 2.5%;
   z-index: 3;
-  display: grid;
-  gap: 2px;
-  min-width: 190px;
-  border: 2px solid #fff;
-  border-radius: 8px;
-  padding: 10px 14px;
+  padding: .9375cqw;
   background: rgb(0 0 0 / 82%);
   color: #fff;
-  box-shadow: 0 3px 14px rgb(0 0 0 / 55%);
-  text-align: left;
+  font-size: 2.1875cqw;
+  line-height: 1;
+  white-space: nowrap;
 }
-.watermarkPreview strong { font-size: 18px; }
-.watermarkPreview span { color: #fff; font-size: 16px; }
+.fixedWatermark { bottom: 4.45%; }
+.dynamicWatermark { top: 4.45%; }
 .sprite {
   position: absolute;
   left: 5%;

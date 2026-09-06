@@ -35,6 +35,15 @@ export const mediaProcessingSchema = z.object({
 });
 export type MediaProcessing = z.infer<typeof mediaProcessingSchema>;
 
+export const WATERMARK_PRESENTATION = {
+  fixedText: 'MEDIA LAB',
+  dynamicSuffix: 'SESSION',
+  fontSize: 28,
+  edgeOffset: 32,
+  boxPadding: 12,
+  boxOpacity: 0.82,
+} as const;
+
 export const mediaAssetSchema = z.object({
   id: z.string().uuid(),
   fileName: z.string().min(1),
