@@ -9,14 +9,14 @@ import styles from './design-system-showcase.module.css';
 
 type View = 'tokens' | 'components' | 'usage';
 const colors = [
-  ['畫布', '--color-canvas', '#080b12'],
-  ['表面', '--color-surface', '#101724'],
-  ['主要文字', '--color-text', '#f3eee8'],
-  ['次要文字', '--color-text-muted', '#9eacba'],
-  ['強調色', '--color-accent', '#5bd7e8'],
-  ['操作色', '--color-action', '#f1ae79'],
-  ['成功', '--color-success', '#79d29d'],
-  ['危險', '--color-danger', '#ff8fa3'],
+  ['畫布', '--color-canvas', '#080b12／#f4f7fb'],
+  ['表面', '--color-surface', '#101724／#ffffff'],
+  ['主要文字', '--color-text', '#f3eee8／#132033'],
+  ['次要文字', '--color-text-muted', '#9eacba／#50657a'],
+  ['強調色', '--color-accent', '#5bd7e8／#006878'],
+  ['操作色', '--color-action', '#f1ae79／#d76c24'],
+  ['成功', '--color-success', '#79d29d／#247b4b'],
+  ['危險', '--color-danger', '#ff8fa3／#b4233c'],
 ];
 const spaces = [
   ['01', '4'],
@@ -68,7 +68,7 @@ export function DesignSystemShowcase() {
             返回影音後台
           </a>
           <a className={styles.back} href="/api-reference" data-tour="open-api-reference">
-            前往介面規格 →
+            前往 API 文件 →
           </a>
         </div>
       </header>
@@ -127,7 +127,7 @@ export function DesignSystemShowcase() {
                 key={token}
                 data-tour={index === 0 ? 'design-tokens' : undefined}
               >
-                <i style={{ background: value }} />
+                <i style={{ background: `var(${token})` }} />
                 <div>
                   <strong>{label}</strong>
                   <code>{token}</code>

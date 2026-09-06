@@ -45,9 +45,9 @@
   --leading-tight: 1.18;
   --leading-body: 1.65;
   --weight-regular: 400;
-  --weight-medium: 550;
-  --weight-semibold: 650;
-  --weight-bold: 750;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
   --tracking-label: 0.06em;
   --duration-fast: 160ms;
   --duration-base: 280ms;
@@ -114,7 +114,7 @@
 }
 .ds-button[data-variant='secondary']:hover:not(:disabled) {
   border-color: var(--color-accent);
-  background: #172737;
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-raised));
 }
 .ds-button[data-variant='ghost'] {
   border-color: var(--color-border);

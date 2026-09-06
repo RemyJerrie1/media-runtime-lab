@@ -8,6 +8,8 @@ body {
   line-height: var(--leading-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+  font-synthesis: none;
 }
 h1,
 h2,
@@ -20,13 +22,13 @@ h1 {
   font-size: var(--type-title-lg);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 h2 {
   font-size: var(--type-title-md);
   font-weight: var(--weight-bold);
   line-height: 1.25;
-  letter-spacing: -0.022em;
+  letter-spacing: 0;
 }
 h3 {
   font-size: var(--type-title-sm);

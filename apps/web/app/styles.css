@@ -12,6 +12,7 @@
 }
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 body {
   margin: 0;
@@ -71,13 +72,13 @@ nav {
 h1 {
   font-size: var(--type-title-lg);
   line-height: var(--leading-tight);
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   margin: 20px 0 28px;
 }
 h2 {
   font-size: var(--type-title-md);
   line-height: 1.25;
-  letter-spacing: -0.022em;
+  letter-spacing: 0;
 }
 .lede {
   font-size: var(--type-body-lg);
