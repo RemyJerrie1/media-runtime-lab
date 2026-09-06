@@ -14,63 +14,75 @@ export function EncodingDecision({
   measuredRenditions: RenderJob['renditions'];
 }) {
   const current = estimateEncodingDecision(input);
+  const vmafRating =
+    current.estimatedVmaf >= 95
+      ? '視覺無損'
+      : current.estimatedVmaf >= 90
+        ? '優良'
+        : current.estimatedVmaf >= 70
+          ? '可接受'
+          : '建議調整';
   return (
     <section className="encoding-decision" aria-labelledby="encoding-decision-title">
       <header className="decision-heading">
         <div>
-          <p className="eyebrow">編碼決策實驗室</p>
-          <h3 id="encoding-decision-title">最高畫質，不一定是最佳播放體驗。</h3>
+          <p className="eyebrow">本次輸出預估</p>
+          <h3 id="encoding-decision-title">1080p 預計輸出結果</h3>
         </div>
-        <p className="decision-disclaimer">
-          編碼前只呈現容量與效能估算；VMAF 僅在後端完成實際比對後顯示。
-        </p>
+        <p className="decision-disclaimer">送出前先估算主要指標；完成後更新為實測結果。</p>
       </header>
 
-      <div className="decision-summary" aria-label="目前參數的取捨預估">
+      <div className="decision-summary" aria-label="目前編碼設定的輸出估算">
         <article>
-          <span>目標碼率</span>
+          <span>1080p 輸出碼率</span>
           <strong>{current.targetKbps.toLocaleString()} kbps</strong>
           <small>
             {input.rateControl === 'crf' ? `由 CRF ${input.crf} 推估` : '由目標碼率指定'}
           </small>
         </article>
         <article>
-          <span>預估品質指數</span>
-          <strong>{current.estimatedVmaf}</strong>
-          <small>碼率增加後效益遞減</small>
+          <span>預估 VMAF 畫質</span>
+          <strong>
+            {current.estimatedVmaf} · {vmafRating}
+          </strong>
+          <small>任務完成後更新為實測分數</small>
         </article>
         <article>
-          <span>編碼成本指數</span>
-          <strong>{current.encodeCost}×</strong>
-          <small>
-            {input.preset === 'slow'
-              ? '精細編碼較慢'
-              : input.preset === 'fast'
-                ? '快速編碼較省算力'
-                : '平衡基準'}
-          </small>
-        </article>
-        <article>
-          <span>每小時資料量</span>
+          <span>每小時影片容量</span>
           <strong>{current.storageGbHour} GB</strong>
-          <small>同時影響儲存與 CDN</small>
-        </article>
-        <article data-risk={current.playbackRisk}>
-          <span>播放風險</span>
-          <strong>{current.playbackRisk}</strong>
-          <small>以 6 Mbps 網路情境估算</small>
-        </article>
-        <article>
-          <span>關鍵影格間隔</span>
-          <strong>{current.keyframeSeconds} 秒</strong>
-          <small>影響壓縮與 Seek</small>
+          <small>用於估算儲存與 CDN 用量</small>
         </article>
       </div>
 
+      <section className="vmaf-guide" aria-labelledby="vmaf-guide-title">
+        <div>
+          <h4 id="vmaf-guide-title">VMAF 判讀基準</h4>
+          <p>分數越高，輸出越接近來源；相差約 6 分時，畫質差異通常較容易察覺。</p>
+        </div>
+        <dl>
+          <div>
+            <dt>95–100</dt>
+            <dd>視覺無損</dd>
+          </div>
+          <div>
+            <dt>90–94</dt>
+            <dd>優良</dd>
+          </div>
+          <div>
+            <dt>70–89</dt>
+            <dd>可接受</dd>
+          </div>
+          <div>
+            <dt>&lt; 70</dt>
+            <dd>建議調整</dd>
+          </div>
+        </dl>
+      </section>
+
       <div className="decision-grid">
         <div className="quality-curve">
-          <h4>品質／碼率曲線</h4>
-          <p>越往右成本越高；曲線變平後，繼續加碼率通常不划算。</p>
+          <h4>各畫質版本的 VMAF 預估</h4>
+          <p>由左至右為 360p、540p、720p 與 1080p；數字為預估 VMAF。</p>
           <div className="curve-bars" role="img" aria-label="碼率增加時，預估品質增幅逐漸減少">
             {renditionCandidates.map((candidate) => (
               <div key={candidate.id}>
@@ -82,8 +94,8 @@ export function EncodingDecision({
           </div>
         </div>
         <div className="abr-ladder">
-          <h4>建議 ABR Ladder</h4>
-          <p>保留有效率且能覆蓋不同網路條件的版本。</p>
+          <h4>預設 ABR 畫質階梯</h4>
+          <p>提供不同頻寬與裝置使用的輸出版本。</p>
           <ol>
             {abrLadder.map((item) => (
               <li key={item.resolution}>
@@ -150,8 +162,8 @@ export function EncodingDecision({
         </section>
       ) : null}
       <p className="decision-conclusion">
-        <strong>決策：</strong>品質達標後，不再追逐最高碼率；把預算留給更穩定的播放、更多有效
-        Rendition 與較低的 Rebuffering。
+        <strong>目前設定：</strong>輸出四個 ABR 畫質版本；任務完成後以實測
+        VMAF、碼率與檔案容量確認結果。
       </p>
     </section>
   );

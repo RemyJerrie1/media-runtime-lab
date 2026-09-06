@@ -2,144 +2,108 @@
 
 [![verify](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml/badge.svg?branch=dev)](https://github.com/RemyJerrie1/media-runtime-lab/actions/workflows/verify.yml)
 
-> 可復原的影音處理工作流後台 — Recoverable media processing workflow backend.
+影音平台營運後台，涵蓋來源素材、FFmpeg 轉檔、ABR 串流、字幕與浮水印、任務追蹤及用量管理。
 
-可復原是三件具體的事：
+## 產品展示
 
-- 同一個指令送幾次，都只有一個工作
-- worker 掛掉後，另一個 worker 可以接手
-- 連線中斷後，可以從斷點接回事件
+從「開始導覽」進入完整操作流程。導覽採用一秒影片與 Ultrafast 預設值，送出任務約五秒後會繼續介紹其他功能；轉檔仍在後端執行，完成後可回到影音工作台預覽成品。
 
-這三條都有測試，並在 CI 使用真正的 PostgreSQL 驗證。
+<a href="./docs/media/product-demo-dark.mp4"><img src="./docs/media/product-demo-dark.gif" width="960" alt="Media Runtime Lab 深色模式產品導覽" /></a>
 
-## Dreamy 預設影片
+## 主要功能
 
-內建一支八秒療癒系倉鼠短片：六格走路循環呈現手腳交替、身體起伏、風吹毛與書包慣性擺動；角色沿下方步道前進，三段中文字幕固定在上方安全區，並搭配柔和提示音。影片會實際送進後端 FFmpeg，供剪輯、編碼、合成與成品播放流程使用。
+- 來源素材：使用內建示範影片或上傳 MP4、MOV、WebM、MKV。
+- 轉檔設定：剪輯區間、CRF、Preset、GOP、幀率與音畫同步。
+- 畫質預估：送出前顯示 1080p 碼率、VMAF 等級與每小時容量。
+- 串流交付：產生 360p、540p、720p、1080p 四個版本，以及 HLS Master Playlist 與 CMAF 分段。
+- 媒體合成：字幕、可視浮水印、動態浮水印與時間軸預覽。
+- 任務追蹤：顯示處理狀態、進度、播放檢查、Request ID 與成品雜湊。
+- 用量管理：呈現用量、成本歸因與預算門檻。
+- API 文件：Web 參考頁與 Bruno collection 使用相同端點分類。
 
-<a href="./docs/media/product-demo.mp4"><img src="./docs/media/product-demo.gif" width="760" alt="影音處理工作台操作示範" /></a>
-
-## 任務生命週期
-
-任務依序經過接受、合成、編碼、封裝與交付；每一步都有狀態、進度與復原證據。
-
-<a href="./docs/media/render-lifecycle.mp4"><img src="./docs/media/render-lifecycle.gif" width="680" alt="媒體任務與時間軸示範" /></a>
-
-## 字幕與合成
-
-包含中文字幕、Sprite Sheet、Canvas 2D 合成，以及 CSS 3D 圖層示範。
-
-<a href="./docs/media/composition-showcase.mp4"><img src="./docs/media/composition-showcase.gif" width="760" alt="字幕與媒體合成示範" /></a>
-
-## 任務復原
-
-後端保存 job、event 與 work lease。重複指令會回到同一個 job；lease 過期後可由其他 worker 接手；SSE 依 `Last-Event-ID` 重播事件。
-
-<a href="./docs/media/reliability-recovery.mp4"><img src="./docs/media/reliability-recovery.gif" width="760" alt="冪等、worker 接手與事件重播示範" /></a>
-
-完成時，成品紀錄、`ready` 狀態、事件與工作完成會在同一筆交易寫入。
-
-## 介面規格
-
-<a href="./docs/media/api-contract.mp4"><img src="./docs/media/api-contract.gif" width="760" alt="API 與 FFmpeg 處理計畫示範" /></a>
-
-- `POST /v1/media`：上傳來源影片並取得媒體資產識別碼
-- `POST /v1/media/demo`：準備內建 Dreamy 示範影片
-- `POST /v1/render-jobs`：以媒體資產建立或重播同一個指令
-- `GET /v1/render-jobs/:id`：讀取目前狀態
-- `SSE /v1/render-jobs/:id/events`：接收與重播進度事件
-- `GET /streams/:jobId/master.m3u8`：讀取 HLS Master Playlist，並延伸至各畫質 Playlist 與 CMAF Segments
-- `GET /v1/operations`：讀取任務、復原、追蹤與成本證據
-- `GET /media/:assetId`：以 HTTP Range Request 預覽來源影片
-- `GET /artifacts/:jobId.mp4`：用 HTTP Range Request 傳送轉檔成品
-
-Worker 會以 `ffprobe` 檢測來源、實際執行 FFmpeg，產生 360p／540p／720p／1080p ABR Ladder，再封裝為 HLS + CMAF（Master Playlist、各畫質 Playlist、初始化片段與 fragmented MP4 Segments）。每個 Rendition 都會計算 SHA-256，並在可用 `libvmaf` 的 FFmpeg 環境中，實際比較來源與輸出畫質；若環境未提供 `libvmaf`，API 會明確回傳 `unavailable`，不使用固定示範分數。
-
-<a href="./docs/media/streaming-delivery.mp4"><img src="./docs/media/streaming-delivery.gif" width="760" alt="ABR Ladder、HLS CMAF 封裝、播放器切換與 VMAF 決策示範" /></a>
-
-建立任務時可設定 `deliveryFormat: "hls-cmaf"`、`abrLadder: "standard"` 與 `qualityMetric: "vmaf"`。完成後的任務 JSON 會包含各 Rendition 的解析度、碼率、Playlist URL、VMAF、Checksum，以及 Master Manifest URL、Trace ID 與 Request ID。`evidence` 同步保存 ffprobe 媒體規格、關鍵影格間隔、音畫長度差、成品播放檢查、水印模式及實際 Playlist／CMAF 分段數量。`GET /streams/:jobId/master.m3u8` 提供播放器使用的自適應串流入口。
-
-預設使用專案附帶的 FFmpeg；部署時也可用 `FFMPEG_BINARY` 與 `FFPROBE_BINARY` 指向完整建置。若要求 VMAF，指定的 FFmpeg 必須包含 `libvmaf` filter。
-
-## API 回歸測試
-
-Bruno 測試涵蓋建立工作、重複指令、錯誤輸入、狀態查詢與復原流程。
-
-<a href="./docs/media/bruno-contract-tests.mp4"><img src="./docs/media/bruno-contract-tests.gif" width="760" alt="Bruno API 回歸測試" /></a>
-
-## 成本歸因示範
-
-用模擬資料呈現供應商用量、專案歸因與預算門檻；沒有呼叫外部模型。
-
-<a href="./docs/media/ai-cost-governance.mp4"><img src="./docs/media/ai-cost-governance.gif" width="760" alt="用量與成本歸因示範" /></a>
-
-## 設計系統
-
-共用色彩、間距、字體與狀態元件，並實際用在工作台頁面。
-
-<a href="./docs/media/design-system-showcase.mp4"><img src="./docs/media/design-system-showcase.gif" width="760" alt="設計系統與元件狀態示範" /></a>
-
-## 程式結構
+## 技術架構
 
 ```text
-apps/web/                 Next.js 操作介面
+Next.js 操作介面
+        │
+        ▼
+NestJS API ── PostgreSQL 任務與事件
+        │
+        ▼
+FFmpeg / ffprobe ── MP4、HLS、CMAF、VMAF、SHA-256
+```
+
+```text
+apps/web/                 Next.js 操作介面與導覽
 apps/api/src/render/
-  domain/                 狀態機、規則與 ports
-  application/            工作調度與 worker
+  domain/                 任務狀態與媒體規則
+  application/            任務調度與 Worker
   interfaces/             HTTP 與 SSE
-  infrastructure/         PostgreSQL 與記憶體 adapter
-packages/contracts/       前後端共用 Zod contract
+  infrastructure/         PostgreSQL、檔案與 FFmpeg
+packages/contracts/       前後端共用 Zod schema
 bruno/                    API 回歸測試
 ```
 
-依賴方向：`interfaces → application → domain ← infrastructure`
+## 本機啟動
 
-- [架構選擇](./docs/adr/0001-modular-control-plane.md)
-- [持久化與事件重播](./docs/adr/0002-durable-workflow-and-replay.md)
-- [維運與失敗模式](./docs/architecture/operations.md)
+Windows 開機後，在任意 PowerShell 視窗執行：
 
-## 本機執行
+```powershell
+media-lab start
+```
 
-面試現場開機後，在專案目錄開啟 PowerShell，只需執行：
+常用指令：
+
+```powershell
+media-lab status
+media-lab restart
+media-lab stop
+```
+
+也可在專案根目錄執行：
 
 ```powershell
 pnpm demo
-```
-
-Windows 也可以直接雙擊專案根目錄的 `START-MEDIA-LAB.cmd`；展示結束後雙擊 `STOP-MEDIA-LAB.cmd`。
-
-也可使用專案 CLI：`./media-lab start`、`./media-lab stop`、`./media-lab restart`、`./media-lab status`。
-
-此指令會建立缺少的 `.env`、安裝首次啟動所需套件、啟動並檢查 PostgreSQL、API 與 Web，確認兩端皆回傳成功後才開啟瀏覽器。啟動紀錄保存在 `.demo-logs`，方便現場直接查看錯誤。若已經有健康的服務正在執行，指令會沿用；若 3000 或 4000 被其他程序占用，會指出衝突，不會再啟動一份服務。
-
-不需要自動開啟瀏覽器時可執行 `pnpm demo -- -NoBrowser`。
-
-展示結束後完整停止 Web、API 與本專案 PostgreSQL：
-
-```powershell
+pnpm demo:restart
 pnpm demo:stop
 ```
 
-需要清掉前一次由啟動器建立的程序並重新啟動時：
+啟動器會準備 `.env`、檢查套件與 PostgreSQL，啟動 API 與 Web，健康檢查通過後開啟瀏覽器。紀錄位於 `.demo-logs`。
+
+- Web：<http://localhost:3000/overview>
+- API：<http://localhost:4000>
+- API 文件：<http://localhost:3000/api-reference>
+
+## API
+
+| 分類 | 端點 | 用途 |
+| --- | --- | --- |
+| 媒體資產 | `POST /v1/media` | 上傳來源影片 |
+| 媒體資產 | `POST /v1/media/demo` | 準備內建示範素材 |
+| 媒體資產 | `GET /media/:assetId` | 預覽來源影片 |
+| 轉檔任務 | `POST /v1/render-jobs` | 建立處理任務 |
+| 轉檔任務 | `GET /v1/render-jobs/:id` | 查詢任務狀態 |
+| 轉檔任務 | `GET /v1/render-jobs/:id/events` | 接收 SSE 進度事件 |
+| 串流交付 | `GET /artifacts/:jobId.mp4` | 播放或下載 MP4 |
+| 串流交付 | `GET /streams/:jobId/master.m3u8` | 取得 HLS 主播放清單 |
+| 維運 | `GET /v1/operations` | 查詢任務與用量摘要 |
+
+Bruno collection 位於 `bruno/`，執行方式：
 
 ```powershell
-pnpm demo:restart
+pnpm bruno
 ```
 
-完整開發與檢查流程：
+## 品質檢查
 
 ```powershell
-pnpm install
-Copy-Item .env.example .env
-docker compose up -d postgres
 pnpm verify
-pnpm dev
 ```
 
-`pnpm install` 會透過 `ffmpeg-static` 與 `@ffprobe-installer/ffprobe` 安裝本機執行檔，不需要另外設定系統 PATH。
+CI 依序檢查格式、架構邊界、API 文件與 Bruno 合約、WCAG 色彩、TypeScript、測試與正式建置。
 
-- Web：`http://localhost:3000`
-- API：`http://localhost:4000`
-- API 參考頁：`http://localhost:3000/api-reference`
-- Bruno：`pnpm bruno`
+延伸文件：
 
-`pnpm verify` 會檢查格式、架構邊界、合約、型別、測試與正式版本建置。本機沒有設定 `DATABASE_URL` 時，PostgreSQL 整合測試會跳過；CI 會使用真正的 PostgreSQL 執行。
+- [模組化控制平面](./docs/adr/0001-modular-control-plane.md)
+- [任務持久化與事件接續](./docs/adr/0002-durable-workflow-and-replay.md)
+- [維運與失敗模式](./docs/architecture/operations.md)

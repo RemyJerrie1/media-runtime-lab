@@ -349,10 +349,7 @@ export function InterviewTour() {
       currentTarget?.textContent?.includes('READY')
     ) {
       settleTimers.push(
-        window.setTimeout(
-          step.id === 'render-result' ? continueToNextTopic : advance,
-          350,
-        ),
+        window.setTimeout(step.id === 'render-result' ? continueToNextTopic : advance, 350),
       );
     }
     if (step.id === 'render-result') {

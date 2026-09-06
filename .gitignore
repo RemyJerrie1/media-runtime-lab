@@ -16,4 +16,6 @@ docs/media/reliability-frames/
 docs/media/design-system-frames/
 **/.runtime/
 .demo-logs/
+.capture-dark-*/
+.demo-capture/
 **/__pycache__/

@@ -19,9 +19,7 @@ function luminance(hex: string) {
     .slice(1)
     .match(/../g)!
     .map((channel) => Number.parseInt(channel, 16) / 255)
-    .map((channel) =>
-      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-    );
+    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
   return 0.2126 * red! + 0.7152 * green! + 0.0722 * blue!;
 }
 

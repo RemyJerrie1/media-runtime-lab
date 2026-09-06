@@ -8,13 +8,16 @@ const STORAGE_KEY = 'media-runtime-theme';
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>('dark');
   useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('theme');
     const saved = window.localStorage.getItem(STORAGE_KEY);
     const initial: Theme =
-      saved === 'light' || saved === 'dark'
-        ? saved
-        : window.matchMedia('(prefers-color-scheme: light)').matches
-          ? 'light'
-          : 'dark';
+      requested === 'light' || requested === 'dark'
+        ? requested
+        : saved === 'light' || saved === 'dark'
+          ? saved
+          : window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark';
     document.documentElement.dataset.theme = initial;
     setTheme(initial);
   }, []);
