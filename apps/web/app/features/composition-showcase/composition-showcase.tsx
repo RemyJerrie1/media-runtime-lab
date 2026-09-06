@@ -1,6 +1,10 @@
 'use client';
 
-import { WATERMARK_PRESENTATION, type MediaAsset, type MediaProcessing } from '@media-lab/contracts';
+import {
+  WATERMARK_PRESENTATION,
+  type MediaAsset,
+  type MediaProcessing,
+} from '@media-lab/contracts';
 import { useEffect, useState } from 'react';
 import { artifactUrl, getDemoMedia } from '../../shared/api/render-jobs';
 import { useRenderJob } from '../../shared/hooks/use-render-job';

@@ -55,6 +55,38 @@
   gap: var(--space-4);
   margin-top: var(--space-4);
 }
+.vmaf-guide {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) minmax(28rem, 2fr);
+  gap: var(--space-5);
+  align-items: center;
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.vmaf-guide h4,
+.vmaf-guide p,
+.vmaf-guide dl {
+  margin: 0;
+}
+.vmaf-guide p {
+  margin-top: 6px;
+  color: var(--color-text-muted);
+}
+.vmaf-guide dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.vmaf-guide dl div {
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface-raised);
+}
+.vmaf-guide dt { font-weight: var(--weight-bold); }
+.vmaf-guide dd { margin: 4px 0 0; color: var(--color-text-muted); }
 .quality-curve,
 .abr-ladder {
   padding: var(--space-5);
@@ -204,6 +236,7 @@
   .decision-summary {
     grid-template-columns: 1fr 1fr;
   }
+  .vmaf-guide { grid-template-columns: 1fr; }
   .measured-renditions ul {
     grid-template-columns: 1fr 1fr;
   }
@@ -212,6 +245,7 @@
   .decision-summary {
     grid-template-columns: 1fr;
   }
+  .vmaf-guide dl { grid-template-columns: 1fr 1fr; }
   .encoding-decision {
     padding: 18px;
   }

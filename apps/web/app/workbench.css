@@ -162,6 +162,14 @@ legend {
 .encode-receipt strong {
   font-size: 16px;
 }
+.encode-receipt summary {
+  cursor: pointer;
+  color: var(--color-accent-strong);
+  font-weight: var(--weight-bold);
+}
+.encode-receipt[open] summary {
+  margin-bottom: var(--space-3);
+}
 .error {
   color: var(--color-danger);
 }
@@ -223,17 +231,17 @@ legend {
   border-radius: 12px;
   background: #000;
 }
-.artifact-preview > div > label {
+.artifact-preview > label {
   display: grid;
   max-width: 420px;
   gap: 8px;
   color: var(--color-text-muted);
   font-weight: var(--weight-semibold);
 }
-.artifact-preview > div > label select {
+.artifact-preview > label select {
   min-height: 48px;
 }
-.artifact-preview > div > a {
+.artifact-preview > a {
   display: inline-flex;
   min-height: 48px;
   align-items: center;

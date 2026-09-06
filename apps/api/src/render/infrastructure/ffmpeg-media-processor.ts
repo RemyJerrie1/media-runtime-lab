@@ -47,87 +47,89 @@ export class FfmpegMediaProcessor {
     ] as const;
     // Renditions are independent. Running them concurrently keeps the guided demo
     // responsive while preserving the same real FFmpeg, CMAF and VMAF evidence.
-    const renditions = await Promise.all(ladder.map(async (rendition) => {
-      const playlist = resolve(directory, `${rendition.id}.m3u8`);
-      const encoded = resolve(directory, `${rendition.id}.mp4`);
-      const scale = `scale=${rendition.width}:${rendition.height}:force_original_aspect_ratio=decrease,pad=${rendition.width}:${rendition.height}:(ow-iw)/2:(oh-ih)/2`;
-      await this.execute(
-        binary,
-        [
-          '-y',
-          '-ss',
-          String(job.trimStartSeconds),
-          '-i',
-          input,
-          '-t',
-          String(job.durationSeconds),
-          '-vf',
-          scale,
-          '-c:v',
-          'libx264',
-          '-preset',
-          job.encoding.preset,
-          '-b:v',
-          `${rendition.bitrateKbps}k`,
-          '-maxrate',
-          `${Math.round(rendition.bitrateKbps * 1.07)}k`,
-          '-bufsize',
-          `${rendition.bitrateKbps * 2}k`,
-          '-g',
-          String(job.encoding.gop),
-          '-keyint_min',
-          String(job.encoding.gop),
-          '-sc_threshold',
-          '0',
-          '-c:a',
-          'aac',
-          '-ar',
-          String(job.processing.audioSampleRate),
-          '-movflags',
-          '+faststart',
-          encoded,
-        ],
-        'FFMPEG_RENDITION_FAILED',
-      );
-      await this.execute(
-        binary,
-        [
-          '-y',
-          '-i',
-          encoded,
-          '-codec',
-          'copy',
-          '-hls_time',
-          '2',
-          '-hls_playlist_type',
-          'vod',
-          '-hls_segment_type',
-          'fmp4',
-          '-hls_fmp4_init_filename',
-          resolve(directory, `${rendition.id}-init.mp4`),
-          '-hls_segment_filename',
-          resolve(directory, `${rendition.id}-%03d.m4s`),
-          playlist,
-        ],
-        'FFMPEG_CMAF_FAILED',
-      );
-      const vmaf =
-        job.processing.qualityMetric === 'vmaf'
-          ? await this.measureVmaf(binary, input, encoded, rendition.width, rendition.height)
-          : null;
-      return {
-        ...rendition,
-        playlistUrl: `/streams/${job.id}/${rendition.id}.m3u8`,
-        checksum: await this.files.checksum(encoded),
-        vmaf,
-        qualityMetricStatus:
-          job.processing.qualityMetric === 'none'
-            ? ('not-requested' as const)
-            : vmaf === null
-              ? ('unavailable' as const)
-              : ('measured' as const),
-      };
-    }));
+    const renditions = await Promise.all(
+      ladder.map(async (rendition) => {
+        const playlist = resolve(directory, `${rendition.id}.m3u8`);
+        const encoded = resolve(directory, `${rendition.id}.mp4`);
+        const scale = `scale=${rendition.width}:${rendition.height}:force_original_aspect_ratio=decrease,pad=${rendition.width}:${rendition.height}:(ow-iw)/2:(oh-ih)/2`;
+        await this.execute(
+          binary,
+          [
+            '-y',
+            '-ss',
+            String(job.trimStartSeconds),
+            '-i',
+            input,
+            '-t',
+            String(job.durationSeconds),
+            '-vf',
+            scale,
+            '-c:v',
+            'libx264',
+            '-preset',
+            job.encoding.preset,
+            '-b:v',
+            `${rendition.bitrateKbps}k`,
+            '-maxrate',
+            `${Math.round(rendition.bitrateKbps * 1.07)}k`,
+            '-bufsize',
+            `${rendition.bitrateKbps * 2}k`,
+            '-g',
+            String(job.encoding.gop),
+            '-keyint_min',
+            String(job.encoding.gop),
+            '-sc_threshold',
+            '0',
+            '-c:a',
+            'aac',
+            '-ar',
+            String(job.processing.audioSampleRate),
+            '-movflags',
+            '+faststart',
+            encoded,
+          ],
+          'FFMPEG_RENDITION_FAILED',
+        );
+        await this.execute(
+          binary,
+          [
+            '-y',
+            '-i',
+            encoded,
+            '-codec',
+            'copy',
+            '-hls_time',
+            '2',
+            '-hls_playlist_type',
+            'vod',
+            '-hls_segment_type',
+            'fmp4',
+            '-hls_fmp4_init_filename',
+            resolve(directory, `${rendition.id}-init.mp4`),
+            '-hls_segment_filename',
+            resolve(directory, `${rendition.id}-%03d.m4s`),
+            playlist,
+          ],
+          'FFMPEG_CMAF_FAILED',
+        );
+        const vmaf =
+          job.processing.qualityMetric === 'vmaf'
+            ? await this.measureVmaf(binary, input, encoded, rendition.width, rendition.height)
+            : null;
+        return {
+          ...rendition,
+          playlistUrl: `/streams/${job.id}/${rendition.id}.m3u8`,
+          checksum: await this.files.checksum(encoded),
+          vmaf,
+          qualityMetricStatus:
+            job.processing.qualityMetric === 'none'
+              ? ('not-requested' as const)
+              : vmaf === null
+                ? ('unavailable' as const)
+                : ('measured' as const),
+        };
+      }),
+    );
     const master = [
       '#EXTM3U',
       '#EXT-X-VERSION:7',

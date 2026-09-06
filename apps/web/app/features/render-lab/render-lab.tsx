@@ -109,8 +109,8 @@ export function RenderLab() {
   return (
     <section className="lab" id="render-lab">
       <div className="lab-copy">
-        <p className="eyebrow">互動式影音工程工作台</p>
-        <h2>剪輯、編碼、交付，並理解每一項取捨。</h2>
+        <p className="eyebrow">影音處理工作台</p>
+        <h2>設定轉檔參數並產生串流成品</h2>
         <div className="pipeline-strip" aria-label="媒體處理管線（Media processing pipeline）">
           {pipeline.map((step, index) => (
             <span key={step}>
@@ -188,8 +188,8 @@ export function RenderLab() {
         <fieldset>
           <legend>剪輯與編碼</legend>
           <div className="demo-speed-note">
-            <strong>Demo 快速設定</strong>
-            <span>1 秒、Ultrafast；導覽顯示 5 秒進度後繼續，ABR／HLS／VMAF 留在背景完成。</span>
+            <strong>導覽預設值</strong>
+            <span>輸出 1 秒影片並採用 Ultrafast；任務送出 5 秒後繼續導覽，處理會在背景完成。</span>
           </div>
           <div className="editor-grid">
             <label>
@@ -265,7 +265,7 @@ export function RenderLab() {
                 <option value="medium">Medium（標準）</option>
                 <option value="slow">Slow（高壓縮效率）</option>
               </select>
-              <small>編碼速度與壓縮效率的取捨</small>
+              <small>速度越慢，通常可產生較小的檔案</small>
             </label>
             <label>
               碼率控制
@@ -448,7 +448,7 @@ export function RenderLab() {
             }
           }}
         >
-          {busy || uploading ? '準備中…' : '套用參數並執行 FFmpeg'}
+          {busy || uploading ? '準備中…' : '開始轉檔'}
         </Button>
         {uploadError ? (
           <p className="error" role="alert">
@@ -466,16 +466,14 @@ export function RenderLab() {
             <span className={job?.artifactUrl ? 'artifact-badge' : 'simulation-badge'}>
               {job?.artifactUrl ? '已完成串流交付' : '等待處理'}
             </span>
-            <h3 id="artifact-preview-title">自適應串流成品</h3>
-            <p>
-              四個畫質版本由 FFmpeg 實際產生；可切換預覽，並查看本次任務的 HLS Master Playlist。
-            </p>
+            <h3 id="artifact-preview-title">串流成品預覽</h3>
+            <p>選擇畫質即可預覽實際輸出；播放清單可供串流播放器使用。</p>
           </div>
           {job?.artifactUrl ? (
             <>
               {renditions.length ? (
                 <label data-tour="rendition-switcher">
-                  預覽 Rendition
+                  預覽畫質
                   <select
                     aria-label="選擇預覽畫質"
                     value={playbackRendition}
@@ -553,12 +551,20 @@ export function RenderLab() {
         >
           <div className="job">
             <MetricCard
-              label="任務狀態（Job Status）"
-              value={job?.status.toUpperCase() ?? '尚未開始'}
+              label="任務狀態"
+              value={
+                job?.status === 'ready'
+                  ? '已完成'
+                  : job?.status === 'failed'
+                    ? '處理失敗'
+                    : job
+                      ? '處理中'
+                      : '尚未開始'
+              }
               tone={job?.status === 'ready' ? 'success' : 'accent'}
             />
             <MetricCard
-              label="處理階段（Stage）"
+              label="目前進度"
               value={
                 job
                   ? `${job.stage} · ${job.status === 'ready' ? '已完成' : `已處理 ${elapsedSeconds} 秒`}`
@@ -566,7 +572,7 @@ export function RenderLab() {
               }
             />
             <MetricCard
-              label="預估處理成本／Token 用量"
+              label="本次處理用量"
               value={job ? `$${job.estimatedCostUsd} / ${job.tokens}` : '—'}
             />
             {error ? (
@@ -576,14 +582,14 @@ export function RenderLab() {
             ) : null}
           </div>
           <ProgressBar
-            label="算圖進度（Render Progress）"
+            label="轉檔進度"
             value={job?.progress ?? 0}
             tone={job?.status === 'ready' ? 'success' : 'accent'}
           />
         </section>
         <div className="review-grid">
           <article data-tour="evidence-probe">
-            <span>素材檢測（Probe）</span>
+            <span>來源影片</span>
             <strong>
               {job?.evidence
                 ? `${job.evidence.probe.codec.toUpperCase()} · ${job.evidence.probe.width}×${job.evidence.probe.height} · ${job.evidence.probe.fps} fps`
@@ -596,7 +602,7 @@ export function RenderLab() {
             </p>
           </article>
           <article data-tour="evidence-gop">
-            <span>GOP／跳轉（Seek）</span>
+            <span>影片跳轉</span>
             <strong>
               {job?.evidence
                 ? `每 ${job.evidence.keyframeIntervalSeconds} 秒建立關鍵影格`
@@ -609,7 +615,7 @@ export function RenderLab() {
             </p>
           </article>
           <article data-tour="evidence-sync">
-            <span>時間與同步（Time & Sync）</span>
+            <span>音畫同步</span>
             <strong>
               {job?.evidence
                 ? `A/V 長度差 ${job.evidence.audioVideoDriftSeconds.toFixed(3)} 秒`
@@ -622,7 +628,7 @@ export function RenderLab() {
             </p>
           </article>
           <article data-tour="evidence-playback">
-            <span>播放（Playback）</span>
+            <span>播放檢查</span>
             <strong>
               {job?.evidence?.playbackVerified ? '成品已通過解封裝與播放檢查' : '等待成品播放檢查'}
             </strong>
@@ -633,7 +639,7 @@ export function RenderLab() {
             </p>
           </article>
           <article data-tour="evidence-watermark">
-            <span>影音水印（Watermark）</span>
+            <span>浮水印</span>
             <strong>
               {job?.evidence
                 ? `本次套用：${job.evidence.watermarkApplied === 'none' ? '不加水印' : job.evidence.watermarkApplied === 'dynamic' ? '動態水印' : '可視水印'}`
@@ -644,7 +650,7 @@ export function RenderLab() {
             </p>
           </article>
           <article data-tour="evidence-delivery">
-            <span>HLS／CMAF 交付</span>
+            <span>串流檔案</span>
             <strong>
               {job?.evidence
                 ? `${job.evidence.playlistCount} 份 Playlist · ${job.evidence.segmentCount} 個 fMP4 分段`
@@ -658,8 +664,9 @@ export function RenderLab() {
           </article>
         </div>
         {job ? (
-          <div className="encode-receipt" aria-live="polite" data-tour="processing-receipt">
-            <span>後端處理收據（Backend Processing Receipt）</span>
+          <details className="encode-receipt" data-tour="processing-receipt">
+            <summary>查看技術明細</summary>
+            <span>後端處理紀錄</span>
             <strong>
               {job.encoding.codec} · {job.encoding.fps}fps · CRF {job.encoding.crf} · GOP{' '}
               {job.encoding.gop} · {job.processing.frameRateMode.toUpperCase()}
@@ -668,7 +675,7 @@ export function RenderLab() {
             <code>ffmpeg {job.ffmpegArgs.join(' ')}</code>
             <code>request-id {job.requestId}</code>
             {job.manifestUrl ? <code>manifest {job.manifestUrl}</code> : null}
-          </div>
+          </details>
         ) : null}
       </div>
     </section>

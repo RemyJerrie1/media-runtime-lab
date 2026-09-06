@@ -10,9 +10,9 @@ import { isWorkspaceSection, type WorkspaceSection } from './workspace-sections'
 
 type TabId = TourTabId & WorkspaceSection;
 const tabs: [TabId, string, string][] = [
-  ['overview', '平台概覽', '核心價值與系統範圍'],
-  ['render', '影音工作台', '剪輯、編碼與交付'],
-  ['composition', '媒體合成', '字幕、精靈圖與時間軸'],
+  ['overview', '平台概覽', '服務與處理範圍'],
+  ['render', '影音工作台', '轉檔、編碼與交付'],
+  ['composition', '媒體合成', '字幕、浮水印與時間軸'],
   ['cost', '成本', '用量與預算'],
   ['operations', '維運', '狀態與追蹤'],
   ['architecture', '架構', '服務邊界'],
@@ -23,23 +23,23 @@ function Overview() {
     <section className="workspace-overview">
       <p className="eyebrow">媒體運行實驗室</p>
       <h1>影音平台營運後台</h1>
-      <p className="lede">集中管理媒體處理、串流交付、品質與成本。</p>
+      <p className="lede">統一管理轉檔、串流交付、服務品質與用量。</p>
       <div className="overview-grid" data-tour="overview-summary">
         <article>
-          <span>媒體生命週期</span>
-          <strong>建立 → 合成 → 交付</strong>
+          <span>處理流程</span>
+          <strong>上傳 → 轉檔 → 交付</strong>
         </article>
         <article>
-          <span>服務品質</span>
-          <strong>追蹤 → 復原 → 最佳化</strong>
+          <span>服務狀態</span>
+          <strong>監控 → 復原 → 追蹤</strong>
         </article>
         <article>
-          <span>工作流保證</span>
-          <strong>冪等 → 重播 → 原子完成</strong>
+          <span>任務控制</span>
+          <strong>去重 → 續傳 → 完成</strong>
         </article>
         <article>
-          <span>成本治理</span>
-          <strong>用量 → 歸因 → 額度控制</strong>
+          <span>用量管理</span>
+          <strong>紀錄 → 歸因 → 額度</strong>
         </article>
       </div>
     </section>
@@ -155,7 +155,11 @@ export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: Tab
               aria-controls={`panel-${id}`}
               tabIndex={active === id ? 0 : -1}
               data-tour={`tab-${id}`}
-              className={['cost', 'operations', 'architecture'].includes(id) ? 'workspace-tab-secondary' : undefined}
+              className={
+                ['cost', 'operations', 'architecture'].includes(id)
+                  ? 'workspace-tab-secondary'
+                  : undefined
+              }
               onClick={() => selectActive(id)}
             >
               <strong>{label}</strong>

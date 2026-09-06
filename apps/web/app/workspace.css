@@ -66,13 +66,15 @@
 .workspace-links {
   display: grid;
   flex: 0 0 auto;
-  gap: 8px;
-  margin-top: auto;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
 }
 .workspace-links a {
   border: 1px solid var(--line);
   border-radius: 9px;
-  padding: 10px 12px;
+  padding: 14px 16px;
   color: var(--ink);
   font-size: 16px;
 }
