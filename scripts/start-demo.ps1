@@ -78,8 +78,21 @@ function Start-DemoService([string]$Name) {
 }
 
 $pnpm = Get-Command pnpm -ErrorAction SilentlyContinue
-if (-not $pnpm) {
-  throw 'pnpm was not found. Install Node.js 22, then run: corepack enable'
+$pnpmExecutable = $null
+$pnpmPrefix = @()
+if ($pnpm) {
+  $pnpmExecutable = $pnpm.Source
+} else {
+  $corepack = Get-Command corepack.cmd -ErrorAction SilentlyContinue
+  if (-not $corepack) {
+    $corepack = Get-Command corepack -ErrorAction SilentlyContinue
+  }
+  if ($corepack) {
+    $pnpmExecutable = $corepack.Source
+    $pnpmPrefix = @('pnpm')
+  } else {
+    throw 'Node.js Corepack was not found. Install Node.js 22 and reopen PowerShell.'
+  }
 }
 
 $docker = Get-Command docker -ErrorAction SilentlyContinue
@@ -100,7 +113,7 @@ Get-Content -LiteralPath $envFile | ForEach-Object {
 
 if (-not (Test-Path (Join-Path $repoRoot 'node_modules'))) {
   Write-Step 'First launch: installing dependencies...'
-  & $pnpm.Source install --frozen-lockfile
+  & $pnpmExecutable @pnpmPrefix install --frozen-lockfile
   if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
 }
 

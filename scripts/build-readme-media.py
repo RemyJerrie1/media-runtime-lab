@@ -70,20 +70,32 @@ def build_product_media() -> None:
         image = meadow.copy().convert("RGBA")
         draw = ImageDraw.Draw(image, "RGBA")
         pose = poses[index % len(poses)]
-        pose_height = 350
+        # Keep the character prominent and safely above the subtitle safe area.
+        pose_height = 405
         pose_width = round(pose.width * pose_height / pose.height)
         pose = pose.resize((pose_width, pose_height), Image.Resampling.LANCZOS)
+        pose = pose.rotate(
+            math.sin(index * math.pi / 6) * 1.4,
+            resample=Image.Resampling.BICUBIC,
+            expand=True,
+        )
         progress = index / (fps * seconds - 1)
         x = round(70 + progress * (width - pose_width - 140))
-        y = 244 + round(math.sin(index * math.pi / 3) * 5)
+        y = 166 + round(math.sin(index * math.pi / 3) * 8)
+        shadow_width = round(pose_width * 0.64)
+        shadow_left = x + (pose.width - shadow_width) // 2
+        draw.ellipse(
+            (shadow_left, y + pose.height - 30, shadow_left + shadow_width, y + pose.height - 8),
+            fill=(30, 54, 29, 48),
+        )
         image.alpha_composite(pose, (x, y))
         caption = next(text for start, end, text in captions if start <= index < end)
         box = draw.textbbox((0, 0), caption, font=title_font)
         text_width = box[2] - box[0]
         panel_left = (width - text_width) // 2 - 30
         panel_right = (width + text_width) // 2 + 30
-        draw.rounded_rectangle((panel_left, 618, panel_right, 690), radius=20, fill=(8, 23, 33, 205))
-        draw.text(((width - text_width) // 2, 630), caption, font=title_font, fill=(255, 255, 255, 255))
+        draw.rounded_rectangle((panel_left, 626, panel_right, 696), radius=20, fill=(8, 23, 33, 205))
+        draw.text(((width - text_width) // 2, 636), caption, font=title_font, fill=(255, 255, 255, 255))
         draw.text((42, 34), "DREAMY MEDIA DELIVERY", font=caption_font, fill=(8, 23, 33, 220))
         frame = image.convert("RGB")
         target = staging / f"frame-{index:03d}.png"
