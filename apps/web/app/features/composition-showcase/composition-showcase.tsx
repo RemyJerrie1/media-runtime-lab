@@ -17,7 +17,7 @@ function formatPts(seconds: number) {
 }
 
 export function CompositionShowcase() {
-  const { job, busy, error, run } = useRenderJob();
+  const { job, busy, error, run } = useRenderJob('composition');
   const [source, setSource] = useState<MediaAsset | null>(null);
   const [watermarkMode, setWatermarkMode] = useState<MediaProcessing['watermarkMode']>('visible');
   const [previewSeconds, setPreviewSeconds] = useState(0);

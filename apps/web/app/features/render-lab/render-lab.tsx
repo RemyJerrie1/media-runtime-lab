@@ -24,7 +24,7 @@ const defaults: MediaProcessing = {
 };
 
 export function RenderLab() {
-  const { job, busy, error, run } = useRenderJob();
+  const { job, busy, error, run } = useRenderJob('render');
   const [trimStartSeconds, setTrimStartSeconds] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(1);
   const [encoding, setEncoding] = useState<FfmpegEncoding>({
