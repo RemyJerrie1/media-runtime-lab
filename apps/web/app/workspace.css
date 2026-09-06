@@ -184,8 +184,9 @@
   position: fixed;
   border: 2px solid var(--color-accent);
   border-radius: 22px;
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+  backdrop-filter: brightness(1.5) saturate(1.12);
   box-shadow:
-    0 0 0 9999px rgba(2, 8, 23, 0.58),
     0 0 0 6px color-mix(in srgb, var(--color-accent) 24%, transparent),
     0 16px 55px rgba(0, 0, 0, 0.25);
   transition:
