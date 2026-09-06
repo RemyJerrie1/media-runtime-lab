@@ -1,16 +1,26 @@
 'use client';
 
-import type { MediaAsset, MediaProcessing } from '@media-lab/contracts';
+import { WATERMARK_PRESENTATION, type MediaAsset, type MediaProcessing } from '@media-lab/contracts';
 import { useEffect, useState } from 'react';
 import { artifactUrl, getDemoMedia } from '../../shared/api/render-jobs';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
 import { SectionHeading } from '../../shared/ui/section-heading';
 import styles from './composition-showcase.module.css';
 
+function formatPts(seconds: number) {
+  const wholeSeconds = Math.floor(seconds);
+  const hours = String(Math.floor(wholeSeconds / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((wholeSeconds % 3600) / 60)).padStart(2, '0');
+  const remaining = String(wholeSeconds % 60).padStart(2, '0');
+  const micros = String(Math.floor((seconds % 1) * 1_000_000)).padStart(6, '0');
+  return `${hours}:${minutes}:${remaining}.${micros}`;
+}
+
 export function CompositionShowcase() {
   const { job, busy, error, run } = useRenderJob();
   const [source, setSource] = useState<MediaAsset | null>(null);
   const [watermarkMode, setWatermarkMode] = useState<MediaProcessing['watermarkMode']>('visible');
+  const [previewSeconds, setPreviewSeconds] = useState(0);
   useEffect(() => {
     getDemoMedia()
       .then(setSource)
@@ -95,19 +105,22 @@ export function CompositionShowcase() {
               loop
               playsInline
               src={artifactUrl(source.url)}
+              onTimeUpdate={(event) => setPreviewSeconds(event.currentTarget.currentTime)}
             />
           ) : (
             <p className={styles.loading}>正在準備電影感示範素材…</p>
           )}
           {watermarkMode !== 'none' ? (
-            <div className={styles.watermarkPreview} role="status" aria-live="polite">
-              <strong>示範浮水印</strong>
-              <span>
-                {watermarkMode === 'dynamic' ? '動態追蹤 · 00:05' : '固定識別 · MEDIA LAB'}
-              </span>
+            <div
+              className={`${styles.watermarkPreview} ${watermarkMode === 'dynamic' ? styles.dynamicWatermark : styles.fixedWatermark}`}
+              role="status"
+              aria-live="polite"
+            >
+              {watermarkMode === 'dynamic'
+                ? `${formatPts(previewSeconds)} · ${WATERMARK_PRESENTATION.dynamicSuffix}`
+                : WATERMARK_PRESENTATION.fixedText}
             </div>
           ) : null}
-          <p className={styles.subtitle}>前端即時預覽 · 不代表後端成品</p>
         </div>
       </div>
       {job?.status === 'ready' && job.artifactUrl ? (

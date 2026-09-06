@@ -1,18 +1,19 @@
-import type { CreateRenderJob } from '@media-lab/contracts';
+import { WATERMARK_PRESENTATION, type CreateRenderJob } from '@media-lab/contracts';
 
 export type MediaProcessingPlan = { ffprobeArgs: string[]; ffmpegArgs: string[] };
 
 export function createMediaProcessingPlan(command: CreateRenderJob): MediaProcessingPlan {
   const { encoding, processing } = command;
+  const watermark = WATERMARK_PRESENTATION;
   const filters: string[] = [];
   if (processing.subtitleMode === 'burn-in') filters.push('subtitles=subtitles.srt');
   if (processing.watermarkMode === 'visible')
     filters.push(
-      "drawtext=text='MEDIA LAB':x=w-tw-32:y=h-th-32:fontsize=28:fontcolor=white:box=1:boxcolor=black@0.82:boxborderw=12",
+      `drawtext=text='${watermark.fixedText}':x=w-tw-${watermark.edgeOffset}:y=h-th-${watermark.edgeOffset}:fontsize=${watermark.fontSize}:fontcolor=white:box=1:boxcolor=black@${watermark.boxOpacity}:boxborderw=${watermark.boxPadding}`,
     );
   if (processing.watermarkMode === 'dynamic')
     filters.push(
-      "drawtext=text='%{pts\\:hms} · SESSION':x=w-tw-32:y=32:fontsize=28:fontcolor=white:box=1:boxcolor=black@0.82:boxborderw=12",
+      `drawtext=text='%{pts\\:hms} · ${watermark.dynamicSuffix}':x=w-tw-${watermark.edgeOffset}:y=${watermark.edgeOffset}:fontsize=${watermark.fontSize}:fontcolor=white:box=1:boxcolor=black@${watermark.boxOpacity}:boxborderw=${watermark.boxPadding}`,
     );
   const ffmpegArgs = [
     '-ss',
