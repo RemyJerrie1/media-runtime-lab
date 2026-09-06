@@ -18,9 +18,9 @@ const defaults: MediaProcessing = {
   watermarkMode: 'visible',
   adInsertion: 'none',
   fastStart: true,
-  deliveryFormat: 'mp4',
-  abrLadder: 'none',
-  qualityMetric: 'none',
+  deliveryFormat: 'hls-cmaf',
+  abrLadder: 'standard',
+  qualityMetric: 'vmaf',
 };
 
 export function RenderLab() {

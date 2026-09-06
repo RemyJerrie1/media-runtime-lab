@@ -34,9 +34,6 @@ const VIEWPORT_GAP = 12;
 const TOOLTIP_WIDTH = 320;
 const TOOLTIP_ESTIMATED_HEIGHT = 340;
 const TOOLTIP_TARGET_GAP = 8;
-const RENDER_WAIT_STEP = interviewTourSteps.findIndex(
-  (candidate) => candidate.id === 'render-result',
-);
 const RENDER_DEPENDENT_STEPS = new Set([
   'switch-rendition',
   'inspect-manifest',
@@ -273,10 +270,9 @@ export function InterviewTour() {
     settleTimers.push(
       window.setTimeout(() => {
         if (targetFound) return;
-        if (RENDER_DEPENDENT_STEPS.has(step.id) && RENDER_WAIT_STEP >= 0) {
-          setFeedback('轉檔仍在進行，導覽已回到處理進度，完成後會自動繼續。');
-          window.sessionStorage.setItem(TOUR_STEP_KEY, String(RENDER_WAIT_STEP));
-          setStepIndex(RENDER_WAIT_STEP);
+        if (RENDER_DEPENDENT_STEPS.has(step.id)) {
+          setFeedback('本次任務沒有產生這項串流證據，已略過這一步。');
+          window.setTimeout(advance, 900);
           return;
         }
         setFeedback('找不到導覽目標，已結束導覽並恢復頁面操作。');
