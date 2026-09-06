@@ -39,6 +39,9 @@ const RENDER_DEPENDENT_STEPS = new Set([
   'inspect-manifest',
   'inspect-vmaf-results',
 ]);
+const NEXT_TOPIC_STEP = interviewTourSteps.findIndex(
+  (candidate) => candidate.id === 'open-composition',
+);
 
 function readRect(element: HTMLElement): Rect {
   const rect = element.getBoundingClientRect();
@@ -284,6 +287,12 @@ export function InterviewTour() {
     });
     observer.observe(document.body, { childList: true, subtree: true });
     const completion = step.completion;
+    const continueToNextTopic = () => {
+      if (NEXT_TOPIC_STEP < 0) return;
+      window.sessionStorage.setItem(TOUR_STEP_KEY, String(NEXT_TOPIC_STEP));
+      setFeedback(null);
+      setStepIndex(NEXT_TOPIC_STEP);
+    };
     const onTargetEvent = (event: Event) => {
       if (!target || !target.contains(event.target as Node)) return;
       if (completion.type === 'input' && completion.validate) {
@@ -311,6 +320,10 @@ export function InterviewTour() {
           return;
         }
         if (!completion.matches(detail)) return;
+        if (step.id === 'render-result') {
+          continueToNextTopic();
+          return;
+        }
       }
       advance();
     };
@@ -335,7 +348,15 @@ export function InterviewTour() {
       completion.name === 'media-lab:render-state' &&
       currentTarget?.textContent?.includes('READY')
     ) {
-      settleTimers.push(window.setTimeout(advance, 350));
+      settleTimers.push(
+        window.setTimeout(
+          step.id === 'render-result' ? continueToNextTopic : advance,
+          350,
+        ),
+      );
+    }
+    if (step.id === 'render-result') {
+      settleTimers.push(window.setTimeout(continueToNextTopic, 5000));
     }
     const routeTimer =
       completion.type === 'route'

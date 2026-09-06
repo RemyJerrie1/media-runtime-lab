@@ -189,7 +189,7 @@ export function RenderLab() {
           <legend>剪輯與編碼</legend>
           <div className="demo-speed-note">
             <strong>Demo 快速設定</strong>
-            <span>1 秒、Ultrafast、單一 MP4；約 5 秒完成。ABR／HLS／VMAF 可在下方開啟。</span>
+            <span>1 秒、Ultrafast；導覽顯示 5 秒進度後繼續，ABR／HLS／VMAF 留在背景完成。</span>
           </div>
           <div className="editor-grid">
             <label>

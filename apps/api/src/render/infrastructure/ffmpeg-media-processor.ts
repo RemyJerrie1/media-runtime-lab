@@ -45,8 +45,9 @@ export class FfmpegMediaProcessor {
       { id: '720p', width: 1280, height: 720, bitrateKbps: 2500 },
       { id: '1080p', width: 1920, height: 1080, bitrateKbps: 4500 },
     ] as const;
-    const renditions = [];
-    for (const rendition of ladder) {
+    // Renditions are independent. Running them concurrently keeps the guided demo
+    // responsive while preserving the same real FFmpeg, CMAF and VMAF evidence.
+    const renditions = await Promise.all(ladder.map(async (rendition) => {
       const playlist = resolve(directory, `${rendition.id}.m3u8`);
       const encoded = resolve(directory, `${rendition.id}.mp4`);
       const scale = `scale=${rendition.width}:${rendition.height}:force_original_aspect_ratio=decrease,pad=${rendition.width}:${rendition.height}:(ow-iw)/2:(oh-ih)/2`;
@@ -114,7 +115,7 @@ export class FfmpegMediaProcessor {
         job.processing.qualityMetric === 'vmaf'
           ? await this.measureVmaf(binary, input, encoded, rendition.width, rendition.height)
           : null;
-      renditions.push({
+      return {
         ...rendition,
         playlistUrl: `/streams/${job.id}/${rendition.id}.m3u8`,
         checksum: await this.files.checksum(encoded),
@@ -125,8 +126,8 @@ export class FfmpegMediaProcessor {
             : vmaf === null
               ? ('unavailable' as const)
               : ('measured' as const),
-      });
-    }
+      };
+    }));
     const master = [
       '#EXTM3U',
       '#EXT-X-VERSION:7',
