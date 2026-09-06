@@ -1,0 +1,16 @@
+meta {
+  name: Get MP4 Artifact (Range)
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/artifacts/{{jobId}}.mp4
+  body: none
+  auth: none
+}
+headers {
+  Range: bytes=0-1023
+}
+tests {
+  test("artifact supports byte ranges", function () { expect(res.status).to.equal(206); expect(res.headers["content-type"]).to.include("video/mp4"); });
+}

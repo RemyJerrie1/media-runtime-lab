@@ -234,8 +234,22 @@ canvas {
 .docs {
   max-width: 1120px;
 }
-.endpoint-list {
+.endpoint-groups {
   margin-top: 50px;
+}
+.endpoint-group {
+  margin-top: 38px;
+}
+.endpoint-group > header h2 {
+  margin-bottom: 6px;
+  font-size: var(--type-title-sm);
+}
+.endpoint-group > header p {
+  margin: 0;
+  color: var(--muted);
+}
+.endpoint-list {
+  margin-top: 16px;
   border-top: 1px solid var(--line);
 }
 .endpoint-list article {
@@ -254,7 +268,7 @@ code {
   padding: 4px 8px;
   font-weight: 700;
 }
-.endpoint-list h2 {
+.endpoint-list h3 {
   font:
     600 21px ui-monospace,
     monospace;

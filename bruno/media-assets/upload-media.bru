@@ -1,0 +1,24 @@
+meta {
+  name: Upload Media Asset
+  type: http
+  seq: 1
+}
+post {
+  url: {{baseUrl}}/v1/media
+  body: multipartForm
+  auth: none
+}
+headers {
+  x-tenant-id: {{tenantId}}
+  x-api-key: {{apiKey}}
+}
+body:multipart-form {
+  file: @file(../docs/media/product-demo.mp4)
+}
+script:post-response {
+  bru.setVar("assetId", res.body.id);
+  bru.setVar("sourceUrl", res.body.url);
+}
+tests {
+  test("media asset is created", function () { expect(res.status).to.equal(201); expect(res.body.id).to.be.a("string"); });
+}

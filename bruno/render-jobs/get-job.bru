@@ -9,8 +9,8 @@ get {
   auth: none
 }
 headers {
-  x-tenant-id: bruno-tenant
-  x-api-key: local-demo-key
+  x-tenant-id: {{tenantId}}
+  x-api-key: {{apiKey}}
 }
 tests {
   test("job is addressable", function () {

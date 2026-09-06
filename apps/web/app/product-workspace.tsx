@@ -13,9 +13,9 @@ const tabs: [TabId, string, string][] = [
   ['overview', '平台概覽', '核心價值與系統範圍'],
   ['render', '影音工作台', '剪輯、編碼與交付'],
   ['composition', '媒體合成', '字幕、精靈圖與時間軸'],
-  ['cost', '人工智慧成本', '用量、預算與歸因'],
-  ['operations', '維運證據', '目標、復原與追蹤'],
-  ['architecture', '系統架構', '邊界與責任分工'],
+  ['cost', '成本', '用量與預算'],
+  ['operations', '維運', '狀態與追蹤'],
+  ['architecture', '架構', '服務邊界'],
 ];
 
 function Overview() {
@@ -155,6 +155,7 @@ export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: Tab
               aria-controls={`panel-${id}`}
               tabIndex={active === id ? 0 : -1}
               data-tour={`tab-${id}`}
+              className={['cost', 'operations', 'architecture'].includes(id) ? 'workspace-tab-secondary' : undefined}
               onClick={() => selectActive(id)}
             >
               <strong>{label}</strong>
@@ -166,7 +167,7 @@ export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: Tab
           <a href="/design-system" data-tour="open-design-system">
             設計系統預覽
           </a>
-          <a href="/api-reference">介面規格參考</a>
+          <a href="/api-reference">API 文件</a>
         </nav>
       </aside>
       <div className="workspace-content">

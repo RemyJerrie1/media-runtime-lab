@@ -9,8 +9,8 @@ post {
   auth: none
 }
 headers {
-  x-tenant-id: bruno-tenant
-  x-api-key: local-demo-key
+  x-tenant-id: {{tenantId}}
+  x-api-key: {{apiKey}}
 }
 body:json {
   {"projectId":"x","template":"portrait","durationSeconds":999,"narration":"","idempotencyKey":"short"}
