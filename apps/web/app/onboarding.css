@@ -103,6 +103,9 @@ body:has(.tour-layer) .theme-toggle {
   box-shadow: 0 20px 64px rgba(2, 8, 23, 0.42);
   pointer-events: auto;
   overflow-wrap: anywhere;
+  font-family: var(--font-sans);
+  font-kerning: normal;
+  letter-spacing: 0;
 }
 .tour-tooltip::before {
   display: none;
@@ -178,6 +181,7 @@ body:has(.tour-layer) .theme-toggle {
   display: block;
   font-size: var(--type-title-sm);
   line-height: 1.35;
+  letter-spacing: 0;
 }
 .tour-tooltip > p {
   margin: 6px 0;

@@ -33,7 +33,7 @@ const VIEWPORT_GAP = 12;
 // the rendered card intrude into the spotlight on left/right placements.
 const TOOLTIP_WIDTH = 320;
 const TOOLTIP_ESTIMATED_HEIGHT = 340;
-const TOOLTIP_TARGET_GAP = 8;
+const TOOLTIP_TARGET_GAP = 20;
 const RENDER_DEPENDENT_STEPS = new Set([
   'switch-rendition',
   'inspect-manifest',

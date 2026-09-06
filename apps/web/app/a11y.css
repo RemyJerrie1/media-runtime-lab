@@ -28,9 +28,6 @@ select:focus-visible {
   background: var(--color-surface) !important;
   color: var(--color-text) !important;
 }
-:root[data-theme='light'] article :where(strong, h1, h2, h3, p, span) {
-  color: var(--color-text);
-}
 .skip-link {
   position: fixed;
   top: 8px;
