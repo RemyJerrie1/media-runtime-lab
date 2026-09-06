@@ -1,5 +1,5 @@
 meta {
-  name: Stream Render Job Events (SSE)
+  name: 訂閱算圖進度事件（SSE）
   type: http
   seq: 4
 }
@@ -12,5 +12,5 @@ headers {
   Accept: text/event-stream
 }
 docs {
-  Replays persisted events after the cursor, then remains connected for new render.progress events.
+  從游標之後重播已保存的事件，並保持連線以接收新的算圖進度事件。執行前需先建立算圖任務以取得 jobId。
 }
