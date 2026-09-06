@@ -9,11 +9,11 @@ post {
   auth: none
 }
 headers {
-  x-tenant-id: bruno-tenant
-  x-api-key: local-demo-key
+  x-tenant-id: {{tenantId}}
+  x-api-key: {{apiKey}}
 }
 body:json {
-  {"sourceAssetId":"{{assetId}}","projectId":"bruno-proof","template":"landscape","trimStartSeconds":0,"durationSeconds":18,"encoding":{"codec":"libx264","preset":"medium","rateControl":"crf","crf":23,"bitrateKbps":4000,"gop":60,"fps":30},"processing":{"frameRateMode":"cfr","audioSampleRate":48000,"audioSync":"async-resample","subtitleMode":"webvtt","watermarkMode":"visible","adInsertion":"none","fastStart":true},"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
+  {"sourceAssetId":"{{assetId}}","projectId":"bruno-proof","template":"landscape","trimStartSeconds":0,"durationSeconds":18,"encoding":{"codec":"libx264","preset":"medium","rateControl":"crf","crf":23,"bitrateKbps":4000,"gop":60,"fps":30},"processing":{"frameRateMode":"cfr","audioSampleRate":48000,"audioSync":"async-resample","subtitleMode":"webvtt","watermarkMode":"visible","adInsertion":"none","fastStart":true,"deliveryFormat":"hls-cmaf","abrLadder":"standard","qualityMetric":"vmaf"},"narration":"A governed deterministic media render.","idempotencyKey":"bruno-proof-001"}
 }
 tests {
   test("same command returns the same identity", function () {

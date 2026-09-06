@@ -1,0 +1,21 @@
+meta {
+  name: Provision Demo Media Asset
+  type: http
+  seq: 2
+}
+post {
+  url: {{baseUrl}}/v1/media/demo
+  body: none
+  auth: none
+}
+headers {
+  x-tenant-id: {{tenantId}}
+  x-api-key: {{apiKey}}
+}
+script:post-response {
+  bru.setVar("assetId", res.body.id);
+  bru.setVar("sourceUrl", res.body.url);
+}
+tests {
+  test("demo asset is ready", function () { expect(res.status).to.equal(201); expect(res.body.url).to.include("/media/"); });
+}

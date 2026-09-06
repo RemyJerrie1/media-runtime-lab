@@ -1,0 +1,17 @@
+meta {
+  name: Get Operations Snapshot
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/v1/operations
+  body: none
+  auth: none
+}
+headers {
+  x-tenant-id: {{tenantId}}
+  x-api-key: {{apiKey}}
+}
+tests {
+  test("SLO and workflow telemetry are exposed", function () { expect(res.status).to.equal(200); expect(res.body.targets.renderSuccessRate).to.equal(0.999); expect(res.body.commands).to.be.a("number"); });
+}

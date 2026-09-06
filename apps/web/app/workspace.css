@@ -50,6 +50,14 @@
   border-color: var(--color-accent);
   background: var(--color-surface-raised);
 }
+.workspace-tabs button.workspace-tab-secondary:not([aria-selected='true']) {
+  min-height: 56px;
+  opacity: 0.68;
+}
+.workspace-tabs button.workspace-tab-secondary:not([aria-selected='true']) strong {
+  font-size: 15px;
+  font-weight: 650;
+}
 .workspace-tabs button:focus-visible,
 .workspace-links a:focus-visible {
   outline: 3px solid var(--color-accent);

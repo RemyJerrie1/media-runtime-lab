@@ -1,0 +1,13 @@
+meta {
+  name: Get HLS Media Playlist or CMAF Segment
+  type: http
+  seq: 3
+}
+get {
+  url: {{baseUrl}}/streams/{{jobId}}/{{streamFilename}}
+  body: none
+  auth: none
+}
+docs {
+  Set streamFilename to a Media Playlist, initialization fragment, or CMAF media segment returned by the Master Playlist and its child playlists.
+}

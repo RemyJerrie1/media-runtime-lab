@@ -1,0 +1,13 @@
+meta {
+  name: Get HLS Master Playlist
+  type: http
+  seq: 2
+}
+get {
+  url: {{baseUrl}}/streams/{{jobId}}/master.m3u8
+  body: none
+  auth: none
+}
+tests {
+  test("master playlist is delivered", function () { expect(res.status).to.equal(200); expect(res.headers["content-type"]).to.include("mpegurl"); });
+}

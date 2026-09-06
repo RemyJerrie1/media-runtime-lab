@@ -1,0 +1,16 @@
+meta {
+  name: Stream Render Job Events (SSE)
+  type: http
+  seq: 4
+}
+get {
+  url: {{baseUrl}}/v1/render-jobs/{{jobId}}/events?tenantId={{tenantId}}&accessToken={{apiKey}}&after=0
+  body: none
+  auth: none
+}
+headers {
+  Accept: text/event-stream
+}
+docs {
+  Replays persisted events after the cursor, then remains connected for new render.progress events.
+}
