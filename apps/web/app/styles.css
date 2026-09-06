@@ -250,15 +250,20 @@ canvas {
   color: var(--muted);
 }
 .endpoint-list {
+  display: grid;
+  gap: 14px;
   margin-top: 16px;
-  border-top: 1px solid var(--line);
 }
 .endpoint-list article {
   display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 22px;
-  padding: 28px 0;
-  border-bottom: 1px solid var(--line);
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 26px;
+  min-height: 164px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 30px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-text) 4%, transparent);
 }
 code {
   align-self: start;
@@ -283,16 +288,52 @@ small {
   color: var(--amber);
 }
 .contract {
-  margin-top: 60px;
+  margin-top: 72px;
 }
-.contract pre {
-  white-space: pre-wrap;
-  background: var(--panel);
+.contract h2 {
+  margin: 8px 0 24px;
+}
+.contract-flow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.contract-flow li {
+  position: relative;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 25px;
-  color: #cdd8e3;
-  font-size: 16px;
+  border-radius: 10px;
+  padding: 14px 10px;
+  background: var(--panel);
+  color: var(--ink);
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+}
+.guarantee-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.guarantee-grid article {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  background: var(--panel);
+}
+.guarantee-grid h3 {
+  margin: 0;
+}
+.guarantee-grid p {
+  margin: 10px 0 16px;
+  color: var(--muted);
+}
+.guarantee-grid small {
+  color: var(--cyan);
+  font-family: var(--font-mono);
 }
 @media (max-width: 850px) {
   body {
@@ -324,5 +365,18 @@ small {
   }
   .nav nav {
     display: none;
+  }
+  .contract-flow,
+  .guarantee-grid {
+    grid-template-columns: 1fr;
+  }
+  .endpoint-list article {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    min-height: 0;
+    padding: 22px;
+  }
+  .endpoint-list article > code {
+    width: max-content;
   }
 }

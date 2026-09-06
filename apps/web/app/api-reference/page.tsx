@@ -18,22 +18,12 @@ const endpointGroups = [
   ]},
 ] as const;
 
-const guarantees = `已接受 → 合成中 → ABR 編碼 → VMAF 驗證 → CMAF 封裝 → 已就緒
-       ↘ 失敗       ↘ 失敗       ↘ 失敗       ↘ 失敗
-
-來源素材：受驗證的影片上傳後取得媒體資產識別碼。
-ABR Ladder：實際產生 360p／540p／720p／1080p 四個 H.264 + AAC Rendition。
-HLS + CMAF：輸出 Master Playlist、各畫質 Media Playlist、初始化片段與 fragmented MP4 Segments。
-VMAF：以來源與各 Rendition 實際比對；執行環境缺少 libvmaf 時回報 unavailable，不填入範例分數。
-證據鏈：任務 JSON 回傳解析度、碼率、VMAF、Manifest URL、SHA-256、Trace ID 與 Request ID。
-追蹤：POST /v1/render-jobs 接受 W3C traceparent 與 x-request-id，串起任務、事件、成品與成本。
-驗證：指令與狀態 API 使用租戶識別與存取金鑰；事件串流使用同等範圍的查詢憑證。
-治理：每個租戶都有請求限流與 Token 額度，/v1/operations 回傳即時用量與證據鏈。
-冪等性：PostgreSQL 唯一限制加上租戶交易鎖。
-復原：Worker 中斷後可重新取得過期的工作租約。
-重播：從最後事件識別碼繼續持久化事件序列。
-原子性：就緒狀態、Manifest、Rendition 收據、雜湊與事件共用同一交易。
-隔離：每次讀取與指令都限定在已驗證租戶。`;
+const guarantees = [
+  { title: '處理品質', description: '驗證來源影片，產生四種畫質，並以 VMAF 記錄實際品質。', detail: '360p／540p／720p／1080p · H.264 + AAC' },
+  { title: '串流交付', description: '同時提供 MP4 範圍請求與 HLS/CMAF 自適應串流。', detail: 'Master Playlist · Media Playlist · CMAF Segments' },
+  { title: '任務可靠性', description: '冪等指令避免重複執行；中斷後可接續事件並重新取得工作。', detail: 'Idempotency Key · Last-Event-ID · Worker Lease' },
+  { title: '追蹤與隔離', description: '每次操作限定在租戶範圍，並串起任務、事件與成品證據。', detail: 'Trace ID · Request ID · SHA-256' },
+] as const;
 
 export default function ApiReference() {
   return <main>
@@ -53,7 +43,20 @@ export default function ApiReference() {
           </section>;
         })}
       </div>
-      <section className="contract"><h2 data-tour="api-guarantees">運行保證</h2><pre>{guarantees}</pre></section>
+      <section className="contract" data-tour="api-guarantees">
+        <p className="eyebrow">處理流程</p>
+        <h2>從接收任務到成品就緒</h2>
+        <ol className="contract-flow" aria-label="算圖任務處理流程">
+          {['已接受', '合成', 'ABR 編碼', '品質驗證', 'CMAF 封裝', '已就緒'].map((stage) => <li key={stage}>{stage}</li>)}
+        </ol>
+        <div className="guarantee-grid">
+          {guarantees.map((item) => <article key={item.title}>
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            <small>{item.detail}</small>
+          </article>)}
+        </div>
+      </section>
     </section>
   </main>;
 }
