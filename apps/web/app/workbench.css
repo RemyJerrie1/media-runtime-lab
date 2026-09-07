@@ -249,6 +249,11 @@ legend {
 }
 .artifact-preview > label select {
   min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
 }
 .artifact-preview > a {
   display: inline-flex;
