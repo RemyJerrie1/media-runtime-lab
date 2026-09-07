@@ -45,6 +45,10 @@
   background: var(--color-surface-raised);
   color: var(--color-text);
 }
+:root[data-theme='light'] .editor-grid select,
+:root[data-theme='light'] .artifact-preview select {
+  color-scheme: light;
+}
 :root[data-theme='light'] .ffmpeg-command code,
 :root[data-theme='light'] .encode-receipt code,
 :root[data-theme='light'] .contract pre {

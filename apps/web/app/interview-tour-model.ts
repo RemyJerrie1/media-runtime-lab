@@ -52,7 +52,7 @@ export const interviewTourSteps: InterviewTourStep[] = [
     instruction: '示範影片已就緒。直接使用，或換成自己的影片。',
     completion: { type: 'click' },
     tab: 'render',
-    placement: 'right',
+    placement: 'left',
   },
   {
     id: 'adjust-quality',

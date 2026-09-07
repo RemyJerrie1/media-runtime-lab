@@ -10,6 +10,24 @@
 
 <a href="./docs/media/product-demo-dark.mp4"><img src="./docs/media/product-demo-dark.gif" width="960" alt="Media Runtime Lab 深色模式產品導覽" /></a>
 
+### 轉檔與畫質設定
+
+以 CRF、Preset、GOP 與 ABR 畫質階梯建立串流成品，送出前先顯示預估碼率、VMAF 等級與容量。
+
+<img src="./docs/media/processing-workflow-dark.gif" width="960" alt="深色模式轉檔與畫質設定" />
+
+### 設計系統
+
+明暗主題共用語意色彩、排版、焦點狀態與元件規格，並以 WCAG 對比檢查驗證。
+
+<img src="./docs/media/design-system-dark.gif" width="960" alt="深色模式設計系統" />
+
+### Bruno API 回歸測試
+
+Bruno collection 依「媒體資產、算圖任務、維運與可觀測性、串流與成品交付」分類，可直接檢查請求參數、狀態碼、回應欄位與事件流程。
+
+<a href="./docs/media/bruno-api-workflow.mp4"><img src="./docs/media/bruno-api-workflow.gif" width="960" alt="Bruno API 回歸測試操作畫面" /></a>
+
 ## 主要功能
 
 - 來源素材：使用內建示範影片或上傳 MP4、MOV、WebM、MKV。
@@ -44,23 +62,22 @@ packages/contracts/       前後端共用 Zod schema
 bruno/                    API 回歸測試
 ```
 
-## 本機啟動
+## 本機執行與服務管理
 
-Windows 開機後，在任意 PowerShell 視窗執行：
+完成一次 CLI 設定後，可在任意 PowerShell 工作目錄管理整套服務：
 
 ```powershell
 media-lab start
 ```
 
-常用指令：
+| 指令                | 說明                                                  |
+| ------------------- | ----------------------------------------------------- |
+| `media-lab start`   | 啟動 PostgreSQL、API 與 Web，通過健康檢查後開啟瀏覽器 |
+| `media-lab status`  | 檢查 3000、4000 與 5432 連接埠的服務狀態              |
+| `media-lab restart` | 停止本專案服務後重新啟動                              |
+| `media-lab stop`    | 停止 Web、API 與本專案 PostgreSQL                     |
 
-```powershell
-media-lab status
-media-lab restart
-media-lab stop
-```
-
-也可在專案根目錄執行：
+在專案根目錄可使用對應的 pnpm scripts：
 
 ```powershell
 pnpm demo
@@ -76,17 +93,17 @@ pnpm demo:stop
 
 ## API
 
-| 分類 | 端點 | 用途 |
-| --- | --- | --- |
-| 媒體資產 | `POST /v1/media` | 上傳來源影片 |
-| 媒體資產 | `POST /v1/media/demo` | 準備內建示範素材 |
-| 媒體資產 | `GET /media/:assetId` | 預覽來源影片 |
-| 轉檔任務 | `POST /v1/render-jobs` | 建立處理任務 |
-| 轉檔任務 | `GET /v1/render-jobs/:id` | 查詢任務狀態 |
-| 轉檔任務 | `GET /v1/render-jobs/:id/events` | 接收 SSE 進度事件 |
-| 串流交付 | `GET /artifacts/:jobId.mp4` | 播放或下載 MP4 |
+| 分類     | 端點                              | 用途                |
+| -------- | --------------------------------- | ------------------- |
+| 媒體資產 | `POST /v1/media`                  | 上傳來源影片        |
+| 媒體資產 | `POST /v1/media/demo`             | 準備內建示範素材    |
+| 媒體資產 | `GET /media/:assetId`             | 預覽來源影片        |
+| 轉檔任務 | `POST /v1/render-jobs`            | 建立處理任務        |
+| 轉檔任務 | `GET /v1/render-jobs/:id`         | 查詢任務狀態        |
+| 轉檔任務 | `GET /v1/render-jobs/:id/events`  | 接收 SSE 進度事件   |
+| 串流交付 | `GET /artifacts/:jobId.mp4`       | 播放或下載 MP4      |
 | 串流交付 | `GET /streams/:jobId/master.m3u8` | 取得 HLS 主播放清單 |
-| 維運 | `GET /v1/operations` | 查詢任務與用量摘要 |
+| 維運     | `GET /v1/operations`              | 查詢任務與用量摘要  |
 
 Bruno collection 位於 `bruno/`，執行方式：
 

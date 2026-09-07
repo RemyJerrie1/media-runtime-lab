@@ -31,7 +31,7 @@ const TARGET_PADDING = 8;
 const VIEWPORT_GAP = 12;
 // Keep this in sync with `.tour-tooltip`; positioning with a narrower width lets
 // the rendered card intrude into the spotlight on left/right placements.
-const TOOLTIP_WIDTH = 320;
+const TOOLTIP_WIDTH = 380;
 const TOOLTIP_ESTIMATED_HEIGHT = 340;
 const TOOLTIP_TARGET_GAP = 20;
 const RENDER_DEPENDENT_STEPS = new Set([

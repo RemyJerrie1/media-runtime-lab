@@ -72,6 +72,15 @@ legend {
     16px ui-monospace,
     monospace;
 }
+.editor-grid select,
+.artifact-preview select {
+  color-scheme: dark;
+}
+.editor-grid select option,
+.artifact-preview select option {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
 .editor-grid input:disabled {
   opacity: 0.7;
 }
@@ -268,6 +277,12 @@ legend {
   overflow-wrap: anywhere;
   font-size: var(--type-caption);
 }
+.rendition-receipt > div:last-child dd {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 @media (max-width: 900px) {
   .rendition-receipt {
     grid-template-columns: 1fr 1fr;
@@ -277,12 +292,17 @@ legend {
 .source-upload { border-color: var(--color-accent) !important; }
 .source-picker {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(300px, 1.1fr);
-  gap: 22px;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(380px, 1.18fr);
+  gap: 28px;
   align-items: stretch;
 }
+.source-picker > * {
+  min-width: 0;
+}
 .source-preview {
+  position: relative;
   aspect-ratio: 16 / 9;
+  width: 100%;
   min-height: 220px;
   overflow: hidden;
   border: 1px solid var(--color-border-strong);
@@ -290,10 +310,12 @@ legend {
   background: #050a12;
 }
 .source-preview video {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 220px;
+  max-width: 100%;
   object-fit: contain;
 }
 .source-loading {
@@ -308,16 +330,17 @@ legend {
   justify-content: center;
   gap: 12px;
   padding: 8px 4px;
+  min-width: 0;
 }
 .source-details h3,
 .source-details p { margin: 0; }
 .source-details h3 { font-size: var(--type-title-sm); }
 .source-details p,
-.source-details small { color: var(--color-text-muted); line-height: 1.6; }
-.source-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.source-details small { color: var(--color-text-muted); line-height: 1.5; }
+.source-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .source-actions > .ds-button,
 .source-actions > .source-file-button {
-  width: 240px;
+  width: 100%;
   min-height: 52px;
   margin-top: 0;
   padding: 12px 22px;
@@ -340,4 +363,5 @@ legend {
 .source-file-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-width: 850px) {
   .source-picker { grid-template-columns: 1fr; }
+  .source-actions { grid-template-columns: 1fr; }
 }

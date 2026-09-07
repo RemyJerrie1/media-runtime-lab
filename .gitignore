@@ -17,5 +17,8 @@ docs/media/design-system-frames/
 **/.runtime/
 .demo-logs/
 .capture-dark-*/
+.capture-*/
 .demo-capture/
+docs/media/docs-*.png
+docs/media/processing-dark-source.png
 **/__pycache__/
