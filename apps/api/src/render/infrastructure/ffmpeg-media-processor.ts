@@ -4,7 +4,7 @@ import ffprobe from '@ffprobe-installer/ffprobe';
 import ffmpegPath from 'ffmpeg-static';
 import { spawn } from 'node:child_process';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import type { ArtifactReceipt } from '../domain/workflow-store';
 import { MediaFilesService } from './media-files.service';
 
@@ -211,12 +211,13 @@ export class FfmpegMediaProcessor {
         '-i',
         source,
         '-lavfi',
-        `[1:v]trim=start=${trimStartSeconds}:duration=${durationSeconds},setpts=PTS-STARTPTS,scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps},format=yuv420p[reference];[0:v]setpts=PTS-STARTPTS,fps=${fps},format=yuv420p[distorted];[distorted][reference]libvmaf=shortest=1:log_fmt=json:log_path=${report.replaceAll('\\', '/')}`,
+        `[1:v]trim=start=${trimStartSeconds}:duration=${durationSeconds},setpts=PTS-STARTPTS,scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps},format=yuv420p[reference];[0:v]setpts=PTS-STARTPTS,fps=${fps},format=yuv420p[distorted];[distorted][reference]libvmaf=shortest=1:log_fmt=json:log_path=${basename(report)}`,
         '-f',
         'null',
         '-',
       ],
       'FFMPEG_VMAF_FAILED',
+      dirname(report),
     );
     const result = JSON.parse(await readFile(report, 'utf8')) as {
       pooled_metrics?: { vmaf?: { mean?: number } };
@@ -264,9 +265,9 @@ export class FfmpegMediaProcessor {
     };
   }
 
-  private execute(binary: string, args: string[], failureCode: string) {
+  private execute(binary: string, args: string[], failureCode: string, cwd?: string) {
     return new Promise<string>((resolvePromise, reject) => {
-      const child = spawn(binary, args, { windowsHide: true });
+      const child = spawn(binary, args, { windowsHide: true, cwd });
       let stdout = '';
       let stderr = '';
       child.stdout.on('data', (chunk: Buffer) => {
