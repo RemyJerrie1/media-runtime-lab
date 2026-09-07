@@ -133,12 +133,12 @@ export function RenderLab() {
               </video>
             </div>
             <div className="source-details">
-              <span className="artifact-badge">{usingDemo ? '內建示範素材' : '自訂素材'}</span>
-              <h3>{sourceAsset?.fileName ?? '媒體運行實驗室示範影片.mp4'}</h3>
+              <span className="artifact-badge">{usingDemo ? '示範素材' : '自訂素材'}</span>
+              <h3>{usingDemo ? '倉鼠示範影片' : sourceAsset?.fileName}</h3>
               <p>
                 {sourceAsset
-                  ? `MP4 · ${(sourceAsset.sizeBytes / 1024 / 1024).toFixed(2)} MB · 已可交給後端 Worker`
-                  : '預覽已就緒；後端正在註冊可供轉檔的素材。'}
+                  ? `${(sourceAsset.sizeBytes / 1024 / 1024).toFixed(2)} MB · 已就緒`
+                  : '可先預覽，素材準備中…'}
               </p>
               <div className="source-actions" data-tour="choose-source">
                 <Button
@@ -157,10 +157,10 @@ export function RenderLab() {
                     }
                   }}
                 >
-                  使用這支示範影片
+                  使用示範影片
                 </Button>
                 <label className="source-file-button">
-                  換成自己的影片
+                  上傳影片
                   <input
                     type="file"
                     accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
@@ -181,7 +181,7 @@ export function RenderLab() {
                   />
                 </label>
               </div>
-              <small>示範影片含提示音；支援 MP4／MOV／WebM／MKV，最大 200 MB</small>
+              <small>MP4／MOV／WebM／MKV · 上限 200 MB</small>
             </div>
           </div>
         </fieldset>
