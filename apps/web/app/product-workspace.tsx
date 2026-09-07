@@ -23,23 +23,23 @@ function Overview() {
     <section className="workspace-overview">
       <p className="eyebrow">媒體運行實驗室</p>
       <h1>影音平台營運後台</h1>
-      <p className="lede">統一管理轉檔、串流交付、服務品質與用量。</p>
+      <p className="lede">從影片轉檔、媒體合成到串流交付，集中查看任務進度與處理結果。</p>
       <div className="overview-grid" data-tour="overview-summary">
         <article>
-          <span>處理流程</span>
-          <strong>上傳 → 轉檔 → 交付</strong>
+          <span>影音工作台</span>
+          <strong>上傳 → 轉檔 → 串流交付</strong>
         </article>
         <article>
-          <span>服務狀態</span>
-          <strong>監控 → 復原 → 追蹤</strong>
+          <span>媒體合成</span>
+          <strong>字幕 → 浮水印 → 時間軸</strong>
         </article>
         <article>
-          <span>任務控制</span>
-          <strong>去重 → 續傳 → 完成</strong>
+          <span>任務與用量</span>
+          <strong>進度 → 成品 → 成本</strong>
         </article>
         <article>
-          <span>用量管理</span>
-          <strong>紀錄 → 歸因 → 額度</strong>
+          <span>工程文件</span>
+          <strong>設計系統 → API → Bruno</strong>
         </article>
       </div>
     </section>

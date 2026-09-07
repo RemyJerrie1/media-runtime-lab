@@ -120,27 +120,27 @@ export function RenderLab() {
           ))}
         </div>
         <EncodingDecision input={encoding} measuredRenditions={renditions} />
-        <fieldset className="source-upload" data-tour="choose-source">
+        <fieldset className="source-upload">
           <legend>1. 選擇來源素材</legend>
           <div className="source-picker">
             <div className="source-preview">
-              {sourceAsset ? (
-                <video controls muted preload="metadata" src={artifactUrl(sourceAsset.url)}>
-                  您的瀏覽器不支援影片播放。
-                </video>
-              ) : (
-                <div className="source-loading">正在準備示範素材…</div>
-              )}
+              <video
+                controls
+                preload="metadata"
+                src={sourceAsset ? artifactUrl(sourceAsset.url) : '/media/product-demo.mp4'}
+              >
+                您的瀏覽器不支援影片播放。
+              </video>
             </div>
             <div className="source-details">
               <span className="artifact-badge">{usingDemo ? '內建示範素材' : '自訂素材'}</span>
-              <h3>{sourceAsset?.fileName ?? '正在載入影片'}</h3>
+              <h3>{sourceAsset?.fileName ?? '媒體運行實驗室示範影片.mp4'}</h3>
               <p>
                 {sourceAsset
                   ? `MP4 · ${(sourceAsset.sizeBytes / 1024 / 1024).toFixed(2)} MB · 已可交給後端 Worker`
-                  : '後端正在建立可直接操作的預設素材。'}
+                  : '預覽已就緒；後端正在註冊可供轉檔的素材。'}
               </p>
-              <div className="source-actions">
+              <div className="source-actions" data-tour="choose-source">
                 <Button
                   type="button"
                   disabled={uploading}
@@ -181,7 +181,7 @@ export function RenderLab() {
                   />
                 </label>
               </div>
-              <small>支援 MP4／MOV／WebM／MKV，最大 200 MB</small>
+              <small>示範影片含提示音；支援 MP4／MOV／WebM／MKV，最大 200 MB</small>
             </div>
           </div>
         </fieldset>

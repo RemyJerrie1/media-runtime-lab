@@ -114,7 +114,16 @@ export class FfmpegMediaProcessor {
         );
         const vmaf =
           job.processing.qualityMetric === 'vmaf'
-            ? await this.measureVmaf(binary, input, encoded, rendition.width, rendition.height)
+            ? await this.measureVmaf(
+                binary,
+                input,
+                encoded,
+                rendition.width,
+                rendition.height,
+                job.trimStartSeconds,
+                job.durationSeconds,
+                job.encoding.fps,
+              )
             : null;
         return {
           ...rendition,
@@ -180,6 +189,9 @@ export class FfmpegMediaProcessor {
     rendition: string,
     width: number,
     height: number,
+    trimStartSeconds: number,
+    durationSeconds: number,
+    fps: number,
   ) {
     if (this.vmafAvailable === undefined) {
       const filters = await this.execute(
@@ -199,7 +211,7 @@ export class FfmpegMediaProcessor {
         '-i',
         source,
         '-lavfi',
-        `[1:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2[reference];[0:v][reference]libvmaf=log_fmt=json:log_path=${report.replaceAll('\\', '/')}`,
+        `[1:v]trim=start=${trimStartSeconds}:duration=${durationSeconds},setpts=PTS-STARTPTS,scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps},format=yuv420p[reference];[0:v]setpts=PTS-STARTPTS,fps=${fps},format=yuv420p[distorted];[distorted][reference]libvmaf=shortest=1:log_fmt=json:log_path=${report.replaceAll('\\', '/')}`,
         '-f',
         'null',
         '-',
