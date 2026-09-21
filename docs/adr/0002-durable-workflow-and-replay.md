@@ -12,11 +12,14 @@ Process-local Maps and RxJS Subjects cannot preserve idempotency, work ownership
 
 - Persist jobs, monotonic events, work leases, and artifacts in PostgreSQL.
 - Serialize commands per tenant with a transaction advisory lock and enforce identity with a database unique constraint.
-- Treat the outbox row as durable work ownership. Workers claim with `FOR UPDATE SKIP LOCKED`, receive a bounded lease, and release after each legal transition.
+- Treat the outbox row as durable work ownership. Workers claim with `FOR UPDATE SKIP LOCKED`, renew a five-second lease every second, and fence every mutation by worker, attempt and lease expiry. Terminal transitions complete the outbox row.
 - Reclaim expired leases so a different worker can resume from authoritative job state.
 - Store every transition with a monotonically increasing sequence. SSE reads persisted events after `Last-Event-ID`, so late and reconnecting consumers do not depend on process memory.
 - Commit ready state, artifact URL/checksum, terminal event, and outbox completion in one transaction.
 - Keep the application layer dependent on `WorkflowStore`, never on PostgreSQL or the in-memory adapter.
+- Depend on the `MediaProcessor` port for rendering and propagate lease cancellation to its FFmpeg adapter.
+- After ten failed attempts, persist an explicit failed transition. An expired final attempt remains reclaimable for terminalization after a crash.
+- Render into immutable attempt-specific paths so a stale child cannot overwrite a successfully registered artifact.
 
 ## Consequences
 

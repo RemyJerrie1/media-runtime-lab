@@ -201,13 +201,20 @@ export class PostgresWorkflowStore implements WorkflowStore {
       tenant_id: string;
       attempt: number;
     }>(
-      `WITH candidate AS (SELECT id FROM render_outbox WHERE attempt < 10 AND ((state='pending' AND available_at<=now()) OR (state='leased' AND lease_until<now())) ORDER BY available_at FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE render_outbox o SET state='leased',worker_id=$1,lease_until=now()+($2::text||' milliseconds')::interval,attempt=o.attempt+1,updated_at=now() FROM candidate WHERE o.id=candidate.id RETURNING o.id,o.job_id,o.tenant_id,o.attempt`,
+      `WITH candidate AS (SELECT id FROM render_outbox WHERE ((state='pending' AND available_at<=now()) OR (state='leased' AND lease_until<now())) ORDER BY available_at FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE render_outbox o SET state='leased',worker_id=$1,lease_until=now()+($2::text||' milliseconds')::interval,attempt=o.attempt+1,updated_at=now() FROM candidate WHERE o.id=candidate.id RETURNING o.id,o.job_id,o.tenant_id,o.attempt`,
       [workerId, leaseMs],
     );
     const row = result.rows[0];
     return row
       ? { id: row.id, jobId: row.job_id, tenantId: row.tenant_id, workerId, attempt: row.attempt }
       : undefined;
+  }
+  async renew(work: ClaimedWork, leaseMs: number) {
+    const result = await this.pool.query(
+      "UPDATE render_outbox SET lease_until=now()+($1::text||' milliseconds')::interval,updated_at=now() WHERE id=$2 AND worker_id=$3 AND attempt=$4 AND state='leased' AND lease_until>now()",
+      [leaseMs, work.id, work.workerId, work.attempt],
+    );
+    return result.rowCount === 1;
   }
   async advance(
     work: ClaimedWork,
@@ -218,8 +225,8 @@ export class PostgresWorkflowStore implements WorkflowStore {
   ) {
     return this.transaction(async (client) => {
       const locked = await client.query<{ snapshot: RenderJob }>(
-        "SELECT j.snapshot FROM render_jobs j JOIN render_outbox o ON o.job_id=j.id WHERE j.id=$1 AND j.tenant_id=$2 AND o.id=$3 AND o.worker_id=$4 AND o.state='leased' FOR UPDATE",
-        [work.jobId, work.tenantId, work.id, work.workerId],
+        "SELECT j.snapshot FROM render_jobs j JOIN render_outbox o ON o.job_id=j.id WHERE j.id=$1 AND j.tenant_id=$2 AND o.id=$3 AND o.worker_id=$4 AND o.state='leased' AND o.attempt=$5 AND o.lease_until>clock_timestamp() FOR UPDATE",
+        [work.jobId, work.tenantId, work.id, work.workerId, work.attempt],
       );
       if (!locked.rowCount) return;
       const next = new RenderJobAggregate(locked.rows[0]!.snapshot).advance(
@@ -260,8 +267,8 @@ export class PostgresWorkflowStore implements WorkflowStore {
   }
   async release(work: ClaimedWork, error?: string) {
     await this.pool.query(
-      "UPDATE render_outbox SET state='pending',worker_id=NULL,lease_until=NULL,last_error=$1,available_at=now()+interval '1 second',updated_at=now() WHERE id=$2 AND worker_id=$3",
-      [error ?? null, work.id, work.workerId],
+      "UPDATE render_outbox SET state='pending',worker_id=NULL,lease_until=NULL,last_error=$1,available_at=now()+(LEAST(60,power(2,attempt-1))::text||' seconds')::interval,updated_at=now() WHERE id=$2 AND worker_id=$3 AND attempt=$4 AND state='leased' AND lease_until>now()",
+      [error ?? null, work.id, work.workerId, work.attempt],
     );
   }
   async activeCount(tenantId: string) {

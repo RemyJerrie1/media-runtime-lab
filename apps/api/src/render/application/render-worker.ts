@@ -1,10 +1,11 @@
-import { Inject, Injectable, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { RenderOrchestrator } from './render-orchestrator';
 
 @Injectable()
 export class RenderWorker implements OnModuleInit, OnApplicationShutdown {
   private timer?: NodeJS.Timeout;
   private running = false;
+  private readonly logger = new Logger(RenderWorker.name);
   private readonly workerId = `worker-${crypto.randomUUID()}`;
   constructor(@Inject(RenderOrchestrator) private readonly renders: RenderOrchestrator) {}
   onModuleInit() {
@@ -19,6 +20,11 @@ export class RenderWorker implements OnModuleInit, OnApplicationShutdown {
     this.running = true;
     try {
       await this.renders.processNext(this.workerId);
+    } catch (error) {
+      this.logger.error(
+        'Render worker tick failed',
+        error instanceof Error ? error.stack : String(error),
+      );
     } finally {
       this.running = false;
     }

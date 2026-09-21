@@ -10,6 +10,7 @@ import { PostgresWorkflowStore } from './render/infrastructure/postgres-workflow
 import { MediaController } from './render/interfaces/media.controller';
 import { MediaFilesService } from './render/infrastructure/media-files.service';
 import { FfmpegMediaProcessor } from './render/infrastructure/ffmpeg-media-processor';
+import { MEDIA_PROCESSOR } from './render/domain/media-processor';
 
 export async function createWorkflowStore(
   databaseUrl = process.env.DATABASE_URL,
@@ -34,6 +35,7 @@ export async function createWorkflowStore(
     TenantPolicy,
     MediaFilesService,
     FfmpegMediaProcessor,
+    { provide: MEDIA_PROCESSOR, useExisting: FfmpegMediaProcessor },
     {
       provide: WORKFLOW_STORE,
       useFactory: createWorkflowStore,

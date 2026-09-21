@@ -1,1 +1,1 @@
-{"$schema":"https://turbo.build/schema.json","tasks":{"dev":{"cache":false,"persistent":true},"build":{"dependsOn":["^build"],"outputs":[".next/**","dist/**"]},"typecheck":{"dependsOn":["^typecheck"]},"test":{"dependsOn":["^build"],"outputs":["coverage/**"]}}}
+{"$schema":"https://turbo.build/schema.json","tasks":{"dev":{"cache":false,"persistent":true},"build":{"dependsOn":["^build"],"outputs":[".next/**","dist/**"]},"typecheck":{"dependsOn":["^typecheck"]},"test":{"dependsOn":["^build"],"cache":false,"env":["DATABASE_URL","FFMPEG_BINARY","FFPROBE_BINARY"],"outputs":[]}}}

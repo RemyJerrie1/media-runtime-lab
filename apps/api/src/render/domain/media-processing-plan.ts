@@ -2,7 +2,12 @@ import { WATERMARK_PRESENTATION, type CreateRenderJob } from '@media-lab/contrac
 
 export type MediaProcessingPlan = { ffprobeArgs: string[]; ffmpegArgs: string[] };
 
-export function createMediaProcessingPlan(command: CreateRenderJob): MediaProcessingPlan {
+type ProcessingCommand = Pick<
+  CreateRenderJob,
+  'encoding' | 'processing' | 'trimStartSeconds' | 'durationSeconds'
+>;
+
+export function createMediaProcessingPlan(command: ProcessingCommand): MediaProcessingPlan {
   const { encoding, processing } = command;
   const watermark = WATERMARK_PRESENTATION;
   const filters: string[] = [];
@@ -45,4 +50,32 @@ export function createMediaProcessingPlan(command: CreateRenderJob): MediaProces
     ffprobeArgs: ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', 'input.mp4'],
     ffmpegArgs,
   };
+}
+
+export function createRenditionProcessingPlan(
+  command: ProcessingCommand,
+  rendition: { width: number; height: number; bitrateKbps: number },
+): MediaProcessingPlan {
+  const plan = createMediaProcessingPlan({
+    ...command,
+    encoding: { ...command.encoding, rateControl: 'bitrate', bitrateKbps: rendition.bitrateKbps },
+  });
+  const args = plan.ffmpegArgs;
+  const scale = `scale=${rendition.width}:${rendition.height}:force_original_aspect_ratio=decrease,pad=${rendition.width}:${rendition.height}:(ow-iw)/2:(oh-ih)/2`;
+  const filterIndex = args.indexOf('-vf');
+  if (filterIndex >= 0) args[filterIndex + 1] = `${scale},${args[filterIndex + 1]}`;
+  else args.splice(args.length - 1, 0, '-vf', scale);
+  args.splice(
+    args.length - 1,
+    0,
+    '-maxrate',
+    `${Math.round(rendition.bitrateKbps * 1.07)}k`,
+    '-bufsize',
+    `${rendition.bitrateKbps * 2}k`,
+    '-keyint_min',
+    String(command.encoding.gop),
+    '-sc_threshold',
+    '0',
+  );
+  return plan;
 }

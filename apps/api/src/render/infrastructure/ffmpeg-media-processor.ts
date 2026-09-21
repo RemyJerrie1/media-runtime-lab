@@ -7,138 +7,150 @@ import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import type { ArtifactReceipt } from '../domain/workflow-store';
 import { MediaFilesService } from './media-files.service';
+import { createRenditionProcessingPlan } from '../domain/media-processing-plan';
+import type { MediaProcessor } from '../domain/media-processor';
 
 @Injectable()
-export class FfmpegMediaProcessor {
+export class FfmpegMediaProcessor implements MediaProcessor {
   private vmafAvailable: boolean | undefined;
-  constructor(@Inject(MediaFilesService) private readonly files: MediaFilesService) {}
+  constructor(
+    @Inject(MediaFilesService)
+    private readonly files: Pick<
+      MediaFilesService,
+      'initialize' | 'sourcePath' | 'artifactPath' | 'streamDirectory' | 'checksum'
+    >,
+  ) {}
 
-  async render(job: RenderJob): Promise<ArtifactReceipt> {
+  async render(job: RenderJob, signal?: AbortSignal): Promise<ArtifactReceipt> {
+    signal?.throwIfAborted();
+    // Immutable attempt-specific paths prevent a stale worker from overwriting a winner.
+    const outputId = crypto.randomUUID();
     const binary = process.env.FFMPEG_BINARY || ffmpegPath;
     if (!binary) throw new Error('FFMPEG_BINARY_UNAVAILABLE');
     await this.files.initialize();
     const input = await this.files.sourcePath(job.sourceAssetId);
-    const output = this.files.artifactPath(job.id);
-    const sourceProbe = await this.probe(input, job.ffprobeArgs);
+    const output = this.files.artifactPath(outputId);
+    await this.probe(input, job.ffprobeArgs, signal);
     const args = [
       '-y',
       ...job.ffmpegArgs.map((value) =>
         value === 'input.mp4' ? input : value === 'output.mp4' ? output : value,
       ),
     ];
-    await this.execute(binary, args, 'FFMPEG_FAILED');
-    await this.probe(output, job.ffprobeArgs);
+    await this.execute(binary, args, 'FFMPEG_FAILED', undefined, signal);
+    const outputProbe = await this.probe(output, job.ffprobeArgs, signal);
+    await this.verifyPlayback(binary, output, signal);
     const artifactChecksum = await this.files.checksum(output);
     if (job.processing.deliveryFormat !== 'hls-cmaf') {
       return {
-        artifactUrl: `/artifacts/${job.id}.mp4`,
+        artifactUrl: `/artifacts/${outputId}.mp4`,
         artifactChecksum,
         manifestUrl: null,
         renditions: [],
-        evidence: this.buildEvidence(job, sourceProbe, 0, 0),
+        evidence: this.buildEvidence(job, outputProbe, 0, 0),
       };
     }
-    const directory = await this.files.streamDirectory(job.id);
-    const ladder = [
-      { id: '360p', width: 640, height: 360, bitrateKbps: 650 },
-      { id: '540p', width: 960, height: 540, bitrateKbps: 1400 },
-      { id: '720p', width: 1280, height: 720, bitrateKbps: 2500 },
-      { id: '1080p', width: 1920, height: 1080, bitrateKbps: 4500 },
-    ] as const;
+    const directory = await this.files.streamDirectory(outputId);
+    const ladder =
+      job.processing.abrLadder === 'standard'
+        ? [
+            { id: '360p', width: 640, height: 360, bitrateKbps: 650 },
+            { id: '540p', width: 960, height: 540, bitrateKbps: 1400 },
+            { id: '720p', width: 1280, height: 720, bitrateKbps: 2500 },
+            { id: '1080p', width: 1920, height: 1080, bitrateKbps: 4500 },
+          ]
+        : [
+            {
+              id: 'source',
+              width: outputProbe.width,
+              height: outputProbe.height,
+              bitrateKbps: Math.max(1, outputProbe.bitrateKbps),
+            },
+          ];
     // Renditions are independent. Running them concurrently keeps the guided demo
     // responsive while preserving the same real FFmpeg, CMAF and VMAF evidence.
-    const renditions = await Promise.all(
+    const siblings = new AbortController();
+    const renditionSignal = signal ? AbortSignal.any([signal, siblings.signal]) : siblings.signal;
+    const results = await Promise.allSettled(
       ladder.map(async (rendition) => {
-        const playlist = resolve(directory, `${rendition.id}.m3u8`);
-        const encoded = resolve(directory, `${rendition.id}.mp4`);
-        const scale = `scale=${rendition.width}:${rendition.height}:force_original_aspect_ratio=decrease,pad=${rendition.width}:${rendition.height}:(ow-iw)/2:(oh-ih)/2`;
-        await this.execute(
-          binary,
-          [
-            '-y',
-            '-ss',
-            String(job.trimStartSeconds),
-            '-i',
-            input,
-            '-t',
-            String(job.durationSeconds),
-            '-vf',
-            scale,
-            '-c:v',
-            'libx264',
-            '-preset',
-            job.encoding.preset,
-            '-b:v',
-            `${rendition.bitrateKbps}k`,
-            '-maxrate',
-            `${Math.round(rendition.bitrateKbps * 1.07)}k`,
-            '-bufsize',
-            `${rendition.bitrateKbps * 2}k`,
-            '-g',
-            String(job.encoding.gop),
-            '-keyint_min',
-            String(job.encoding.gop),
-            '-sc_threshold',
-            '0',
-            '-c:a',
-            'aac',
-            '-ar',
-            String(job.processing.audioSampleRate),
-            '-movflags',
-            '+faststart',
-            encoded,
-          ],
-          'FFMPEG_RENDITION_FAILED',
-        );
-        await this.execute(
-          binary,
-          [
-            '-y',
-            '-i',
-            encoded,
-            '-codec',
-            'copy',
-            '-hls_time',
-            '2',
-            '-hls_playlist_type',
-            'vod',
-            '-hls_segment_type',
-            'fmp4',
-            '-hls_fmp4_init_filename',
-            resolve(directory, `${rendition.id}-init.mp4`),
-            '-hls_segment_filename',
-            resolve(directory, `${rendition.id}-%03d.m4s`),
-            playlist,
-          ],
-          'FFMPEG_CMAF_FAILED',
-        );
-        const vmaf =
-          job.processing.qualityMetric === 'vmaf'
-            ? await this.measureVmaf(
-                binary,
-                input,
-                encoded,
-                rendition.width,
-                rendition.height,
-                job.trimStartSeconds,
-                job.durationSeconds,
-                job.encoding.fps,
-              )
-            : null;
-        return {
-          ...rendition,
-          playlistUrl: `/streams/${job.id}/${rendition.id}.m3u8`,
-          checksum: await this.files.checksum(encoded),
-          vmaf,
-          qualityMetricStatus:
-            job.processing.qualityMetric === 'none'
-              ? ('not-requested' as const)
-              : vmaf === null
-                ? ('unavailable' as const)
-                : ('measured' as const),
-        };
+        try {
+          const playlist = resolve(directory, `${rendition.id}.m3u8`);
+          const encoded = resolve(directory, `${rendition.id}.mp4`);
+          const plan = createRenditionProcessingPlan(job, rendition);
+          await this.execute(
+            binary,
+            [
+              '-y',
+              ...plan.ffmpegArgs.map((value) =>
+                value === 'input.mp4' ? input : value === 'output.mp4' ? encoded : value,
+              ),
+            ],
+            'FFMPEG_RENDITION_FAILED',
+            undefined,
+            renditionSignal,
+          );
+          await this.execute(
+            binary,
+            [
+              '-y',
+              '-i',
+              encoded,
+              '-codec',
+              'copy',
+              '-hls_time',
+              '2',
+              '-hls_playlist_type',
+              'vod',
+              '-hls_segment_type',
+              'fmp4',
+              '-hls_fmp4_init_filename',
+              `${rendition.id}-init.mp4`,
+              '-hls_segment_filename',
+              resolve(directory, `${rendition.id}-%03d.m4s`),
+              playlist,
+            ],
+            'FFMPEG_CMAF_FAILED',
+            directory,
+            renditionSignal,
+          );
+          await this.verifyPlayback(binary, playlist, renditionSignal);
+          const vmaf =
+            job.processing.qualityMetric === 'vmaf'
+              ? await this.measureVmaf(
+                  binary,
+                  input,
+                  encoded,
+                  rendition.width,
+                  rendition.height,
+                  job.trimStartSeconds,
+                  job.durationSeconds,
+                  job.encoding.fps,
+                  renditionSignal,
+                )
+              : null;
+          return {
+            ...rendition,
+            playlistUrl: `/streams/${outputId}/${rendition.id}.m3u8`,
+            checksum: await this.files.checksum(encoded),
+            vmaf,
+            qualityMetricStatus:
+              job.processing.qualityMetric === 'none'
+                ? ('not-requested' as const)
+                : vmaf === null
+                  ? ('unavailable' as const)
+                  : ('measured' as const),
+          };
+        } catch (error) {
+          siblings.abort(error);
+          throw error;
+        }
       }),
     );
+    const renditions = results.map((result) => {
+      if (result.status === 'rejected') throw result.reason;
+      return result.value;
+    });
+    signal?.throwIfAborted();
     const master = [
       '#EXTM3U',
       '#EXT-X-VERSION:7',
@@ -153,13 +165,13 @@ export class FfmpegMediaProcessor {
     await writeFile(masterPath, master, 'utf8');
     const packagedFiles = await readdir(directory);
     return {
-      artifactUrl: `/artifacts/${job.id}.mp4`,
+      artifactUrl: `/artifacts/${outputId}.mp4`,
       artifactChecksum,
-      manifestUrl: `/streams/${job.id}/master.m3u8`,
+      manifestUrl: `/streams/${outputId}/master.m3u8`,
       renditions,
       evidence: this.buildEvidence(
         job,
-        sourceProbe,
+        outputProbe,
         packagedFiles.filter((name) => name.endsWith('.m3u8')).length,
         packagedFiles.filter((name) => name.endsWith('.m4s')).length,
       ),
@@ -192,12 +204,15 @@ export class FfmpegMediaProcessor {
     trimStartSeconds: number,
     durationSeconds: number,
     fps: number,
+    signal?: AbortSignal,
   ) {
     if (this.vmafAvailable === undefined) {
       const filters = await this.execute(
         binary,
         ['-hide_banner', '-filters'],
         'FFMPEG_FILTERS_FAILED',
+        undefined,
+        signal,
       );
       this.vmafAvailable = /\blibvmaf\b/.test(filters);
     }
@@ -218,6 +233,7 @@ export class FfmpegMediaProcessor {
       ],
       'FFMPEG_VMAF_FAILED',
       dirname(report),
+      signal,
     );
     const result = JSON.parse(await readFile(report, 'utf8')) as {
       pooled_metrics?: { vmaf?: { mean?: number } };
@@ -226,12 +242,14 @@ export class FfmpegMediaProcessor {
     return typeof score === 'number' ? Number(score.toFixed(1)) : null;
   }
 
-  private async probe(path: string, configuredArgs: string[]) {
+  private async probe(path: string, configuredArgs: string[], signal?: AbortSignal) {
     const args = configuredArgs.map((value) => (value === 'input.mp4' ? path : value));
     const output = await this.execute(
       process.env.FFPROBE_BINARY || ffprobe.path,
       args,
       'FFPROBE_FAILED',
+      undefined,
+      signal,
     );
     const metadata = JSON.parse(output) as {
       streams?: Array<{
@@ -265,9 +283,31 @@ export class FfmpegMediaProcessor {
     };
   }
 
-  private execute(binary: string, args: string[], failureCode: string, cwd?: string) {
+  private verifyPlayback(binary: string, path: string, signal?: AbortSignal) {
+    return this.execute(
+      binary,
+      ['-v', 'error', '-xerror', '-i', path, '-f', 'null', '-'],
+      'PLAYBACK_DECODE_FAILED',
+      undefined,
+      signal,
+    );
+  }
+
+  private execute(
+    binary: string,
+    args: string[],
+    failureCode: string,
+    cwd?: string,
+    signal?: AbortSignal,
+  ) {
     return new Promise<string>((resolvePromise, reject) => {
+      signal?.throwIfAborted();
       const child = spawn(binary, args, { windowsHide: true, cwd });
+      const abort = () => {
+        child.kill('SIGKILL');
+      };
+      signal?.addEventListener('abort', abort, { once: true });
+      const timeout = setTimeout(abort, 10 * 60 * 1000);
       let stdout = '';
       let stderr = '';
       child.stdout.on('data', (chunk: Buffer) => {
@@ -277,11 +317,15 @@ export class FfmpegMediaProcessor {
         stderr = `${stderr}${chunk.toString()}`.slice(-12000);
       });
       child.once('error', reject);
-      child.once('close', (code: number | null) =>
-        code === 0
-          ? resolvePromise(stdout)
-          : reject(new Error(`${failureCode}:${code}:${stderr.slice(-1200)}`)),
-      );
+      child.once('close', (code: number | null) => {
+        clearTimeout(timeout);
+        signal?.removeEventListener('abort', abort);
+        signal?.aborted
+          ? reject(signal.reason)
+          : code === 0
+            ? resolvePromise(stdout)
+            : reject(new Error(`${failureCode}:${code}:${stderr.slice(-1200)}`));
+      });
     });
   }
 }

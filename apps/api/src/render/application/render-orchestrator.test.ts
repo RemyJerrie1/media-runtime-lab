@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ArtifactReceipt } from '../domain/workflow-store';
+import type { MediaProcessor } from '../domain/media-processor';
 import { InMemoryWorkflowStore } from '../infrastructure/in-memory-render.repository';
 import { OperationsTelemetry } from './operations-telemetry';
 import { RenderOrchestrator } from './render-orchestrator';
@@ -34,7 +36,7 @@ const command = {
 };
 function setup() {
   const store = new InMemoryWorkflowStore();
-  const processor = {
+  const processor: MediaProcessor = {
     render: async (job: { id: string }) => ({
       artifactUrl: `/artifacts/${job.id}.mp4`,
       artifactChecksum: `sha256:${'a'.repeat(64)}`,
@@ -43,9 +45,110 @@ function setup() {
     }),
   };
   const orchestrator = new RenderOrchestrator(store, new OperationsTelemetry(), processor as never);
-  return { store, orchestrator };
+  return { store, orchestrator, processor };
 }
 describe('render orchestration', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+  it('renews a long render so a second worker cannot claim it', async () => {
+    vi.useFakeTimers();
+    const { store, orchestrator, processor } = setup();
+    let finish!: (receipt: ArtifactReceipt) => void;
+    vi.spyOn(processor, 'render').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const job = await orchestrator.create('tenant-1', command, 'trace', 'request', 50000);
+    const processing = orchestrator.processNext('worker-1', false);
+    await vi.advanceTimersByTimeAsync(12000);
+    expect(await store.claimNext('worker-2', 5000)).toBeUndefined();
+    finish({
+      artifactUrl: '/artifacts/receipt.mp4',
+      artifactChecksum: 'sha256:a',
+      manifestUrl: null,
+      renditions: [],
+    });
+    expect(await processing).toBe(true);
+    expect(await orchestrator.get('tenant-1', job.id)).toMatchObject({
+      status: 'ready',
+      attempt: 1,
+    });
+  });
+  it('aborts rendering when renewal fails and does not publish a stale receipt', async () => {
+    vi.useFakeTimers();
+    const { store, orchestrator, processor } = setup();
+    let aborted = false;
+    vi.spyOn(processor, 'render').mockImplementation(
+      (...args: unknown[]) =>
+        new Promise((_resolve, reject) => {
+          const signal = args[1] as AbortSignal;
+          signal.addEventListener(
+            'abort',
+            () => {
+              aborted = true;
+              reject(signal.reason);
+            },
+            { once: true },
+          );
+        }),
+    );
+    vi.spyOn(store, 'renew').mockResolvedValue(false);
+    const job = await orchestrator.create('tenant-1', command, 'trace', 'request', 50000);
+    const processing = orchestrator.processNext('worker-1', false);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(await processing).toBe(false);
+    expect(aborted).toBe(true);
+    expect((await orchestrator.get('tenant-1', job.id))?.artifactUrl).toBeNull();
+  });
+  it('terminates repeated failures and persists a terminal event after ten attempts', async () => {
+    vi.useFakeTimers();
+    const { store, orchestrator, processor } = setup();
+    vi.spyOn(processor, 'render').mockRejectedValue(new Error('FFMPEG_FAILED'));
+    const job = await orchestrator.create('tenant-1', command, 'trace', 'request', 50000);
+    for (let attempt = 1; attempt <= 10; attempt++) {
+      expect(await orchestrator.processNext('worker-1', false)).toBe(false);
+      await vi.advanceTimersByTimeAsync(60000);
+    }
+    expect(processor.render).toHaveBeenCalledTimes(10);
+    expect(await orchestrator.get('tenant-1', job.id)).toMatchObject({
+      status: 'failed',
+      attempt: 10,
+    });
+    expect((await store.listEvents('tenant-1', job.id, 0)).at(-1)?.data.status).toBe('failed');
+    expect(await store.activeCount('tenant-1')).toBe(0);
+    expect(await store.claimNext('worker-2', 5000)).toBeUndefined();
+  });
+  it('finalizes a crash on the last allowed attempt without rendering again', async () => {
+    vi.useFakeTimers();
+    const { store, orchestrator, processor } = setup();
+    const render = vi.spyOn(processor, 'render');
+    const job = await orchestrator.create('tenant-1', command, 'trace', 'request', 50000);
+    for (let attempt = 1; attempt <= 10; attempt++) {
+      expect((await store.claimNext('crashed-worker', 5))?.attempt).toBe(attempt);
+      await vi.advanceTimersByTimeAsync(10);
+    }
+    await orchestrator.processNext('recovery-worker', false);
+    expect(render).not.toHaveBeenCalled();
+    expect(await orchestrator.get('tenant-1', job.id)).toMatchObject({ status: 'failed' });
+  });
+  it('fences an expired lease and an old attempt even when worker IDs are reused', async () => {
+    vi.useFakeTimers();
+    const { store, orchestrator } = setup();
+    await orchestrator.create('tenant-1', command, 'trace', 'request', 50000);
+    const old = (await store.claimNext('worker', 5))!;
+    await vi.advanceTimersByTimeAsync(10);
+    expect(await store.renew(old, 5000)).toBe(false);
+    expect(await store.advance(old, 'composing', 26, 'expired')).toBeUndefined();
+    const fresh = (await store.claimNext('worker', 5000))!;
+    expect(await store.renew(old, 5000)).toBe(false);
+    await store.release(old);
+    expect(await store.advance(old, 'composing', 26, 'stale')).toBeUndefined();
+    expect(await store.advance(fresh, 'composing', 26, 'owned')).toMatchObject({ attempt: 2 });
+  });
   it('returns one identity under concurrent duplicate commands', async () => {
     const { orchestrator } = setup();
     const [first, repeated] = await Promise.all([

@@ -16,6 +16,7 @@ type WorkRow = {
   attempt: number;
   state: 'pending' | 'leased' | 'complete';
   leaseUntil: number;
+  availableAt: number;
   workerId: string | undefined;
 };
 
@@ -95,6 +96,7 @@ export class InMemoryWorkflowStore implements WorkflowStore {
       attempt: 0,
       state: 'pending',
       leaseUntil: 0,
+      availableAt: 0,
       workerId: undefined,
     });
     return { job: structuredClone(job), created: true };
@@ -113,18 +115,31 @@ export class InMemoryWorkflowStore implements WorkflowStore {
   async claimNext(workerId: string, leaseMs: number) {
     const now = Date.now();
     const row = [...this.work.values()].find(
-      (item) => item.state === 'pending' || (item.state === 'leased' && item.leaseUntil < now),
+      (item) =>
+        (item.state === 'pending' && item.availableAt <= now) ||
+        (item.state === 'leased' && item.leaseUntil <= now),
     );
     if (!row) return;
     row.state = 'leased';
     row.workerId = workerId;
     row.leaseUntil = now + leaseMs;
     row.attempt += 1;
-    const job = this.jobs.get(this.jobKey(row.tenantId, row.jobId));
-    if (job) {
-      job.attempt = row.attempt;
-    }
     return { id: row.id, jobId: row.jobId, tenantId: row.tenantId, workerId, attempt: row.attempt };
+  }
+  private owns(row: WorkRow | undefined, work: ClaimedWork): row is WorkRow {
+    return (
+      !!row &&
+      row.state === 'leased' &&
+      row.workerId === work.workerId &&
+      row.attempt === work.attempt &&
+      row.leaseUntil > Date.now()
+    );
+  }
+  async renew(work: ClaimedWork, leaseMs: number) {
+    const row = this.work.get(work.id);
+    if (!this.owns(row, work)) return false;
+    row.leaseUntil = Date.now() + leaseMs;
+    return true;
   }
   async advance(
     work: ClaimedWork,
@@ -136,7 +151,7 @@ export class InMemoryWorkflowStore implements WorkflowStore {
     const key = this.jobKey(work.tenantId, work.jobId);
     const current = this.jobs.get(key);
     const row = this.work.get(work.id);
-    if (!current || !row || row.workerId !== work.workerId) return;
+    if (!current || !this.owns(row, work)) return;
     const next = new RenderJobAggregate(current).advance(status, progress, stage, artifact);
     next.attempt = work.attempt;
     this.jobs.set(key, structuredClone(next));
@@ -162,10 +177,11 @@ export class InMemoryWorkflowStore implements WorkflowStore {
   }
   async release(work: ClaimedWork) {
     const row = this.work.get(work.id);
-    if (row && row.workerId === work.workerId) {
+    if (this.owns(row, work)) {
       row.state = 'pending';
       row.workerId = undefined;
       row.leaseUntil = 0;
+      row.availableAt = Date.now() + Math.min(60, 2 ** (row.attempt - 1)) * 1000;
     }
   }
   async activeCount(tenantId: string) {

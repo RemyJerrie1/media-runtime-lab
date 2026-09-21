@@ -61,25 +61,26 @@ const endpointGroups = [
   },
   {
     name: '串流與成品交付（Streaming & Delivery）',
-    description: '以位元組範圍或 HLS/CMAF 交付處理結果。',
+    description:
+      '以位元組範圍或 HLS/CMAF 交付處理結果。請使用任務回應中的交付 URL，成品 ID 與任務 ID 不同。',
     endpoints: [
       {
         method: 'GET',
-        path: '/artifacts/:jobId.mp4',
+        path: '/artifacts/:artifactId.mp4',
         purpose: '以 HTTP Range Request 串流 FFmpeg 成品',
         contract: '位元組範圍 → MP4 Partial Content',
       },
       {
         method: 'GET',
-        path: '/streams/:jobId/:filename',
+        path: '/streams/:artifactId/:filename',
         purpose: '交付 HLS Master、Media Playlist、初始化片段與 CMAF Segments',
         contract: 'Manifest 或媒體分段 → 自適應串流內容',
       },
       {
         method: 'GET',
-        path: '/streams/:jobId/master.m3u8',
+        path: '/streams/:artifactId/master.m3u8',
         purpose: '取得自適應串流的 HLS 主播放清單',
-        contract: '任務識別碼 → Master Playlist 與各畫質串流',
+        contract: 'manifestUrl → Master Playlist 與各畫質串流',
       },
     ],
   },

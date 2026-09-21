@@ -46,7 +46,7 @@ for (const route of [
   '/v1/render-jobs',
   ':id/events',
   '/v1/operations',
-  '/streams/:jobId/master.m3u8',
+  '/streams/:artifactId/master.m3u8',
 ])
   if (!docs.includes(route)) {
     console.error(`Reference drift: ${route}`);

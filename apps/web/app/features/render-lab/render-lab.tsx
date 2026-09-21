@@ -6,7 +6,7 @@ import { Button } from '../../design-system/button';
 import { MetricCard } from '../../design-system/metric-card';
 import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
-import { artifactUrl, getDemoMedia, uploadMedia } from '../../shared/api/render-jobs';
+import { artifactUrl, getDemoMedia, playbackPath, uploadMedia } from '../../shared/api/render-jobs';
 import { EncodingDecision } from './encoding-decision';
 
 const pipeline = ['檢測', '剪輯', '編碼', '封裝', '驗證', '儲存', '交付', '播放'];
@@ -45,7 +45,9 @@ export function RenderLab() {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const renditions = job?.renditions ?? [];
-  const selectedRendition = renditions.find((rendition) => rendition.id === playbackRendition);
+  const selectedRendition =
+    renditions.find((rendition) => rendition.id === playbackRendition) ?? renditions[0];
+  const selectedRenditionId = selectedRendition?.id ?? playbackRendition;
   useEffect(() => {
     if (!job?.status) return;
     window.dispatchEvent(new CustomEvent('media-lab:render-state', { detail: job.status }));
@@ -476,7 +478,7 @@ export function RenderLab() {
                   預覽畫質
                   <select
                     aria-label="選擇預覽畫質"
-                    value={playbackRendition}
+                    value={selectedRenditionId}
                     onChange={(event) => setPlaybackRendition(event.target.value)}
                   >
                     {renditions.map((rendition) => (
@@ -488,18 +490,14 @@ export function RenderLab() {
                 </label>
               ) : null}
               <video
-                key={`${job.id}-${playbackRendition}`}
+                key={`${job.id}-${selectedRenditionId}`}
                 controls
                 autoPlay
                 muted
                 loop
                 playsInline
                 preload="metadata"
-                src={artifactUrl(
-                  renditions.length
-                    ? `/streams/${job.id}/${playbackRendition}.mp4`
-                    : job.artifactUrl,
-                )}
+                src={artifactUrl(playbackPath(job, selectedRenditionId) ?? job.artifactUrl)}
               >
                 您的瀏覽器不支援影片播放。
               </video>

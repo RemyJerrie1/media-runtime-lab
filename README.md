@@ -128,8 +128,8 @@ pnpm demo:stop
 | 轉檔任務 | `POST /v1/render-jobs`            | 建立處理任務        |
 | 轉檔任務 | `GET /v1/render-jobs/:id`         | 查詢任務狀態        |
 | 轉檔任務 | `GET /v1/render-jobs/:id/events`  | 接收 SSE 進度事件   |
-| 串流交付 | `GET /artifacts/:jobId.mp4`       | 播放或下載 MP4      |
-| 串流交付 | `GET /streams/:jobId/master.m3u8` | 取得 HLS 主播放清單 |
+| 串流交付 | `GET /artifacts/:artifactId.mp4`       | 播放或下載 MP4      |
+| 串流交付 | `GET /streams/:artifactId/master.m3u8` | 取得 HLS 主播放清單 |
 | 維運     | `GET /v1/operations`              | 查詢任務與用量摘要  |
 
 在 Bruno 開啟 `bruno/`，選擇 `local` 環境，依序執行「準備示範素材」與「建立算圖任務」。回應腳本保存 `assetId` 與 `jobId`，供後續請求使用。CLI 入口執行 `render-jobs` 資料夾：
@@ -140,11 +140,15 @@ pnpm bruno
 
 ## 品質檢查
 
+交付 URL 以任務完成回應中的 `artifactUrl`、`manifestUrl` 與 `renditions[].playlistUrl` 為準；不要由任務 ID 自行拼接。每次處理使用獨立成品 ID，避免過期 Worker 覆寫成功成品。Bruno 請先重新查詢已完成任務，取得這些交付變數。
+
 ```powershell
 pnpm verify
 ```
 
 檢查格式、架構邊界、API／Bruno 契約、明暗色彩對比、TypeScript、測試與正式建置。PostgreSQL 整合測試需要 `DATABASE_URL`；未設定會略過。GitHub Actions 提供 PostgreSQL 測試服務，並額外檢查高風險套件漏洞。
+
+媒體整合測試會實際產生短片、編碼 MP4／HLS、解碼分段，檢查浮水印像素、剪輯長度、幀率與音訊取樣率。資料庫測試使用隨機獨立 schema，結束後清除；測試帳號需具備建立 schema 的權限。Turbo 會傳遞資料庫與媒體執行檔環境變數，且不快取測試結果。
 
 ## 實作範圍與限制
 

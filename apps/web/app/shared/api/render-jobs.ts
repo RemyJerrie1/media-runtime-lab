@@ -41,6 +41,14 @@ export function artifactUrl(path: string) {
   return `${API}${path}`;
 }
 
+export function playbackPath(
+  job: Pick<RenderJob, 'artifactUrl' | 'renditions'>,
+  renditionId: string,
+) {
+  const rendition = job.renditions.find((item) => item.id === renditionId);
+  return rendition?.playlistUrl.replace(/\.m3u8$/, '.mp4') ?? job.artifactUrl;
+}
+
 export async function createRenderJob(editor: RenderEditorCommand): Promise<RenderJob> {
   const traceId = crypto.randomUUID().replaceAll('-', '');
   const spanId = crypto.randomUUID().replaceAll('-', '').slice(0, 16);

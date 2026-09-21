@@ -12,6 +12,13 @@ headers {
   x-tenant-id: {{tenantId}}
   x-api-key: {{apiKey}}
 }
+script:post-response {
+  if (res.body.status === 'ready') {
+    bru.setVar('artifactUrl', res.body.artifactUrl);
+    bru.setVar('manifestUrl', res.body.manifestUrl);
+    bru.setVar('streamBaseUrl', res.body.manifestUrl ? res.body.manifestUrl.replace(/\/master\.m3u8$/, '') : '');
+  }
+}
 tests {
   test("job is addressable", function () {
     expect(res.status).to.equal(200);

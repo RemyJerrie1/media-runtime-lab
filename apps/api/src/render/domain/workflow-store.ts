@@ -27,6 +27,7 @@ export interface WorkflowStore {
   findById(tenantId: string, id: string): Promise<RenderJob | undefined>;
   listEvents(tenantId: string, id: string, afterSequence: number): Promise<RenderEvent[]>;
   claimNext(workerId: string, leaseMs: number): Promise<ClaimedWork | undefined>;
+  renew(work: ClaimedWork, leaseMs: number): Promise<boolean>;
   advance(
     work: ClaimedWork,
     status: RenderStatus,

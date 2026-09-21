@@ -87,6 +87,7 @@ export const renderJobSchema = z.object({
   processing: mediaProcessingSchema,
   ffprobeArgs: z.array(z.string()),
   ffmpegArgs: z.array(z.string()),
+  // Delivery URLs are opaque, attempt-specific receipts; never construct them from job.id.
   artifactUrl: z.string().nullable(),
   artifactChecksum: z.string().nullable(),
   manifestUrl: z.string().nullable(),

@@ -3,7 +3,10 @@ import type { CreateRenderJob, RenderEvent, RenderJob, RenderStatus } from '@med
 import { Observable } from 'rxjs';
 import { WORKFLOW_STORE, type ArtifactReceipt, type WorkflowStore } from '../domain/workflow-store';
 import { OperationsTelemetry } from './operations-telemetry';
-import { FfmpegMediaProcessor } from '../infrastructure/ffmpeg-media-processor';
+import { MEDIA_PROCESSOR, type MediaProcessor } from '../domain/media-processor';
+
+const LEASE_MS = 5000;
+const MAX_ATTEMPTS = 10;
 
 /**
  * The render state machine, as data rather than control flow.
@@ -60,7 +63,7 @@ export class RenderOrchestrator {
   constructor(
     @Inject(WORKFLOW_STORE) private readonly store: WorkflowStore,
     @Inject(OperationsTelemetry) private readonly telemetry: OperationsTelemetry,
-    @Inject(FfmpegMediaProcessor) private readonly processor: FfmpegMediaProcessor,
+    @Inject(MEDIA_PROCESSOR) private readonly processor: MediaProcessor,
   ) {}
   async create(
     tenantId: string,
@@ -77,18 +80,39 @@ export class RenderOrchestrator {
     return this.store.findById(tenantId, id);
   }
   async processNext(workerId: string, withDelay = true) {
-    const work = await this.store.claimNext(workerId, 5000);
+    const work = await this.store.claimNext(workerId, LEASE_MS);
     if (!work) return false;
+    const controller = new AbortController();
+    let renewal: Promise<void> | undefined;
+    const timer = setInterval(() => {
+      if (renewal || controller.signal.aborted) return;
+      renewal = this.store
+        .renew(work, LEASE_MS)
+        .then((owned) => {
+          if (!owned) controller.abort(new Error('WORK_LEASE_LOST'));
+        })
+        .catch(() => {
+          controller.abort(new Error('WORK_LEASE_RENEWAL_FAILED'));
+        })
+        .finally(() => {
+          renewal = undefined;
+        });
+    }, 1000);
     try {
       let current = await this.store.findById(work.tenantId, work.jobId);
       let artifact: ArtifactReceipt | undefined;
       if (!current || current.status === 'ready' || current.status === 'failed') return false;
+      // Reclaim even an exhausted lease: a crash on the last attempt must still terminate.
+      if (work.attempt > MAX_ATTEMPTS) throw new Error('RENDER_ATTEMPTS_EXHAUSTED');
       while (current.status !== 'ready' && current.status !== 'failed') {
         const step = STEPS[current.status];
         if (withDelay) await new Promise((resolve) => setTimeout(resolve, step.delay));
-        if (current.status === 'encoding') artifact = await this.processor.render(current);
+        controller.signal.throwIfAborted();
+        if (current.status === 'encoding')
+          artifact = await this.processor.render(current, controller.signal);
         if (current.status === 'packaging' && !artifact)
-          artifact = await this.processor.render(current);
+          artifact = await this.processor.render(current, controller.signal);
+        controller.signal.throwIfAborted();
         const next = await this.store.advance(
           work,
           step.status,
@@ -102,8 +126,24 @@ export class RenderOrchestrator {
       }
       return true;
     } catch (error) {
-      await this.store.release(work, error instanceof Error ? error.message : 'worker failure');
+      if (!controller.signal.aborted && work.attempt >= MAX_ATTEMPTS) {
+        const current = await this.store.findById(work.tenantId, work.jobId);
+        if (current && current.status !== 'ready' && current.status !== 'failed') {
+          const failed = await this.store.advance(
+            work,
+            'failed',
+            current.progress,
+            'RENDER_ATTEMPTS_EXHAUSTED',
+          );
+          if (failed) this.telemetry.transition(failed);
+        }
+      } else {
+        await this.store.release(work, error instanceof Error ? error.message : 'worker failure');
+      }
       return false;
+    } finally {
+      clearInterval(timer);
+      await renewal;
     }
   }
   events(tenantId: string, id: string, afterSequence = 0): Observable<RenderEvent> {
