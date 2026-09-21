@@ -56,7 +56,10 @@ export function playbackPath(
   return rendition?.playlistUrl.replace(/\.m3u8$/, '.mp4') ?? job.artifactUrl;
 }
 
-export async function createRenderJob(editor: RenderEditorCommand): Promise<RenderJob> {
+export async function createRenderJob(
+  editor: RenderEditorCommand,
+  idempotencyKey: string,
+): Promise<RenderJob> {
   const traceId = crypto.randomUUID().replaceAll('-', '');
   const spanId = crypto.randomUUID().replaceAll('-', '').slice(0, 16);
   const response = await fetch(`${API}/v1/render-jobs`, {
@@ -71,7 +74,7 @@ export async function createRenderJob(editor: RenderEditorCommand): Promise<Rend
       projectId: 'portfolio-reel',
       ...editor,
       narration: 'A deterministic media runtime governed by explicit contracts.',
-      idempotencyKey: `portfolio-${Date.now()}`,
+      idempotencyKey,
     }),
   });
   if (!response.ok) throw new Error(`Render command rejected (${response.status})`);

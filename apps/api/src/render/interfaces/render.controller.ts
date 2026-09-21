@@ -8,6 +8,7 @@ import {
   MessageEvent,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Sse,
@@ -65,7 +66,7 @@ export class RenderController {
     }
   }
   @Get('render-jobs/:id') async get(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Headers('x-tenant-id') tenantHeader: string | undefined,
     @Headers('x-api-key') apiKey: string | undefined,
   ) {
@@ -80,7 +81,7 @@ export class RenderController {
     return job;
   }
   @Sse('render-jobs/:id/events') async events(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Query('tenantId') tenantQuery: string | undefined,
     @Query('accessToken') accessToken: string | undefined,
     @Query('after') after: string | undefined,

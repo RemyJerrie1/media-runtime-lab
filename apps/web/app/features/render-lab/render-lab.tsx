@@ -6,6 +6,7 @@ import { Button } from '../../design-system/button';
 import { MetricCard } from '../../design-system/metric-card';
 import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
+import { PendingRenderOperation } from '../../shared/ui/pending-render-operation';
 import { artifactUrl, getDemoMedia, playbackPath, uploadMedia } from '../../shared/api/render-jobs';
 import { EncodingDecision } from './encoding-decision';
 
@@ -24,7 +25,7 @@ const defaults: MediaProcessing = {
 };
 
 export function RenderLab() {
-  const { job, busy, error, run } = useRenderJob('render');
+  const { job, busy, error, run, pending, retry, discardPending } = useRenderJob('render');
   const [trimStartSeconds, setTrimStartSeconds] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(1);
   const [encoding, setEncoding] = useState<FfmpegEncoding>({
@@ -430,7 +431,7 @@ export function RenderLab() {
         </div>
         <Button
           data-tour="submit-render"
-          disabled={busy || uploading || !sourceAsset}
+          disabled={busy || uploading || !sourceAsset || pending}
           onClick={async () => {
             if (!sourceAsset) return;
             setUploadError(null);
@@ -452,6 +453,9 @@ export function RenderLab() {
         >
           {busy || uploading ? '準備中…' : '開始轉檔'}
         </Button>
+        {pending ? (
+          <PendingRenderOperation busy={busy} retry={retry} discard={discardPending} />
+        ) : null}
         {uploadError ? (
           <p className="error" role="alert">
             {uploadError}

@@ -8,6 +8,7 @@ import {
 import { useEffect, useState } from 'react';
 import { artifactUrl, getDemoMedia } from '../../shared/api/render-jobs';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
+import { PendingRenderOperation } from '../../shared/ui/pending-render-operation';
 import { SectionHeading } from '../../shared/ui/section-heading';
 import styles from './composition-showcase.module.css';
 
@@ -21,7 +22,7 @@ function formatPts(seconds: number) {
 }
 
 export function CompositionShowcase() {
-  const { job, busy, error, run } = useRenderJob('composition');
+  const { job, busy, error, run, pending, retry, discardPending } = useRenderJob('composition');
   const [source, setSource] = useState<MediaAsset | null>(null);
   const [watermarkMode, setWatermarkMode] = useState<MediaProcessing['watermarkMode']>('visible');
   const [previewSeconds, setPreviewSeconds] = useState(0);
@@ -59,7 +60,7 @@ export function CompositionShowcase() {
           <button
             type="button"
             data-tour="composition-submit"
-            disabled={!source || busy}
+            disabled={!source || busy || pending}
             onClick={() =>
               source &&
               run({
@@ -93,6 +94,9 @@ export function CompositionShowcase() {
           >
             {busy ? '正在建立任務…' : '產生 FFmpeg 成品'}
           </button>
+          {pending ? (
+            <PendingRenderOperation busy={busy} retry={retry} discard={discardPending} />
+          ) : null}
           {error ? <p role="alert">{error}</p> : null}
           {job ? (
             <p aria-live="polite">

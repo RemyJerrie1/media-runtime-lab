@@ -47,4 +47,15 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-test-evidence
+          path: |
+            .runtime/playwright-report
+            .runtime/playwright-results
+          retention-days: 7
+          include-hidden-files: true
       - run: pnpm audit --audit-level high

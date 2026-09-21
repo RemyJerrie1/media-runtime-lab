@@ -88,7 +88,7 @@ const endpoints = [
     value: asset,
   },
   { name: 'demo', run: getDemoMedia, value: asset },
-  { name: 'create', run: () => createRenderJob(job), value: job },
+  { name: 'create', run: () => createRenderJob(job, 'operation-123'), value: job },
   { name: 'get', run: () => getRenderJob(job.id), value: job },
   { name: 'operations', run: getOperations, value: operations },
 ];
