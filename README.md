@@ -140,6 +140,8 @@ pnpm bruno
 
 ## 品質檢查
 
+Linux CI 使用系統 FFmpeg 與 DejaVu 字型，並在測試前檢查 `drawtext`、`subtitles` 濾鏡。部分平台的 `ffmpeg-static` 不包含文字濾鏡；在 Linux 執行浮水印／字幕處理時，請安裝具備這些濾鏡的 FFmpeg，並設定 `FFMPEG_BINARY`、`FFPROBE_BINARY` 指向對應執行檔。不能以略過浮水印測試替代執行環境修正。
+
 交付 URL 以任務完成回應中的 `artifactUrl`、`manifestUrl` 與 `renditions[].playlistUrl` 為準；不要由任務 ID 自行拼接。每次處理使用獨立成品 ID，避免過期 Worker 覆寫成功成品。Bruno 請先重新查詢已完成任務，取得這些交付變數。
 
 ```powershell

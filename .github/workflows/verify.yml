@@ -24,6 +24,8 @@ jobs:
       DATABASE_URL: postgresql://media:media@localhost:5432/media_runtime
       MEDIA_RUNTIME_API_KEY: ci-test-key
       NODE_ENV: test
+      FFMPEG_BINARY: /usr/bin/ffmpeg
+      FFPROBE_BINARY: /usr/bin/ffprobe
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -31,6 +33,16 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - name: Install media runtime with text rendering
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg fonts-dejavu-core
+      - name: Verify media runtime capabilities
+        run: |
+          "$FFMPEG_BINARY" -hide_banner -filters > /tmp/media-runtime-filters.txt
+          grep -w drawtext /tmp/media-runtime-filters.txt
+          grep -w subtitles /tmp/media-runtime-filters.txt
+          "$FFPROBE_BINARY" -version
       - run: pnpm governance
       - run: pnpm typecheck
       - run: pnpm test
