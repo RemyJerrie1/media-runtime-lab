@@ -21,5 +21,7 @@ overrides:
   form-data: 4.0.6
   nanoid@3: 3.3.18
   postcss: 8.5.26
-  sharp: 0.35.0
+  sharp: 0.35.4
+  js-yaml@4: 4.3.2
+  multer@2: 2.3.0
   uuid: 11.1.1
