@@ -61,7 +61,14 @@ export function useRenderJob(scope: 'render' | 'composition') {
     stream.current = events;
     events.addEventListener('render.progress', (event) => {
       if (stream.current !== events) return;
-      const next = parseRenderJobEvent((event as MessageEvent).data);
+      let next: RenderJob;
+      try {
+        next = parseRenderJobEvent((event as MessageEvent).data);
+      } catch {
+        events.close();
+        setError('收到的任務進度格式不正確，已停止更新；請重新載入以取得後端狀態。');
+        return;
+      }
       lastReceivedSequence.current = Math.max(lastReceivedSequence.current, next.sequence);
       setJob(next);
       if (next.status === 'ready' || next.status === 'failed') events.close();
