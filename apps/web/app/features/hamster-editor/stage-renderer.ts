@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { HamsterScene } from '@media-lab/contracts';
-import { scenePose } from './scene-model';
+import { evaluateScene } from './evaluate-scene';
 
 // Shared procedural scene, independent of React and persistence; render only on change.
 export function createHamsterStage(canvas: HTMLCanvasElement) {
@@ -67,12 +67,14 @@ export function createHamsterStage(canvas: HTMLCanvasElement) {
   const hamster = new THREE.Group();
   hamster.name = 'hamster';
   scene.add(hamster);
-  part(hamster, 'body', fur, [0, 0.95, 0], [0.78, 0.85, 0.6]);
-  part(hamster, 'belly', cream, [0, 0.91, 0.43], [0.59, 0.66, 0.22]);
+  const upper = new THREE.Group();
+  hamster.add(upper);
+  part(upper, 'body', fur, [0, 0.95, 0], [0.78, 0.85, 0.6]);
+  part(upper, 'belly', cream, [0, 0.91, 0.43], [0.59, 0.66, 0.22]);
   const head = new THREE.Group();
   head.name = 'head';
   head.position.set(0, 1.75, 0.15);
-  hamster.add(head);
+  upper.add(head);
   part(head, 'face', fur, [0, 0, 0], [0.77, 0.66, 0.59]);
   for (const side of [-1, 1]) {
     part(head, `ear-${side}`, fur, [side * 0.55, 0.5, -0.04], [0.25, 0.29, 0.15]);
@@ -86,9 +88,9 @@ export function createHamsterStage(canvas: HTMLCanvasElement) {
       [side * 0.31 - 0.024, 0.14, 0.595],
       [0.026, 0.032, 0.016],
     );
-    const arm = part(hamster, `arm-${side}`, fur, [side * 0.65, 1, 0.37], [0.2, 0.36, 0.22]);
+    const arm = part(upper, `arm-${side}`, fur, [side * 0.65, 1, 0.37], [0.2, 0.36, 0.22]);
     arm.rotation.z = side * 0.35;
-    part(hamster, `hand-${side}`, pink, [side * 0.55, 0.75, 0.56], [0.15, 0.13, 0.12]);
+    part(upper, `hand-${side}`, pink, [side * 0.55, 0.75, 0.56], [0.15, 0.13, 0.12]);
     part(hamster, `foot-${side}`, pink, [side * 0.4, 0.13, 0.26], [0.25, 0.13, 0.32]);
     for (const offset of [-1, 1]) {
       const line = part(
@@ -110,15 +112,24 @@ export function createHamsterStage(canvas: HTMLCanvasElement) {
     mouth.rotation.z = side * 0.4;
   }
   part(head, 'nose', pink, [0, -0.14, 0.67], [0.105, 0.073, 0.055]);
-  part(hamster, 'tail', cream, [0, 0.48, -0.64], [0.17, 0.16, 0.18]);
+  part(upper, 'tail', cream, [0, 0.48, -0.64], [0.17, 0.16, 0.18]);
   let disposed = false;
   return {
-    render(document: HamsterScene) {
+    render(document: HamsterScene, timeSeconds = 0) {
       if (disposed) return;
       const width = Math.max(canvas.clientWidth, 1);
-      renderer.setSize(width, (width * 9) / 16, false);
+      if (canvas.width !== Math.floor(width * renderer.getPixelRatio()))
+        renderer.setSize(width, (width * 9) / 16, false);
       scene.background = new THREE.Color(document.background);
-      const pose = scenePose(document);
+      const evaluated = evaluateScene(document, timeSeconds);
+      const pose = evaluated.root;
+      upper.position.y = evaluated.bodyLift;
+      for (const side of [-1, 1]) {
+        const foot = side === -1 ? evaluated.leftFoot : evaluated.rightFoot;
+        hamster.getObjectByName('foot-' + side)!.position.set(foot.x, foot.y, foot.z);
+        upper.getObjectByName('arm-' + side)!.rotation.x = side * evaluated.armSwing;
+        upper.getObjectByName('hand-' + side)!.position.z = 0.56 + side * evaluated.armSwing;
+      }
       hamster.position.set(pose.x, pose.y, pose.z);
       hamster.rotation.y = pose.rotationY;
       hamster.scale.setScalar(pose.scale);

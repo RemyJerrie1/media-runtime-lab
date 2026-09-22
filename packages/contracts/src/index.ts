@@ -224,7 +224,7 @@ export const encodingBenchmarkSchema = z.object({
 });
 
 export const HAMSTER_SCENE_MAX_BYTES = 16 * 1024;
-export const hamsterSceneSchema = z
+export const hamsterSceneV1Schema = z
   .object({
     version: z.literal(1),
     subject: z.literal('hamster'),
@@ -242,4 +242,20 @@ export const hamsterSceneSchema = z
       .strict(),
   })
   .strict();
+export const hamsterSceneSchema = hamsterSceneV1Schema.extend({
+  version: z.literal(2),
+  animation: z
+    .object({
+      durationSeconds: z.literal(5),
+      end: hamsterSceneV1Schema.shape.transform.omit({ scale: true }),
+    })
+    .strict(),
+});
 export type HamsterScene = z.infer<typeof hamsterSceneSchema>;
+export const hamsterSceneDocumentSchema = z
+  .discriminatedUnion('version', [hamsterSceneV1Schema, hamsterSceneSchema])
+  .transform((document): HamsterScene => {
+    if (document.version === 2) return document;
+    const { x, z, heading } = document.transform;
+    return { ...document, version: 2, animation: { durationSeconds: 5, end: { x, z, heading } } };
+  });

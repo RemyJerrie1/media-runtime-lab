@@ -1,5 +1,6 @@
 import {
   hamsterSceneSchema,
+  hamsterSceneDocumentSchema,
   HAMSTER_SCENE_MAX_BYTES,
   type HamsterScene,
 } from '@media-lab/contracts';
@@ -7,10 +8,11 @@ import {
 export const SCENE_STORAGE_KEY = 'media-runtime-hamster-scene-v1';
 export function defaultScene(): HamsterScene {
   return {
-    version: 1,
+    version: 2,
     subject: 'hamster',
     background: '#e8ddd0',
     transform: { x: 0, z: 0, heading: 0, scale: 1 },
+    animation: { durationSeconds: 5, end: { x: 0, z: 0, heading: 0 } },
   };
 }
 export function parseScene(text: string): HamsterScene {
@@ -22,20 +24,11 @@ export function parseScene(text: string): HamsterScene {
   } catch {
     throw new Error('無法讀取 JSON，請選擇有效的場景檔案。');
   }
-  const result = hamsterSceneSchema.safeParse(value);
+  const result = hamsterSceneDocumentSchema.safeParse(value);
   if (!result.success)
-    throw new Error('場景版本或設定不支援，請匯入第 1 版倉鼠場景並檢查數值範圍。');
+    throw new Error('場景版本或設定不支援，請匯入第 1 或第 2 版倉鼠場景並檢查數值範圍。');
   return result.data;
 }
 export function serializeScene(scene: HamsterScene): string {
   return JSON.stringify(hamsterSceneSchema.parse(scene), null, 2);
-}
-export function scenePose(scene: HamsterScene) {
-  return {
-    x: scene.transform.x,
-    y: 0.06,
-    z: scene.transform.z,
-    rotationY: (scene.transform.heading * Math.PI) / 180,
-    scale: scene.transform.scale,
-  };
 }

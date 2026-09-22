@@ -5,6 +5,7 @@ import { HAMSTER_SCENE_MAX_BYTES, type HamsterScene } from '@media-lab/contracts
 import { defaultScene, parseScene, serializeScene, SCENE_STORAGE_KEY } from './scene-model';
 import { loadScene, saveScene } from './scene-storage';
 import { HamsterPreview } from './hamster-preview';
+import { useScenePlayback } from './use-scene-playback';
 import styles from './hamster-editor.module.css';
 
 const controls = [
@@ -20,6 +21,12 @@ export function HamsterEditor() {
   const [loaded, setLoaded] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [endpoint, setEndpoint] = useState<'start' | 'end'>('start');
+  const playback = useScenePlayback();
+  const edited =
+    endpoint === 'start'
+      ? scene.transform
+      : { ...scene.animation.end, scale: scene.transform.scale };
   const revision = useRef(0);
   const mounted = useRef(false);
   const dirty = serializeScene(scene) !== baseline;
@@ -30,7 +37,7 @@ export function HamsterEditor() {
       if (saved) {
         setScene(saved);
         setBaseline(serializeScene(saved));
-        setMessage('已載入本機保存的場景。');
+        setMessage('已載入本機場景；舊版靜態場景會以相同起終點保留，保存時寫入動畫版本。');
       } else setMessage('先擺好倉鼠，再保存你的第一個場景。');
     } catch {
       setError('無法讀取本機場景。原始資料未被覆寫，你仍可編輯與匯出 JSON。');
@@ -58,6 +65,7 @@ export function HamsterEditor() {
     };
   }, [dirty]);
   function change(next: HamsterScene) {
+    playback.seek(endpoint === 'start' ? 0 : 5);
     revision.current++;
     setScene(next);
     setError('');
@@ -104,6 +112,8 @@ export function HamsterEditor() {
       }
       if (!window.confirm('要用匯入的場景取代目前畫面嗎？本機保存內容會保留到你按下保存。')) return;
       change(next);
+      setEndpoint('start');
+      playback.seek(0);
       setMessage('已匯入場景，按下保存可保留至下次開啟。');
     } catch (reason) {
       if (mounted.current && revision.current === started)
@@ -114,9 +124,9 @@ export function HamsterEditor() {
     <section className={styles.editor}>
       <header className={styles.header}>
         <div>
-          <p className="eyebrow">HAMSTER STUDIO · 01</p>
+          <p className="eyebrow">HAMSTER STUDIO · 02</p>
           <h1>給倉鼠一個小舞台</h1>
-          <p>調整位置與朝向，留下屬於你的場景。</p>
+          <p>設定起點與終點，讓倉鼠走過自己的五秒鐘。</p>
         </div>
         <span className={styles.badge}>{dirty ? '尚未保存' : '沒有未保存變更'}</span>
       </header>
@@ -126,19 +136,72 @@ export function HamsterEditor() {
             <strong>場景預覽</strong>
             <span>固定鏡頭 · 16:9</span>
           </div>
-          <HamsterPreview scene={scene} />
-          <p className={styles.note}>一隻倉鼠，一個舞台。腳掌始終貼齊地面。</p>
+          <HamsterPreview scene={scene} time={playback.time} onUnavailable={playback.pause} />
+          <div className={styles.timeline}>
+            <div className={styles.stageHeading}>
+              <strong>動畫預覽</strong>
+              <output aria-label="目前時間">{playback.time.toFixed(2)} / 5.00 秒</output>
+            </div>
+            <label>
+              預覽時間
+              <input
+                aria-label="預覽時間"
+                type="range"
+                min="0"
+                max="5"
+                step="0.01"
+                value={playback.time}
+                onChange={(event) => playback.seek(Number(event.target.value))}
+              />
+            </label>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                disabled={!loaded}
+                onClick={playback.playing ? playback.pause : playback.play}
+              >
+                {playback.playing ? '暫停' : playback.time >= 5 ? '重播' : '播放'}
+              </button>
+              <button type="button" onClick={() => playback.seek(0)}>
+                回到開頭
+              </button>
+            </div>
+            <p className={styles.note}>
+              拖曳只改變預覽時間；右側設定正在編輯的
+              {endpoint === 'start' ? '起點（0 秒）' : '終點（5 秒）'}。切換分頁會暫停播放。
+            </p>
+            {playback.notice && (
+              <p role="status" className={styles.note}>
+                {playback.notice}
+              </p>
+            )}
+          </div>
         </div>
         <fieldset className={styles.controls} disabled={!loaded}>
           <legend>場景設定</legend>
+          <label className={styles.endpoint}>
+            正在編輯
+            <select
+              aria-label="正在編輯"
+              value={endpoint}
+              onChange={(event) => {
+                const next = event.target.value === 'end' ? 'end' : 'start';
+                setEndpoint(next);
+                playback.seek(next === 'start' ? 0 : 5);
+              }}
+            >
+              <option value="start">起點 · 0 秒</option>
+              <option value="end">終點 · 5 秒</option>
+            </select>
+          </label>
           {controls.map(([key, label, min, max, step]) => (
             <label key={key}>
               <span>
                 {label}
                 <output>
                   {key === 'heading'
-                    ? `${scene.transform[key]}°`
-                    : `${scene.transform[key].toFixed(2)}${key === 'scale' ? '×' : ''}`}
+                    ? `${edited[key]}°`
+                    : `${edited[key].toFixed(2)}${key === 'scale' ? '×' : ''}`}
                 </output>
               </span>
               <input
@@ -147,16 +210,43 @@ export function HamsterEditor() {
                 min={min}
                 max={max}
                 step={step}
-                value={scene.transform[key]}
+                value={edited[key]}
                 onChange={(event) =>
-                  change({
-                    ...scene,
-                    transform: { ...scene.transform, [key]: Number(event.target.value) },
-                  })
+                  change(
+                    key !== 'scale' && endpoint === 'end'
+                      ? {
+                          ...scene,
+                          animation: {
+                            ...scene.animation,
+                            end: { ...scene.animation.end, [key]: Number(event.target.value) },
+                          },
+                        }
+                      : {
+                          ...scene,
+                          transform: { ...scene.transform, [key]: Number(event.target.value) },
+                        },
+                  )
                 }
               />
             </label>
           ))}
+          <p className={styles.note}>大小與背景套用整段動畫。位置與朝向只修改選定端點。</p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!window.confirm('套用走路示範會取代目前起終點，保留大小與背景。確定套用？'))
+                return;
+              change({
+                ...scene,
+                transform: { ...scene.transform, x: -1.2, z: 0, heading: 90 },
+                animation: { durationSeconds: 5, end: { x: 0.6, z: 0, heading: 0 } },
+              });
+              setEndpoint('start');
+              playback.seek(0);
+            }}
+          >
+            套用走路示範
+          </button>
           <label className={styles.color}>
             <span>背景顏色</span>
             <input
@@ -186,8 +276,11 @@ export function HamsterEditor() {
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('確定重設為預設場景？目前變更會被取代，本機保存內容暫不變。'))
+              if (window.confirm('確定重設為預設場景？目前變更會被取代，本機保存內容暫不變。')) {
                 change(defaultScene());
+                setEndpoint('start');
+                playback.seek(0);
+              }
             }}
           >
             重設場景

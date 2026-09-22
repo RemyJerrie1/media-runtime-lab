@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 
 const storageKey = 'media-runtime-hamster-scene-v1';
 const scene = {
-  version: 1,
+  version: 2,
   subject: 'hamster',
   background: '#e8ddd0',
   transform: { x: 0, z: 0, heading: 0, scale: 1 },
+  animation: { durationSeconds: 5, end: { x: 0, z: 0, heading: 0 } },
 };
 
 async function ready(page: Page) {

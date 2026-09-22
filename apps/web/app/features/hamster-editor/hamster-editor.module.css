@@ -157,6 +157,36 @@
   color: var(--color-text-muted);
   margin: 0;
 }
+.timeline {
+  display: grid;
+  gap: 16px;
+  padding: 18px 20px;
+  border-top: 1px solid var(--color-border);
+}
+.timeline .stageHeading {
+  padding: 0;
+}
+.timeline output {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+.timeline input {
+  width: 100%;
+  accent-color: var(--color-action);
+}
+.endpoint {
+  display: grid;
+  gap: 8px;
+}
+.endpoint select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+}
 .stage > .note {
   padding: 16px 20px;
 }

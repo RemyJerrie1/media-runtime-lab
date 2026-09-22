@@ -5,12 +5,24 @@ import type { HamsterScene } from '@media-lab/contracts';
 import type { createHamsterStage } from './stage-renderer';
 import styles from './hamster-editor.module.css';
 
-export function HamsterPreview({ scene }: { scene: HamsterScene }) {
+export function HamsterPreview({
+  scene,
+  time,
+  onUnavailable,
+}: {
+  scene: HamsterScene;
+  time: number;
+  onUnavailable: () => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<ReturnType<typeof createHamsterStage> | null>(null);
   const drawRef = useRef<(() => void) | null>(null);
   const currentScene = useRef(scene);
   currentScene.current = scene;
+  const currentTime = useRef(time);
+  currentTime.current = time;
+  const unavailable = useRef(onUnavailable);
+  unavailable.current = onUnavailable;
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState('正在準備小舞台…');
   const [failed, setFailed] = useState(false);
@@ -24,6 +36,7 @@ export function HamsterPreview({ scene }: { scene: HamsterScene }) {
       if (cancelled) return;
       canvas.dataset.ready = 'false';
       setFailed(true);
+      unavailable.current();
       setStatus('3D 預覽暫時無法顯示。場景設定仍保留，請重試或使用支援 WebGL 的瀏覽器。');
     };
     const lost = (event: Event) => {
@@ -38,7 +51,7 @@ export function HamsterPreview({ scene }: { scene: HamsterScene }) {
         stageRef.current = stage;
         const redraw = () => {
           try {
-            stage.render(currentScene.current);
+            stage.render(currentScene.current, currentTime.current);
             if (!canvas.getContext('webgl2')?.isContextLost()) {
               canvas.dataset.ready = 'true';
               setStatus('舞台已就緒');
@@ -64,7 +77,7 @@ export function HamsterPreview({ scene }: { scene: HamsterScene }) {
   }, [attempt]);
   useEffect(() => {
     drawRef.current?.();
-  }, [scene]);
+  }, [scene, time]);
   return (
     <div className={styles.preview}>
       <canvas key={attempt} ref={canvasRef} aria-label="3D 倉鼠場景" />

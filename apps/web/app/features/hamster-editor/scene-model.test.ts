@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defaultScene, parseScene, serializeScene, scenePose } from './scene-model';
+import { defaultScene, parseScene, serializeScene } from './scene-model';
+import { evaluateScene } from './evaluate-scene';
 import { loadScene, saveScene } from './scene-storage';
 
 describe('hamster scene persistence', () => {
@@ -22,7 +23,7 @@ describe('hamster scene persistence', () => {
   });
   it.each([
     '{',
-    JSON.stringify({ ...defaultScene(), version: 2 }),
+    JSON.stringify({ ...defaultScene(), version: 99 }),
     JSON.stringify({ ...defaultScene(), background: 'url(evil)' }),
     JSON.stringify({ ...defaultScene(), extra: true }),
     ...['x', 'z', 'heading', 'scale'].map((key) =>
@@ -54,7 +55,7 @@ describe('hamster scene persistence', () => {
       const scene = defaultScene();
       scene.transform.scale = scale;
       scene.transform.heading = 180;
-      const pose = scenePose(parseScene(serializeScene(scene)));
+      const pose = evaluateScene(parseScene(serializeScene(scene)), 0).root;
       expect(pose.y).toBe(0.06);
       expect(pose.scale).toBe(scale);
       expect(pose.rotationY).toBe(Math.PI);
