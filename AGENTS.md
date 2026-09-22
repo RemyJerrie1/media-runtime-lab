@@ -7,6 +7,8 @@
 3. Never bypass the render state machine. Every transition must be explicit, observable, and idempotent.
 4. Keep AI and provider code behind ports. Deterministic Canvas/FFmpeg composition remains available when provider output is late, invalid, or expensive.
 5. A change is complete only after `pnpm verify`; snapshots may change only with an explicit reason in the commit.
+6. Use `.agents/skills/development/SKILL.md` for delivery. Keep Git hooks enabled. For hook changes, prove passing and blocking behavior with `scripts/codex-gate.test.mjs`; distinguish manual hook execution from automatic dispatch. A pushed change is delivered only after its exact SHA passes remote CI.
+7. Track current scope and acceptance in GitHub issues. Record scope changes and their rationale; link added/deferred work, and use a short ADR for significant architecture decisions. Never silently weaken acceptance to hide a failing check.
 
 ## Review order
 

@@ -32,6 +32,20 @@ description: Deliver a governed end-to-end change in Media Runtime Lab with expl
 
 ## Completion gate
 
+- The executable local gate is `pnpm verify` (governance, typecheck, tests, build), run by both Husky pre-commit and the Codex Stop hook. E2E, real database coverage and media checks still need the appropriate environment and separate evidence; a local pass is not remote CI success.
+- Hook changes require `node --test scripts/codex-gate.test.mjs`, including failing child processes, malformed input and continuation handling. Keep these tests in governance/CI. Validate edited skills with the skill-creator validator when available.
+- Codex matches unified `exec_command` as `Bash`; do not rename matchers based only on the API tool name. See https://learn.chatgpt.com/docs/hooks. Open the repository as the Codex project so its configuration is discoverable; merely running a command in a child repo does not establish hook activation.
+- `.runtime/codex-gate.jsonl` records Stop gate invocations, not a reusable approval receipt. Manually invoking the script tests its behavior but does not prove automatic Codex dispatch. Report those separately. The continuation guard avoids infinite retries and emits a warning, never passing evidence.
+- Never bypass hooks, remove failing acceptance criteria to get green, or claim success from skipped tests. Git hooks can be bypassed by a caller and Codex hooks depend on discovery/trust; neither is a security boundary. Confirm the pushed SHA's CI result separately before reporting delivery complete.
+
+## Plan changes
+
+- Treat the GitHub issue as the current scope and acceptance criteria; local planning documents link to it rather than maintaining a second progress ledger.
+- Implementation details that preserve acceptance belong in the PR/commit explanation. Scope changes require updating the issue and recording what changed, why, and which dependent rounds are affected.
+- Split added or deferred work into linked issues. Close cancelled work with the reason, not as completed acceptance. Keep evidence for superseded decisions instead of silently rewriting history.
+- For significant architecture choices, write a short ADR covering context, decision, alternatives and consequences; link it from the issue/PR. Routine implementation choices do not need an ADR.
+- Changing acceptance requires an explicit rationale and replacement verification; a failing test by itself is not a reason to weaken the gate.
+
 - No reverse dependency across domain boundaries or hidden network call in presentation components.
 - No drift between schema, API, Bruno, consumers and tests.
 - No snapshot churn without a named behavior change.

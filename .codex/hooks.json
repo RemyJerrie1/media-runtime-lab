@@ -22,8 +22,8 @@
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/governance-gate.mjs\"",
             "commandWindows": "powershell -NoProfile -Command \"$root = git rev-parse --show-toplevel; node (Join-Path $root '.codex/hooks/governance-gate.mjs')\"",
-            "timeout": 60,
-            "statusMessage": "Running governance gate"
+            "timeout": 600,
+            "statusMessage": "Running full repository verification"
           }
         ]
       }

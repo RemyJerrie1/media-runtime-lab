@@ -10,7 +10,7 @@
     "build": "turbo build",
     "test": "turbo test",
     "typecheck": "turbo typecheck && tsc -p e2e/tsconfig.json",
-    "governance": "pnpm format:check && node --test scripts/check-boundaries.test.mjs && node scripts/check-boundaries.mjs && node scripts/check-contract-drift.mjs && node scripts/check-a11y-colors.mjs",
+    "governance": "pnpm format:check && node --test scripts/check-boundaries.test.mjs scripts/codex-gate.test.mjs && node scripts/check-boundaries.mjs && node scripts/check-contract-drift.mjs && node scripts/check-a11y-colors.mjs",
     "verify": "pnpm governance && pnpm typecheck && pnpm test && pnpm build",
     "bruno": "node scripts/run-bruno.mjs",
     "prepare": "husky",
