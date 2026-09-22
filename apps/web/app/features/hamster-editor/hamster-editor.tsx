@@ -7,6 +7,7 @@ import { loadScene, saveScene } from './scene-storage';
 import { HamsterPreview } from './hamster-preview';
 import { useScenePlayback } from './use-scene-playback';
 import { CaptionControls } from './caption-controls';
+import { SceneExport } from './scene-export';
 import styles from './hamster-editor.module.css';
 
 const controls = [
@@ -126,7 +127,7 @@ export function HamsterEditor() {
     <section className={styles.editor}>
       <header className={styles.header}>
         <div>
-          <p className="eyebrow">HAMSTER STUDIO · 03</p>
+          <p className="eyebrow">HAMSTER STUDIO · 04</p>
           <h1>給倉鼠一個小舞台</h1>
           <p>讓倉鼠走過自己的五秒鐘，再加上一句想說的話。</p>
         </div>
@@ -178,6 +179,7 @@ export function HamsterEditor() {
               </p>
             )}
           </div>
+          <SceneExport scene={scene} disabled={!loaded || captionDraft} />
         </div>
         <fieldset className={styles.controls} disabled={!loaded}>
           <legend>場景設定</legend>
@@ -307,7 +309,7 @@ export function HamsterEditor() {
         </p>
       )}
       {error && (
-        <p role="alert" className={styles.error}>
+        <p role="alert" aria-label="場景錯誤" className={styles.error}>
           {error}
         </p>
       )}

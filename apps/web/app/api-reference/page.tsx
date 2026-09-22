@@ -1,5 +1,45 @@
 const endpointGroups = [
   {
+    name: '倉鼠場景逐幀輸出（Scene Render）',
+    description:
+      '獨立於影片轉檔的持久化任務。POST 接受 version=1、kind=hamster-scene、scene（v3）及 UUID idempotencyKey；鎖定快照。固定 640×360、24 fps、120 幀、5 秒無聲 MP4。需 PostgreSQL、Playwright Chromium 與 FFmpeg。',
+    endpoints: [
+      {
+        method: 'POST',
+        path: '/v1/scene-render-jobs',
+        purpose: '建立或找回相同操作',
+        contract:
+          '同 key 同內容回原任務；不同內容回 409 IDEMPOTENCY_CONFLICT。每租戶最多 3 筆未完成任務。',
+      },
+      {
+        method: 'GET',
+        path: '/v1/scene-render-jobs/:id',
+        purpose: '重新讀取任務、實際幀數與不可變 receipt',
+        contract:
+          'sceneFingerprint、rendererVersion、status、sequence、attempt、completedFrames、error、receipt；前端每 500ms 輪詢，斷線後可恢復。',
+      },
+      {
+        method: 'POST',
+        path: '/v1/scene-render-jobs/:id/retry',
+        purpose: '重試失敗任務並保留快照',
+        contract: '{ expectedAttempt }；冪等重送不重啟已進行或已完成的 attempt。',
+      },
+      {
+        method: 'POST',
+        path: '/v1/scene-render-jobs/:id/cancel',
+        purpose: '取消尚未完成的任務',
+        contract: '撤銷租約；舊 worker 無法提交 receipt。',
+      },
+      {
+        method: 'GET',
+        path: '/scene-artifacts/:file',
+        purpose: '播放或下載已編碼的 MP4',
+        contract:
+          '使用 receipt.artifactUrl 原值，支援 Range；?download=1 下載。receipt 含 fps、frameCount、durationSeconds、width、height、audioStreams、sizeBytes、checksum。',
+      },
+    ],
+  },
+  {
     name: '媒體資產（Media Assets）',
     description: '建立與讀取轉檔流程使用的來源媒體。',
     endpoints: [

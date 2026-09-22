@@ -107,6 +107,7 @@ test('Bruno media and render contract checks', async ({}, testInfo) => {
       'run',
       'media-assets/provision-demo.bru',
       'render-jobs',
+      'scene-render',
       '--tests-only',
       '--env',
       'local',

@@ -14,7 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { createReadStream } from 'node:fs';
 import { MediaFilesService } from '../infrastructure/media-files.service';
-import { TenantPolicy } from '../application/tenant-policy';
+import { TenantPolicy } from '../../shared/tenant-policy';
 
 @Controller()
 export class MediaController {

@@ -8,15 +8,21 @@ const normalized = (file) => file.replaceAll('\\', '/');
 
 function forbidden(source, target) {
   if (isTest(target)) return 'production imports test code';
-  const backend = 'apps/api/src/render/';
+  const backend = 'apps/api/src/';
   const rules = {
     domain: ['application', 'interfaces', 'infrastructure'],
     application: ['interfaces', 'infrastructure'],
     infrastructure: ['interfaces', 'application'],
   };
   if (source.startsWith(backend) && target.startsWith(backend)) {
-    const owner = source.slice(backend.length).split('/')[0];
-    const destination = target.slice(backend.length).split('/')[0];
+    const [feature, owner] = source.slice(backend.length).split('/');
+    const [other, destination] = target.slice(backend.length).split('/');
+    if (
+      ['render', 'scene-render'].includes(feature) &&
+      ['render', 'scene-render'].includes(other) &&
+      feature !== other
+    )
+      return `cross-feature dependency: ${feature} -> ${other}`;
     if (rules[owner]?.includes(destination)) return `${owner} depends on ${destination}`;
   }
   const web = 'apps/web/app/';

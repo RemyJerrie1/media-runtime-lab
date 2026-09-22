@@ -53,6 +53,23 @@ for (const statement of [
     );
   });
 
+test('scene rendering follows backend layers and cannot import another feature', () => {
+  assert.ok(
+    check({
+      'apps/api/src/scene-render/application/work.ts':
+        "import { value } from '../infrastructure/store';",
+      'apps/api/src/scene-render/infrastructure/store.ts': 'export const value = 1;',
+    }).some((error) => error.includes('application depends on infrastructure')),
+  );
+  assert.ok(
+    check({
+      'apps/api/src/scene-render/application/work.ts':
+        "import { value } from '../../render/domain/model';",
+      'apps/api/src/render/domain/model.ts': 'export const value = 1;',
+    }).some((error) => error.includes('cross-feature dependency')),
+  );
+});
+
 test('resolves alias imports and follows barrels across features', () => {
   const errors = check({
     'apps/web/app/features/a/view.ts': "import { value } from '@/app/bridge';",

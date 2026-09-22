@@ -3,6 +3,30 @@
   max-width: 1440px;
   margin: 0 auto;
 }
+.exportPanel {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-top: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.exportPanel h2,
+.exportPanel p {
+  margin: 0;
+}
+.exportPanel video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #111;
+}
+.exportPanel progress {
+  width: 100%;
+  accent-color: var(--color-action);
+}
+.exportPanel details {
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
 .header {
   display: flex;
   justify-content: space-between;

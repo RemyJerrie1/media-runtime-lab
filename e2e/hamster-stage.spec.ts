@@ -168,7 +168,7 @@ test('WebGL and storage unavailable still allow a visible recovery path', async 
     };
   });
   await page.goto('/hamster');
-  await expect(page.getByRole('tabpanel').getByRole('alert')).toContainText('無法讀取本機場景');
+  await expect(page.getByRole('alert', { name: '場景錯誤' })).toContainText('無法讀取本機場景');
   await expect(page.getByRole('button', { name: '重新載入預覽' })).toBeVisible();
   await slider(page, '大小', '0.65');
   await expect(page.getByRole('button', { name: '匯出 JSON' })).toBeEnabled();
@@ -214,7 +214,7 @@ test('unsupported saved document remains intact until explicit overwrite; back n
   });
   await page.goto('/overview');
   await page.getByRole('button', { name: '打開倉鼠小舞台 →' }).click();
-  await expect(page.getByRole('tabpanel').getByRole('alert')).toContainText('無法讀取本機場景');
+  await expect(page.getByRole('alert', { name: '場景錯誤' })).toContainText('無法讀取本機場景');
   expect(await page.evaluate((key) => localStorage.getItem(key), storageKey)).toBe(unsupported);
   await slider(page, '朝向', '20');
   page.once('dialog', (dialog) => dialog.dismiss());

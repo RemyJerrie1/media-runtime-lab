@@ -6,7 +6,15 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const executable = process.platform === 'win32' ? 'bru.cmd' : 'bru';
 const result = spawnSync(
   executable,
-  ['run', 'media-assets/provision-demo.bru', 'render-jobs', '--tests-only', '--env', 'local'],
+  [
+    'run',
+    'media-assets/provision-demo.bru',
+    'render-jobs',
+    'scene-render',
+    '--tests-only',
+    '--env',
+    'local',
+  ],
   {
     cwd: resolve(root, 'bruno'),
     encoding: 'utf8',

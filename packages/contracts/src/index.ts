@@ -318,3 +318,65 @@ export const hamsterSceneDocumentSchema = z
       caption: defaultHamsterCaption(),
     };
   });
+
+export const SCENE_RENDERER_VERSION = 'hamster-1';
+export const createSceneRenderSchema = z
+  .object({
+    version: z.literal(1),
+    kind: z.literal('hamster-scene'),
+    scene: hamsterSceneSchema,
+    idempotencyKey: z.string().uuid(),
+  })
+  .strict();
+export type CreateSceneRender = z.infer<typeof createSceneRenderSchema>;
+export const sceneReceiptSchema = z
+  .object({
+    version: z.literal(1),
+    rendererVersion: z.literal(SCENE_RENDERER_VERSION),
+    sceneFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    artifactUrl: z.string().regex(/^\/scene-artifacts\/[a-f0-9-]{36}\.mp4$/),
+    width: z.literal(640),
+    height: z.literal(360),
+    fps: z.literal(24),
+    frameCount: z.literal(120),
+    durationSeconds: z
+      .number()
+      .min(5 - 1 / 24)
+      .max(5 + 1 / 24),
+    audioStreams: z.literal(0),
+    sizeBytes: z.number().int().positive(),
+    checksum: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+  })
+  .strict();
+export type SceneReceipt = z.infer<typeof sceneReceiptSchema>;
+export const sceneRenderJobSchema = z
+  .object({
+    version: z.literal(1),
+    kind: z.literal('hamster-scene'),
+    id: z.string().uuid(),
+    scene: hamsterSceneSchema,
+    sceneFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    rendererVersion: z.literal(SCENE_RENDERER_VERSION),
+    status: z.enum(['accepted', 'rendering', 'encoding', 'ready', 'failed', 'cancelled']),
+    completedFrames: z.number().int().min(0).max(120),
+    sequence: z.number().int().positive(),
+    attempt: z.number().int().nonnegative(),
+    error: z.string().nullable(),
+    receipt: sceneReceiptSchema.nullable(),
+    updatedAt: z.string().datetime(),
+  })
+  .strict()
+  .refine(
+    (job) =>
+      job.status === 'ready'
+        ? job.completedFrames === 120 &&
+          job.receipt !== null &&
+          job.receipt.sceneFingerprint === job.sceneFingerprint &&
+          job.receipt.rendererVersion === job.rendererVersion
+        : job.receipt === null,
+    'SCENE_INCONSISTENT_RECEIPT',
+  );
+export type SceneRenderJob = z.infer<typeof sceneRenderJobSchema>;
+export const retrySceneRenderSchema = z
+  .object({ expectedAttempt: z.number().int().nonnegative() })
+  .strict();

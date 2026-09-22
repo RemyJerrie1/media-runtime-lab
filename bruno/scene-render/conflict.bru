@@ -1,0 +1,20 @@
+meta {
+ name: Scene conflict
+ type: http
+ seq: 3
+}
+post {
+ url: {{baseUrl}}/v1/scene-render-jobs
+ body: json
+ auth: none
+}
+headers {
+ x-tenant-id: {{tenantId}}
+ x-api-key: {{apiKey}}
+}
+body:json {
+ {"version": 1, "kind": "hamster-scene", "idempotencyKey": "{{sceneKey}}", "scene": {"version": 3, "subject": "hamster", "background": "#000000", "transform": {"x": 0, "z": 0, "heading": 0, "scale": 1}, "animation": {"durationSeconds": 5, "end": {"x": 0.6, "z": 0, "heading": 0}}, "caption": {"enabled": true, "text": "小倉鼠，出發吧！", "start": 1, "end": 4, "fontSize": 48, "color": "#ffffff", "background": "#252525"}}}
+}
+tests {
+ test("different scene rejects same key", function(){ expect(res.status).to.equal(409); expect(res.body.code).to.equal("IDEMPOTENCY_CONFLICT"); });
+}

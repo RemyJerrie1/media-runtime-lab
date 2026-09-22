@@ -18,7 +18,7 @@ import { createRenderJobSchema, idempotencyConflictSchema } from '@media-lab/con
 import { IdempotencyConflict } from '../domain/idempotency';
 import { map, type Observable } from 'rxjs';
 import { RenderOrchestrator } from '../application/render-orchestrator';
-import { TenantPolicy } from '../application/tenant-policy';
+import { TenantPolicy } from '../../shared/tenant-policy';
 
 @Controller('v1')
 export class RenderController {

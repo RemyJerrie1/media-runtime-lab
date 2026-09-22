@@ -1,0 +1,41 @@
+{
+  "name": "@media-lab/scene-renderer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./capture.js": "./dist/capture.js",
+    "./font.ttf": "./assets/NotoSansTC.ttf",
+    "./evaluate-scene": {
+      "types": "./dist/evaluate-scene.d.ts",
+      "default": "./dist/evaluate-scene.js"
+    },
+    "./caption-renderer": {
+      "types": "./dist/caption-renderer.d.ts",
+      "default": "./dist/caption-renderer.js"
+    },
+    "./stage-renderer": {
+      "types": "./dist/stage-renderer.d.ts",
+      "default": "./dist/stage-renderer.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@media-lab/contracts": "workspace:*",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "@types/node": "22.18.0",
+    "typescript": "^5.9.2",
+    "esbuild": "^0.25.12"
+  },
+  "sideEffects": false
+}

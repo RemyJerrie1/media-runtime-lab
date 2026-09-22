@@ -60,4 +60,25 @@ if (![contract, docs, conflictExample].every((source) => source.includes('IDEMPO
   console.error('Contract drift: idempotency conflict response');
   process.exit(1);
 }
-console.log('Contract gate: schema, API reference and Bruno aligned');
+const sceneExample = readFileSync(
+  new URL('../bruno/scene-render/create.bru', import.meta.url),
+  'utf8',
+);
+for (const field of ['version', 'kind', 'scene', 'idempotencyKey']) {
+  if (![contract, docs, sceneExample].every((source) => source.includes(field)))
+    throw new Error(`Scene contract drift: ${field}`);
+}
+for (const route of [
+  '/v1/scene-render-jobs',
+  '/v1/scene-render-jobs/:id/retry',
+  '/v1/scene-render-jobs/:id/cancel',
+  '/scene-artifacts/:file',
+]) {
+  if (!docs.includes(route)) throw new Error(`Scene reference drift: ${route}`);
+}
+const webFont = readFileSync(new URL('../apps/web/public/fonts/NotoSansTC.ttf', import.meta.url));
+const runnerFont = readFileSync(
+  new URL('../packages/scene-renderer/assets/NotoSansTC.ttf', import.meta.url),
+);
+if (!webFont.equals(runnerFont)) throw new Error('Preview/export font drift');
+console.log('Contract gate: schema, API reference, Bruno and scene fonts aligned');

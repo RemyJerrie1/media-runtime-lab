@@ -3,7 +3,7 @@ import { RenderController } from './render/interfaces/render.controller';
 import { RenderOrchestrator } from './render/application/render-orchestrator';
 import { RenderWorker } from './render/application/render-worker';
 import { OperationsTelemetry } from './render/application/operations-telemetry';
-import { TenantPolicy } from './render/application/tenant-policy';
+import { TenantPolicy } from './shared/tenant-policy';
 import { WORKFLOW_STORE, type WorkflowStore } from './render/domain/workflow-store';
 import { InMemoryWorkflowStore } from './render/infrastructure/in-memory-render.repository';
 import { PostgresWorkflowStore } from './render/infrastructure/postgres-workflow.store';
@@ -11,6 +11,11 @@ import { MediaController } from './render/interfaces/media.controller';
 import { MediaFilesService } from './render/infrastructure/media-files.service';
 import { FfmpegMediaProcessor } from './render/infrastructure/ffmpeg-media-processor';
 import { MEDIA_PROCESSOR } from './render/domain/media-processor';
+import { SceneController } from './scene-render/interfaces/scene.controller';
+import { SceneWorker } from './scene-render/application/scene-worker';
+import { PostgresSceneStore } from './scene-render/infrastructure/postgres-scene.store';
+import { ChromiumSceneProcessor } from './scene-render/infrastructure/chromium-scene.processor';
+import { SCENE_STORE, SCENE_PROCESSOR } from './scene-render/domain/scene-workflow';
 
 export async function createWorkflowStore(
   databaseUrl = process.env.DATABASE_URL,
@@ -27,8 +32,18 @@ export async function createWorkflowStore(
 }
 
 @Module({
-  controllers: [RenderController, MediaController],
+  controllers: [RenderController, MediaController, SceneController],
   providers: [
+    SceneWorker,
+    { provide: SCENE_PROCESSOR, useFactory: () => new ChromiumSceneProcessor() },
+    {
+      provide: SCENE_STORE,
+      useFactory: async () => {
+        const store = new PostgresSceneStore(process.env.DATABASE_URL);
+        await store.initialize();
+        return store;
+      },
+    },
     RenderOrchestrator,
     RenderWorker,
     OperationsTelemetry,
