@@ -1,5 +1,5 @@
 export type TourTabId =
-  'overview' | 'render' | 'composition' | 'cost' | 'operations' | 'architecture';
+  'overview' | 'render' | 'composition' | 'hamster' | 'cost' | 'operations' | 'architecture';
 
 export type TourCompletion =
   | { type: 'manual' }

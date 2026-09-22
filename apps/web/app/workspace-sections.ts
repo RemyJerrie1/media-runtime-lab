@@ -2,6 +2,7 @@ export const workspaceSections = [
   'overview',
   'render',
   'composition',
+  'hamster',
   'cost',
   'operations',
   'architecture',

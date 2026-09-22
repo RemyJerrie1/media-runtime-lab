@@ -222,3 +222,24 @@ export const encodingBenchmarkSchema = z.object({
     )
     .length(3),
 });
+
+export const HAMSTER_SCENE_MAX_BYTES = 16 * 1024;
+export const hamsterSceneSchema = z
+  .object({
+    version: z.literal(1),
+    subject: z.literal('hamster'),
+    background: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .transform((value) => value.toLowerCase()),
+    transform: z
+      .object({
+        x: z.number().finite().min(-1.2).max(1.2),
+        z: z.number().finite().min(-1.2).max(1.2),
+        heading: z.number().finite().min(-180).max(180),
+        scale: z.number().finite().min(0.65).max(1.25),
+      })
+      .strict(),
+  })
+  .strict();
+export type HamsterScene = z.infer<typeof hamsterSceneSchema>;

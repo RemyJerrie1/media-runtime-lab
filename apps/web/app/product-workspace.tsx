@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { HamsterEditor } from './features/hamster-editor/hamster-editor';
 import { EncodingComparison } from './features/encoding-comparison/encoding-comparison';
 import { CompositionShowcase } from './features/composition-showcase/composition-showcase';
 import { CostGovernance } from './features/cost-governance/cost-governance';
@@ -14,18 +15,26 @@ const tabs: [TabId, string, string][] = [
   ['overview', '平台概覽', '服務與處理範圍'],
   ['render', '影音工作台', '轉檔、編碼與交付'],
   ['composition', '媒體合成', '字幕、浮水印與時間軸'],
+  ['hamster', '倉鼠小舞台', '3D 場景與擺放'],
   ['cost', '成本', '用量與預算'],
   ['operations', '維運', '狀態與追蹤'],
   ['architecture', '架構', '服務邊界'],
 ];
 
-function Overview() {
+function Overview({ openHamster }: { openHamster: () => void }) {
   return (
     <section className="workspace-overview">
       <p className="eyebrow">媒體運行實驗室</p>
       <h1>影音平台營運後台</h1>
       <p className="lede">從影片轉檔、媒體合成到串流交付，集中查看任務進度與處理結果。</p>
       <div className="overview-grid" data-tour="overview-summary">
+        <article>
+          <span>倉鼠小舞台</span>
+          <strong>擺放 → 調整 → 保存場景</strong>
+          <button type="button" onClick={openHamster}>
+            打開倉鼠小舞台 →
+          </button>
+        </article>
         <article>
           <span>影音工作台</span>
           <strong>上傳 → 轉檔 → 串流交付</strong>
@@ -83,7 +92,21 @@ function Architecture() {
 
 export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: TabId }) {
   const [active, setActive] = useState<TabId>(initialTab);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  useEffect(() => {
+    const selected = document.getElementById(`tab-${active}`);
+    const list = selected?.parentElement;
+    if (selected && list && list.scrollWidth > list.clientWidth) {
+      list.scrollLeft = selected.offsetLeft - list.offsetLeft;
+    }
+  }, [active]);
   const selectActive = useCallback((next: TabId, historyMode: 'push' | 'replace' = 'push') => {
+    if (
+      next !== activeRef.current &&
+      !window.dispatchEvent(new Event('media-lab:before-navigate', { cancelable: true }))
+    )
+      return;
     setActive(next);
     const nextPath = `/${next}`;
     if (window.location.pathname !== nextPath) {
@@ -103,7 +126,16 @@ export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: Tab
     }
     const restoreFromHistory = () => {
       const section = window.location.pathname.slice(1);
-      if (isWorkspaceSection(section)) setActive(section);
+      if (isWorkspaceSection(section)) {
+        if (
+          section !== activeRef.current &&
+          !window.dispatchEvent(new Event('media-lab:before-navigate', { cancelable: true }))
+        ) {
+          window.history.pushState({}, '', `/${activeRef.current}`);
+          return;
+        }
+        setActive(section);
+      }
     };
     window.addEventListener('popstate', restoreFromHistory);
     return () => window.removeEventListener('popstate', restoreFromHistory);
@@ -143,7 +175,7 @@ export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: Tab
         <div
           className="workspace-tabs"
           role="tablist"
-          aria-label="平台明暗主題"
+          aria-label="工作區"
           aria-orientation="vertical"
           onKeyDown={onKeyDown}
         >
@@ -184,7 +216,9 @@ export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: Tab
           tabIndex={0}
         >
           {active === 'overview' ? (
-            <Overview />
+            <Overview openHamster={() => selectActive('hamster')} />
+          ) : active === 'hamster' ? (
+            <HamsterEditor />
           ) : active === 'render' ? (
             <RenderLab />
           ) : active === 'composition' ? (

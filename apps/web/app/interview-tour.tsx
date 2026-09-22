@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  readPreference,
+  writePreference,
+  removePreference,
+} from './design-system/browser-preferences';
+
+import {
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -132,8 +138,8 @@ export function InterviewTour() {
   const finish = useCallback(() => {
     setOpen(false);
     setRect(null);
-    window.sessionStorage.setItem(TOUR_SESSION_KEY, '1');
-    window.sessionStorage.removeItem(TOUR_STEP_KEY);
+    writePreference('sessionStorage', TOUR_SESSION_KEY, '1');
+    removePreference('sessionStorage', TOUR_STEP_KEY);
   }, []);
 
   const advance = useCallback(() => {
@@ -143,7 +149,7 @@ export function InterviewTour() {
         window.setTimeout(finish, 900);
         return current;
       }
-      window.sessionStorage.setItem(TOUR_STEP_KEY, String(current + 1));
+      writePreference('sessionStorage', TOUR_STEP_KEY, String(current + 1));
       const route =
         interviewTourSteps[current]?.id === 'open-design-system'
           ? '/design-system'
@@ -159,7 +165,7 @@ export function InterviewTour() {
     setFeedback(null);
     setStepIndex((current) => {
       const previous = Math.max(current - 1, 0);
-      window.sessionStorage.setItem(TOUR_STEP_KEY, String(previous));
+      writePreference('sessionStorage', TOUR_STEP_KEY, String(previous));
       return previous;
     });
   }, []);
@@ -167,7 +173,7 @@ export function InterviewTour() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('guide') === '1';
-    const savedStep = window.sessionStorage.getItem(TOUR_STEP_KEY);
+    const savedStep = readPreference('sessionStorage', TOUR_STEP_KEY);
     const resumedStep = Number(savedStep);
     const canResume = savedStep !== null && Number.isInteger(resumedStep) && resumedStep >= 0;
     if (!requested && !canResume) return;
@@ -185,7 +191,7 @@ export function InterviewTour() {
   }, []);
   useEffect(() => {
     const start = () => {
-      window.sessionStorage.setItem(TOUR_STEP_KEY, '0');
+      writePreference('sessionStorage', TOUR_STEP_KEY, '0');
       setStepIndex(0);
       setOpen(true);
     };
@@ -205,7 +211,7 @@ export function InterviewTour() {
   useEffect(() => {
     if (!open) return;
     if (step.pathname && window.location.pathname !== step.pathname) {
-      window.sessionStorage.setItem(TOUR_STEP_KEY, String(stepIndex));
+      writePreference('sessionStorage', TOUR_STEP_KEY, String(stepIndex));
       window.location.replace(step.pathname);
       return;
     }
@@ -266,7 +272,7 @@ export function InterviewTour() {
       setTooltip(null);
       if (step.id === 'open-design-system' || step.id === 'open-api-reference') {
         const route = step.id === 'open-design-system' ? '/design-system' : '/api-reference';
-        window.sessionStorage.setItem(TOUR_STEP_KEY, String(stepIndex + 1));
+        writePreference('sessionStorage', TOUR_STEP_KEY, String(stepIndex + 1));
         settleTimers.push(window.setTimeout(() => window.location.assign(route), 450));
       }
     }
@@ -289,7 +295,7 @@ export function InterviewTour() {
     const completion = step.completion;
     const continueToNextTopic = () => {
       if (NEXT_TOPIC_STEP < 0) return;
-      window.sessionStorage.setItem(TOUR_STEP_KEY, String(NEXT_TOPIC_STEP));
+      writePreference('sessionStorage', TOUR_STEP_KEY, String(NEXT_TOPIC_STEP));
       setFeedback(null);
       setStepIndex(NEXT_TOPIC_STEP);
     };

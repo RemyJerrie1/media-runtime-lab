@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { readPreference, writePreference } from './browser-preferences';
 
 type Theme = 'dark' | 'light';
 const STORAGE_KEY = 'media-runtime-theme';
@@ -9,7 +10,7 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>('dark');
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('theme');
-    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const saved = readPreference('localStorage', STORAGE_KEY);
     const initial: Theme =
       requested === 'light' || requested === 'dark'
         ? requested
@@ -24,7 +25,7 @@ export function ThemeToggle() {
   const toggle = () => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    window.localStorage.setItem(STORAGE_KEY, next);
+    writePreference('localStorage', STORAGE_KEY, next);
     setTheme(next);
   };
   return (
