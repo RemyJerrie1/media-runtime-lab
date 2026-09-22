@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { logInvocation } from './invocation-log.mjs';
 
 export const repositoryRoot = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -46,7 +47,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     let raw = '';
     for await (const chunk of process.stdin) raw += chunk;
     mkdirSync(resolve(repositoryRoot, '.runtime'), { recursive: true });
-    output = evaluateGate(parseInput(raw), (...args) => {
+    const input = parseInput(raw);
+    output = evaluateGate(input, (...args) => {
       const result = spawnSync(...args);
       writeFileSync(
         resolve(repositoryRoot, '.runtime/codex-verify.log'),
@@ -54,6 +56,11 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       );
       return result;
     });
+    logInvocation(
+      input,
+      'Stop',
+      output.decision === 'block' ? 'failed' : output.systemMessage ? 'not-rerun' : 'passed',
+    );
     appendFileSync(
       resolve(repositoryRoot, '.runtime/codex-gate.jsonl'),
       JSON.stringify({

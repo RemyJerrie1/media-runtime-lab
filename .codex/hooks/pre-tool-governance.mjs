@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { logInvocation } from './invocation-log.mjs';
 
 export function contractReminder(input) {
   const payload = input?.tool_input;
@@ -18,7 +19,14 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     let raw = '';
     for await (const chunk of process.stdin) raw += chunk;
-    process.stdout.write(JSON.stringify(contractReminder(JSON.parse(raw || '{}'))));
+    const input = JSON.parse(raw || '{}');
+    const output = contractReminder(input);
+    logInvocation(
+      input,
+      'PreToolUse',
+      output.hookSpecificOutput ? 'reminded' : 'no-contract-change',
+    );
+    process.stdout.write(JSON.stringify(output));
   } catch {
     process.stderr.write('Invalid PreToolUse input; repository policy could not be evaluated.');
     process.exitCode = 2;

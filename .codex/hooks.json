@@ -8,7 +8,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-governance.mjs\"",
-            "commandWindows": "powershell -NoProfile -Command \"$root = git rev-parse --show-toplevel; node (Join-Path $root '.codex/hooks/pre-tool-governance.mjs')\"",
+            "commandWindows": "node -e \"const c=require('node:child_process');const p=c.execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim();const r=c.spawnSync(process.execPath,[p+'/.codex/hooks/pre-tool-governance.mjs'],{stdio:'inherit'});process.exit(r.status===null?2:r.status)\"",
             "timeout": 10,
             "statusMessage": "Checking repository change policy"
           }
@@ -21,7 +21,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/governance-gate.mjs\"",
-            "commandWindows": "powershell -NoProfile -Command \"$root = git rev-parse --show-toplevel; node (Join-Path $root '.codex/hooks/governance-gate.mjs')\"",
+            "commandWindows": "node -e \"const c=require('node:child_process');const p=c.execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim();const r=c.spawnSync(process.execPath,[p+'/.codex/hooks/governance-gate.mjs'],{stdio:'inherit'});process.exit(r.status===null?2:r.status)\"",
             "timeout": 600,
             "statusMessage": "Running full repository verification"
           }
