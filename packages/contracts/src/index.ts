@@ -242,7 +242,7 @@ export const hamsterSceneV1Schema = z
       .strict(),
   })
   .strict();
-export const hamsterSceneSchema = hamsterSceneV1Schema.extend({
+export const hamsterSceneV2Schema = hamsterSceneV1Schema.extend({
   version: z.literal(2),
   animation: z
     .object({
@@ -251,11 +251,70 @@ export const hamsterSceneSchema = hamsterSceneV1Schema.extend({
     })
     .strict(),
 });
+// Fixed-cell typography makes wrapping independent of viewport and browser metrics.
+export function hamsterCaptionLines(text: string): string[] {
+  return text.split('\n').flatMap((line) => {
+    const characters = Array.from(line);
+    return characters.length === 0
+      ? ['']
+      : Array.from({ length: Math.ceil(characters.length / 20) }, (_, index) =>
+          characters.slice(index * 20, index * 20 + 20).join(''),
+        );
+  });
+}
+export const hamsterCaptionSchema = z
+  .object({
+    enabled: z.boolean(),
+    text: z
+      .string()
+      .min(1, '請輸入字幕。')
+      .max(41, '字幕最多 40 字（不含換行）。')
+      .refine((text) => text.trim().length > 0, '字幕不能只有空白。')
+      .refine(
+        (text) =>
+          /^[\x20-\x7e\u3000-\u303f\u3400-\u9fff\uff01-\uff60\u2013\u2014\u2018\u2019\u201c\u201d\u2026\n]+$/.test(
+            text,
+          ),
+        '請使用中英文、數字及標點；暫不支援表情符號或特殊控制字元。',
+      )
+      .refine(
+        (text) => text.replaceAll('\n', '').length <= 40 && hamsterCaptionLines(text).length <= 2,
+        '字幕每行最多 20 字、自動換行，合計最多兩行 40 字。',
+      ),
+    start: z.number().finite().min(0).max(5),
+    end: z.number().finite().min(0).max(5),
+    fontSize: z.number().int().min(32).max(52),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    background: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  })
+  .strict()
+  .refine((caption) => caption.start < caption.end, '字幕時間須符合 0 ≤ 開始 < 結束 ≤ 5 秒。');
+export type HamsterCaption = z.infer<typeof hamsterCaptionSchema>;
+export const defaultHamsterCaption = (): HamsterCaption => ({
+  enabled: false,
+  text: '小倉鼠，出發吧！',
+  start: 1,
+  end: 4,
+  fontSize: 48,
+  color: '#ffffff',
+  background: '#252525',
+});
+export const hamsterSceneSchema = hamsterSceneV2Schema.extend({
+  version: z.literal(3),
+  caption: hamsterCaptionSchema,
+});
 export type HamsterScene = z.infer<typeof hamsterSceneSchema>;
 export const hamsterSceneDocumentSchema = z
-  .discriminatedUnion('version', [hamsterSceneV1Schema, hamsterSceneSchema])
+  .discriminatedUnion('version', [hamsterSceneV1Schema, hamsterSceneV2Schema, hamsterSceneSchema])
   .transform((document): HamsterScene => {
-    if (document.version === 2) return document;
+    if (document.version === 3) return document;
+    if (document.version === 2)
+      return { ...document, version: 3, caption: defaultHamsterCaption() };
     const { x, z, heading } = document.transform;
-    return { ...document, version: 2, animation: { durationSeconds: 5, end: { x, z, heading } } };
+    return {
+      ...document,
+      version: 3,
+      animation: { durationSeconds: 5, end: { x, z, heading } },
+      caption: defaultHamsterCaption(),
+    };
   });

@@ -1,9 +1,19 @@
 import { test, expect, type Page } from '@playwright/test';
+const defaultHamsterCaption = () => ({
+  enabled: false,
+  text: '小倉鼠，出發吧！',
+  start: 1,
+  end: 4,
+  fontSize: 48,
+  color: '#ffffff',
+  background: '#252525',
+});
 import { readFile } from 'node:fs/promises';
 
 const storageKey = 'media-runtime-hamster-scene-v1';
 const scene = {
-  version: 2,
+  version: 3,
+  caption: defaultHamsterCaption(),
   subject: 'hamster',
   background: '#e8ddd0',
   transform: { x: 0, z: 0, heading: 0, scale: 1 },

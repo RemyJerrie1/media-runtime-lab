@@ -6,6 +6,7 @@ import { defaultScene, parseScene, serializeScene, SCENE_STORAGE_KEY } from './s
 import { loadScene, saveScene } from './scene-storage';
 import { HamsterPreview } from './hamster-preview';
 import { useScenePlayback } from './use-scene-playback';
+import { CaptionControls } from './caption-controls';
 import styles from './hamster-editor.module.css';
 
 const controls = [
@@ -22,6 +23,7 @@ export function HamsterEditor() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [endpoint, setEndpoint] = useState<'start' | 'end'>('start');
+  const [captionDraft, setCaptionDraft] = useState(false);
   const playback = useScenePlayback();
   const edited =
     endpoint === 'start'
@@ -29,7 +31,7 @@ export function HamsterEditor() {
       : { ...scene.animation.end, scale: scene.transform.scale };
   const revision = useRef(0);
   const mounted = useRef(false);
-  const dirty = serializeScene(scene) !== baseline;
+  const dirty = captionDraft || serializeScene(scene) !== baseline;
   useEffect(() => {
     mounted.current = true;
     try {
@@ -37,7 +39,7 @@ export function HamsterEditor() {
       if (saved) {
         setScene(saved);
         setBaseline(serializeScene(saved));
-        setMessage('已載入本機場景；舊版靜態場景會以相同起終點保留，保存時寫入動畫版本。');
+        setMessage('已載入本機場景；舊版場景保留原動畫並關閉字幕，保存時寫入第 3 版。');
       } else setMessage('先擺好倉鼠，再保存你的第一個場景。');
     } catch {
       setError('無法讀取本機場景。原始資料未被覆寫，你仍可編輯與匯出 JSON。');
@@ -124,9 +126,9 @@ export function HamsterEditor() {
     <section className={styles.editor}>
       <header className={styles.header}>
         <div>
-          <p className="eyebrow">HAMSTER STUDIO · 02</p>
+          <p className="eyebrow">HAMSTER STUDIO · 03</p>
           <h1>給倉鼠一個小舞台</h1>
-          <p>設定起點與終點，讓倉鼠走過自己的五秒鐘。</p>
+          <p>讓倉鼠走過自己的五秒鐘，再加上一句想說的話。</p>
         </div>
         <span className={styles.badge}>{dirty ? '尚未保存' : '沒有未保存變更'}</span>
       </header>
@@ -256,11 +258,22 @@ export function HamsterEditor() {
               onChange={(event) => change({ ...scene, background: event.target.value })}
             />
           </label>
-          <button className={styles.primary} type="button" onClick={save}>
+          <CaptionControls
+            caption={scene.caption}
+            onDraftChange={setCaptionDraft}
+            onApply={(caption) => {
+              revision.current++;
+              setScene({ ...scene, caption });
+              setError('');
+              setMessage('字幕已套用，保存場景可保留至下次開啟。');
+              playback.seek(caption.start);
+            }}
+          />
+          <button className={styles.primary} type="button" onClick={save} disabled={captionDraft}>
             保存場景
           </button>
           <div className={styles.actions}>
-            <button type="button" onClick={exportScene}>
+            <button type="button" onClick={exportScene} disabled={captionDraft}>
               匯出 JSON
             </button>
             <label className={styles.import}>

@@ -32,6 +32,10 @@ export function evaluateScene(document: HamsterScene, timeSeconds: number) {
   });
   return {
     time,
+    caption:
+      document.caption.enabled && time >= document.caption.start && time < document.caption.end
+        ? document.caption
+        : null,
     root: {
       x: start.x + dx * progress,
       y: 0.06,

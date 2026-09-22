@@ -52,6 +52,51 @@
   position: relative;
   background: var(--color-surface-raised);
 }
+.frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.frame .captionCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.captionText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.captionControls {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+.captionControls textarea,
+.captionControls input[type='number'] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  font: inherit;
+}
+.captionControls textarea {
+  resize: vertical;
+}
+.editor button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 .preview canvas {
   display: block;
   width: 100%;
