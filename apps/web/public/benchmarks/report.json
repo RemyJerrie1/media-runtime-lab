@@ -1,0 +1,81 @@
+{
+  "measuredAt": "2026-09-22T01:27:15.314Z",
+  "source": {
+    "path": "docs/media/product-demo.mp4",
+    "sha256": "7a40ca394bd26771a0de5436bce934d8a3975bf4e1fc997d2a8a8f34deeb8610",
+    "startSeconds": 0,
+    "durationSeconds": 3
+  },
+  "environment": {
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "Intel(R) Core(TM) Ultra 7 270K Plus",
+    "logicalCpus": 24,
+    "node": "v22.23.2",
+    "ffmpeg": "ffmpeg version 6.1.1-essentials_build-www.gyan.dev Copyright (c) 2000-2023 the FFmpeg developers",
+    "threads": 2
+  },
+  "method": "Same 3-second source, 640x360 / 30fps / no audio / libx264 / 2 threads. One warm-up; three sequential rounds with rotating profile order. Wall time includes process launch and output write, excludes probe/decode. Median reported; last output retained. Local measurements, not universal performance rankings or objective quality scores.",
+  "results": [
+    {
+      "id": "ultrafast-23",
+      "preset": "ultrafast",
+      "crf": 23,
+      "elapsedMs": [
+        102.24,
+        101.17,
+        102.33
+      ],
+      "medianMs": 102.24,
+      "sizeBytes": 297836,
+      "sha256": "b1a70028c979b7219ff7dbbafc570325de70b92b5006b6c2fa663a59fc4a1623",
+      "videoUrl": "/benchmarks/ultrafast-23.mp4",
+      "posterUrl": "/benchmarks/ultrafast-23.jpg",
+      "posterSha256": "b2f36de3440f89e9749da4970b9c9be57a297ae61acaf9d3225f783362a0cfc7",
+      "width": 640,
+      "height": 360,
+      "durationSeconds": 3,
+      "decoded": true
+    },
+    {
+      "id": "slow-23",
+      "preset": "slow",
+      "crf": 23,
+      "elapsedMs": [
+        277.32,
+        275.03,
+        274.21
+      ],
+      "medianMs": 275.03,
+      "sizeBytes": 95138,
+      "sha256": "7a57bc9429a29d1515a46b1c139766eea52fc67a24782cd256f8a66fe83ca8bb",
+      "videoUrl": "/benchmarks/slow-23.mp4",
+      "posterUrl": "/benchmarks/slow-23.jpg",
+      "posterSha256": "503aa7225682cd34e0d113800b8f6fe99dc55ffbd916743db5bf4bc10ccdb805",
+      "width": 640,
+      "height": 360,
+      "durationSeconds": 3,
+      "decoded": true
+    },
+    {
+      "id": "slow-30",
+      "preset": "slow",
+      "crf": 30,
+      "elapsedMs": [
+        229.33,
+        226.06,
+        227.84
+      ],
+      "medianMs": 227.84,
+      "sizeBytes": 45364,
+      "sha256": "62d32ac35a7f6b009efc32efaffe225ba7d371ee10598eaf12f287a3297e539a",
+      "videoUrl": "/benchmarks/slow-30.mp4",
+      "posterUrl": "/benchmarks/slow-30.jpg",
+      "posterSha256": "77560525fc70921c8c4bbc2f3f01e702a96581006468273cdfdfe2d840c56ab6",
+      "width": 640,
+      "height": 360,
+      "durationSeconds": 3,
+      "decoded": true
+    }
+  ]
+}

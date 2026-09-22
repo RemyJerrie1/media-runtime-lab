@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
+import { EncodingComparison } from './features/encoding-comparison/encoding-comparison';
 import { CompositionShowcase } from './features/composition-showcase/composition-showcase';
 import { CostGovernance } from './features/cost-governance/cost-governance';
 import { OperationsEvidence } from './features/operations-evidence/operations-evidence';
@@ -187,7 +188,10 @@ export function ProductWorkspace({ initialTab = 'overview' }: { initialTab?: Tab
           ) : active === 'render' ? (
             <RenderLab />
           ) : active === 'composition' ? (
-            <CompositionShowcase />
+            <>
+              <CompositionShowcase />
+              <EncodingComparison />
+            </>
           ) : active === 'cost' ? (
             <CostGovernance />
           ) : active === 'operations' ? (

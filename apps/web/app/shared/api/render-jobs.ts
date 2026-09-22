@@ -2,6 +2,7 @@ import {
   mediaAssetSchema,
   renderJobSchema,
   operationsSnapshotSchema,
+  idempotencyConflictSchema,
   type CreateRenderJob,
   type MediaAsset,
   type OperationsSnapshot,
@@ -11,6 +12,12 @@ import { MEDIA_RUNTIME } from '../../config/media';
 
 const API = MEDIA_RUNTIME.apiBaseUrl;
 const tenantHeaders = { 'x-tenant-id': 'portfolio', 'x-api-key': 'local-demo-key' };
+
+export class RenderConflictError extends Error {
+  constructor() {
+    super('原操作識別已用於不同內容，或屬於無法比對的舊任務。請放棄重試後明確建立新任務。');
+  }
+}
 
 function normalizeRenderJob(value: unknown): RenderJob {
   const job =
@@ -77,6 +84,10 @@ export async function createRenderJob(
       idempotencyKey,
     }),
   });
+  if (response.status === 409) {
+    idempotencyConflictSchema.parse(await response.json());
+    throw new RenderConflictError();
+  }
   if (!response.ok) throw new Error(`Render command rejected (${response.status})`);
   return normalizeRenderJob(await response.json());
 }

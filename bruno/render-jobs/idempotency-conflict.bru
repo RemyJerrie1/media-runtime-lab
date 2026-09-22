@@ -1,0 +1,24 @@
+meta {
+  name: 拒絕冪等內容衝突
+  type: http
+  seq: 5
+}
+post {
+  url: {{baseUrl}}/v1/render-jobs
+  body: json
+  auth: none
+}
+headers {
+  x-tenant-id: {{tenantId}}
+  x-api-key: {{apiKey}}
+}
+body:json {
+  {"sourceAssetId":"{{assetId}}","projectId":"bruno-proof","template":"landscape","trimStartSeconds":0,"durationSeconds":18,"encoding":{"codec":"libx264","preset":"medium","rateControl":"crf","crf":23,"bitrateKbps":4000,"gop":60,"fps":30},"processing":{"frameRateMode":"cfr","audioSampleRate":48000,"audioSync":"async-resample","subtitleMode":"webvtt","watermarkMode":"visible","adInsertion":"none","fastStart":true,"deliveryFormat":"hls-cmaf","abrLadder":"standard","qualityMetric":"vmaf"},"narration":"A changed narration must not reuse the original intent.","idempotencyKey":"{{idempotencyKey}}"}
+}
+tests {
+  test("same key with changed intent returns 409", function () {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal("IDEMPOTENCY_CONFLICT");
+    expect(res.body.traceId).to.be.a("string");
+  });
+}

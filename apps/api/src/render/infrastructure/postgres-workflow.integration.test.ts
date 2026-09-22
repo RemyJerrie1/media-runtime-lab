@@ -1,3 +1,4 @@
+import type { CreateWorkflow } from '../domain/workflow-store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Pool } from 'pg';
 import { RenderOrchestrator } from '../application/render-orchestrator';
@@ -122,7 +123,7 @@ suite('PostgreSQL workflow integration', () => {
   async function seed() {
     const store = createStore();
     await store.initialize();
-    const { job } = await store.create({
+    const input: CreateWorkflow = {
       tenantId: 'lease-test',
       traceId: 'trace',
       requestId: 'request',
@@ -157,9 +158,50 @@ suite('PostgreSQL workflow integration', () => {
         narration: 'lease integration test',
         idempotencyKey: crypto.randomUUID(),
       },
-    });
-    return { store, job };
+    };
+    const { job } = await store.create(input);
+    return { store, job, input };
   }
+  it('persists fingerprints across restart and rejects unverifiable legacy replays', async () => {
+    const { job, input } = await seed();
+    const restarted = createStore();
+    await restarted.initialize();
+    expect(await restarted.create(input)).toMatchObject({ created: false, job: { id: job.id } });
+    await expect(
+      restarted.create({
+        ...input,
+        command: { ...input.command, narration: 'different same key' },
+      }),
+    ).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+    await admin.query(`UPDATE ${schema}.render_jobs SET request_fingerprint=NULL WHERE id=$1`, [
+      job.id,
+    ]);
+    await restarted.initialize();
+    await expect(restarted.create(input)).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+    expect((await restarted.findById(input.tenantId, job.id))?.id).toBe(job.id);
+    expect(await restarted.listEvents(input.tenantId, job.id, 0)).toHaveLength(1);
+  });
+  it('serializes conflicting concurrent requests across instances with one winner', async () => {
+    const { input } = await seed();
+    const one = createStore();
+    const two = createStore();
+    const command = { ...input.command, idempotencyKey: crypto.randomUUID() };
+    const results = await Promise.allSettled([
+      one.create({ ...input, command }),
+      two.create({ ...input, command: { ...command, durationSeconds: 2 } }),
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    const rejected = results.find(
+      (result) => result.status === 'rejected',
+    ) as PromiseRejectedResult;
+    expect(rejected.reason.message).toBe('IDEMPOTENCY_CONFLICT');
+    const rows = await admin.query(
+      `SELECT id FROM ${schema}.render_jobs WHERE idempotency_key=$1`,
+      [command.idempotencyKey],
+    );
+    expect(rows.rowCount).toBe(1);
+    expect(await one.listEvents(input.tenantId, rows.rows[0].id, 0)).toHaveLength(1);
+  });
   it('renews ownership and fences expired leases and reused worker IDs', async () => {
     const { store } = await seed();
     const old = (await store.claimNext('same-worker', 5000))!;

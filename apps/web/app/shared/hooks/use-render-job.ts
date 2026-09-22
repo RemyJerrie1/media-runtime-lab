@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createRenderJobSchema, type CreateRenderJob, type RenderJob } from '@media-lab/contracts';
 import {
   createRenderJob,
+  RenderConflictError,
   getRenderJob,
   parseRenderJobEvent,
   renderJobEvents,
@@ -14,6 +15,12 @@ const STORAGE_PREFIX = 'media-runtime-active-job-v1:';
 const PENDING_PREFIX = 'media-runtime-pending-command-v1:';
 const terminal = (job: RenderJob | null) => job?.status === 'ready' || job?.status === 'failed';
 
+export type RecoveryProof = {
+  action: 'disconnect' | 'lost-response' | 'replay';
+  before: { id: string; sequence: number };
+  after?: { id: string; sequence: number };
+};
+
 export function useRenderJob(scope: 'render' | 'composition') {
   const storageKey = `${STORAGE_PREFIX}${scope}`;
   const pendingKey = `${PENDING_PREFIX}${scope}`;
@@ -21,6 +28,9 @@ export function useRenderJob(scope: 'render' | 'composition') {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [proof, setProof] = useState<RecoveryProof | null>(null);
+  const lastCommand = useRef<CreateRenderJob | null>(null);
   const operation = useRef<CreateRenderJob | null>(null);
   const mounted = useRef(false);
   const generation = useRef(0);
@@ -43,6 +53,7 @@ export function useRenderJob(scope: 'render' | 'composition') {
     snapshot.current = null;
     setJob(null);
     setError(null);
+    setPaused(false);
     return generation.current;
   }
   function current(epoch: number) {
@@ -114,6 +125,8 @@ export function useRenderJob(scope: 'render' | 'composition') {
       setBusy(false);
       operation.current = null;
       try {
+        lastCommand.current = null;
+        setProof(null);
         const saved = window.localStorage.getItem(pendingKey);
         operation.current = saved ? createRenderJobSchema.parse(JSON.parse(saved)) : null;
         setPending(Boolean(operation.current));
@@ -142,7 +155,7 @@ export function useRenderJob(scope: 'render' | 'composition') {
     };
   }, [storageKey, pendingKey]);
 
-  async function send(request: CreateRenderJob) {
+  async function send(request: CreateRenderJob, loseResponse = false) {
     if (!mounted.current || sending.current) return;
     sending.current = true;
     const epoch = begin(null);
@@ -154,6 +167,18 @@ export function useRenderJob(scope: 'render' | 'composition') {
       setPending(true);
       const created = await createRenderJob(request, request.idempotencyKey);
       if (!current(epoch)) return;
+      if (loseResponse) {
+        setProof({
+          action: 'lost-response',
+          before: { id: created.id, sequence: created.sequence },
+        });
+        setError('故障注入：後端已接收，但本頁刻意丟棄成功回應。請按「重試原操作」驗證去重。');
+        return;
+      }
+      lastCommand.current = request;
+      setProof((previous) =>
+        previous ? { ...previous, after: { id: created.id, sequence: created.sequence } } : null,
+      );
       window.localStorage.setItem(storageKey, created.id);
       window.localStorage.removeItem(pendingKey);
       operation.current = null;
@@ -161,9 +186,13 @@ export function useRenderJob(scope: 'render' | 'composition') {
       activeId.current = created.id;
       accept(created, epoch);
       connect(created.id, epoch);
-    } catch {
+    } catch (cause) {
       if (current(epoch)) {
-        setError('尚未確認任務是否建立；請重試原操作，避免重複建立任務。');
+        setError(
+          cause instanceof RenderConflictError
+            ? cause.message
+            : '尚未確認任務是否建立；請重試原操作，避免重複建立任務。',
+        );
       }
     } finally {
       if (current(epoch)) {
@@ -172,7 +201,7 @@ export function useRenderJob(scope: 'render' | 'composition') {
       }
     }
   }
-  async function run(command: RenderEditorCommand) {
+  async function run(command: RenderEditorCommand, options?: { loseResponse?: boolean }) {
     if (!mounted.current || sending.current || pending || operation.current) return;
     try {
       const request = createRenderJobSchema.parse({
@@ -183,8 +212,10 @@ export function useRenderJob(scope: 'render' | 'composition') {
       });
       // Retain the intent even if persistence itself fails; never send without saving it.
       operation.current = request;
+      lastCommand.current = null;
+      setProof(null);
       setPending(true);
-      await send(request);
+      await send(request, options?.loseResponse);
     } catch {
       setError('轉檔設定不符合契約，請檢查後重新送出。');
     }
@@ -199,11 +230,67 @@ export function useRenderJob(scope: 'render' | 'composition') {
       window.localStorage.removeItem(pendingKey);
       window.localStorage.removeItem(storageKey);
       operation.current = null;
+      lastCommand.current = null;
+      setProof(null);
       setPending(false);
       begin(null);
     } catch {
       setError('無法清除已保存的操作，請檢查瀏覽器儲存空間。');
     }
   }
-  return { job, busy, error, run, pending, retry, discardPending };
+  function pauseProgress() {
+    if (!snapshot.current || terminal(snapshot.current) || busy || pending) return;
+    generation.current += 1;
+    closeStream();
+    setPaused(true);
+    setProof({
+      action: 'disconnect',
+      before: { id: snapshot.current.id, sequence: snapshot.current.sequence },
+    });
+  }
+  async function resumeProgress() {
+    const id = activeId.current;
+    if (!paused || !id || sending.current) return;
+    const epoch = ++generation.current;
+    setBusy(true);
+    setError(null);
+    try {
+      const recovered = await getRenderJob(id);
+      if (!current(epoch)) return;
+      if (recovered.id !== id) throw new Error('Unexpected job identity');
+      accept(recovered, epoch);
+      setProof((previous) =>
+        previous ? { ...previous, after: { id, sequence: snapshot.current!.sequence } } : null,
+      );
+      setPaused(false);
+      connect(id, epoch);
+    } catch {
+      if (current(epoch)) setError('無法恢復進度，請再次嘗試恢復連線。');
+    } finally {
+      if (current(epoch)) setBusy(false);
+    }
+  }
+  async function replay() {
+    if (!lastCommand.current || !snapshot.current || busy || pending) return;
+    setProof({
+      action: 'replay',
+      before: { id: snapshot.current.id, sequence: snapshot.current.sequence },
+    });
+    await send(lastCommand.current);
+  }
+  return {
+    job,
+    busy,
+    error,
+    run,
+    pending,
+    retry,
+    discardPending,
+    paused,
+    proof,
+    pauseProgress,
+    resumeProgress,
+    replay,
+    canReplay: Boolean(lastCommand.current),
+  };
 }

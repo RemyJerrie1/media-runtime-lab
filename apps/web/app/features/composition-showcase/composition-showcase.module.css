@@ -169,3 +169,12 @@
     transform: rotateX(-90deg) translateZ(32px);
   }
 }
+.recovery { margin-top: 32px; padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+.recovery p { color: var(--muted); line-height: 1.6; }
+.recovery label { display: flex; align-items: center; gap: 10px; }
+.recovery dl { display: grid; grid-template-columns: minmax(140px, 1fr) 2fr; gap: 8px 16px; }
+.recovery dd { margin: 0; overflow-wrap: anywhere; font-family: monospace; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.actions button { padding: 12px 16px; min-height: 44px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.actions button:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 600px) { .recovery dl { grid-template-columns: 1fr; } }

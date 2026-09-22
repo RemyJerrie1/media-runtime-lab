@@ -1,3 +1,4 @@
+import { assertSameRequest, requestFingerprint } from '../domain/idempotency';
 import { Injectable } from '@nestjs/common';
 import type { RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts';
 import { RenderJobAggregate } from '../domain/render-job';
@@ -23,6 +24,7 @@ type WorkRow = {
 @Injectable()
 export class InMemoryWorkflowStore implements WorkflowStore {
   private readonly jobs = new Map<string, RenderJob>();
+  private readonly fingerprints = new Map<string, string>();
   private readonly keys = new Map<string, string>();
   private readonly events = new Map<string, RenderEvent[]>();
   private readonly work = new Map<string, WorkRow>();
@@ -33,9 +35,11 @@ export class InMemoryWorkflowStore implements WorkflowStore {
     return `${tenantId}:${id}`;
   }
   async create({ tenantId, traceId, requestId, command, quotaTokens }: CreateWorkflow) {
-    const key = `${tenantId}:${command.idempotencyKey}`;
+    const key = JSON.stringify([tenantId, command.idempotencyKey]);
+    const fingerprint = requestFingerprint(command);
     const existingId = this.keys.get(key);
     if (existingId) {
+      assertSameRequest(this.fingerprints.get(key), fingerprint);
       return {
         job: structuredClone(this.jobs.get(this.jobKey(tenantId, existingId))!),
         created: false,
@@ -77,6 +81,7 @@ export class InMemoryWorkflowStore implements WorkflowStore {
     };
     this.jobs.set(this.jobKey(tenantId, id), structuredClone(job));
     this.keys.set(key, id);
+    this.fingerprints.set(key, fingerprint);
     this.events.set(this.jobKey(tenantId, id), [
       {
         id: crypto.randomUUID(),

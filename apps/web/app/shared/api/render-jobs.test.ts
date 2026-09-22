@@ -8,6 +8,7 @@ import {
   getOperations,
   parseRenderJobEvent,
   playbackPath,
+  RenderConflictError,
 } from './render-jobs';
 
 const job: RenderJob = {
@@ -154,6 +155,29 @@ describe('API response contracts', () => {
     await expect(getDemoMedia()).rejects.toThrow();
     response({ ...operations, targets: { ...operations.targets, recoverySeconds: 'fast' } });
     await expect(getOperations()).rejects.toThrow();
+  });
+  it('validates and surfaces an idempotency conflict without masking it as a network error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ code: 'IDEMPOTENCY_CONFLICT', message: 'Conflict', traceId: 'trace' }),
+            { status: 409 },
+          ),
+        ),
+    );
+    await expect(createRenderJob(job, 'operation-123')).rejects.toBeInstanceOf(RenderConflictError);
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify({ code: 'OTHER_ERROR' }), { status: 409 })),
+    );
+    await expect(createRenderJob(job, 'operation-123')).rejects.not.toBeInstanceOf(
+      RenderConflictError,
+    );
   });
   it('uses committed delivery identity for quality previews', () => {
     const receipt = {

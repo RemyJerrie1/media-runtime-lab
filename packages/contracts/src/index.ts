@@ -66,6 +66,12 @@ export const createRenderJobSchema = z.object({
 });
 export type CreateRenderJob = z.infer<typeof createRenderJobSchema>;
 
+export const idempotencyConflictSchema = z.object({
+  code: z.literal('IDEMPOTENCY_CONFLICT'),
+  message: z.string().min(1),
+  traceId: z.string().min(1),
+});
+
 export const renderJobSchema = z.object({
   id: z.string(),
   tenantId: z.string(),
@@ -175,4 +181,44 @@ export const apiErrorSchema = z.object({
   code: z.string(),
   message: z.string(),
   traceId: z.string(),
+});
+
+export const encodingBenchmarkSchema = z.object({
+  measuredAt: z.string().datetime(),
+  source: z.object({
+    path: z.string(),
+    sha256: z.string().regex(/^[a-f0-9]{64}$/),
+    startSeconds: z.number().nonnegative(),
+    durationSeconds: z.number().positive(),
+  }),
+  environment: z.object({
+    platform: z.string(),
+    arch: z.string(),
+    cpu: z.string(),
+    logicalCpus: z.number().int().positive(),
+    node: z.string(),
+    ffmpeg: z.string(),
+    threads: z.number().int().positive(),
+  }),
+  method: z.string(),
+  results: z
+    .array(
+      z.object({
+        id: z.string(),
+        preset: z.enum(['ultrafast', 'slow']),
+        crf: z.number().int(),
+        elapsedMs: z.array(z.number().positive()).length(3),
+        medianMs: z.number().positive(),
+        sizeBytes: z.number().int().positive(),
+        sha256: z.string().regex(/^[a-f0-9]{64}$/),
+        videoUrl: z.string().regex(/^\/benchmarks\/[a-z0-9-]+\.mp4$/),
+        posterUrl: z.string().regex(/^\/benchmarks\/[a-z0-9-]+\.jpg$/),
+        posterSha256: z.string().regex(/^[a-f0-9]{64}$/),
+        width: z.number().int().positive(),
+        height: z.number().int().positive(),
+        durationSeconds: z.number().positive(),
+        decoded: z.literal(true),
+      }),
+    )
+    .length(3),
 });

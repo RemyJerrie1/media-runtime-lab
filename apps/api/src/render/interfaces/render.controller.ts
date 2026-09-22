@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Body,
   Inject,
   Controller,
@@ -13,7 +14,8 @@ import {
   Query,
   Sse,
 } from '@nestjs/common';
-import { createRenderJobSchema } from '@media-lab/contracts';
+import { createRenderJobSchema, idempotencyConflictSchema } from '@media-lab/contracts';
+import { IdempotencyConflict } from '../domain/idempotency';
 import { map, type Observable } from 'rxjs';
 import { RenderOrchestrator } from '../application/render-orchestrator';
 import { TenantPolicy } from '../application/tenant-policy';
@@ -56,6 +58,15 @@ export class RenderController {
         this.policy.quotaTokens,
       );
     } catch (error) {
+      if (error instanceof IdempotencyConflict)
+        throw new ConflictException(
+          idempotencyConflictSchema.parse({
+            code: 'IDEMPOTENCY_CONFLICT',
+            message:
+              'This key belongs to another request or an unverifiable legacy request. Use the original request or explicitly start a new operation.',
+            traceId,
+          }),
+        );
       if (error instanceof Error && error.message === 'TENANT_QUOTA_EXCEEDED')
         throw new BadRequestException({
           code: 'TENANT_QUOTA_EXCEEDED',

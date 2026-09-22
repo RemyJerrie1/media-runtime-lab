@@ -31,7 +31,8 @@ const endpointGroups = [
         method: 'POST',
         path: '/v1/render-jobs',
         purpose: '建立具租戶範圍與冪等性的原子指令',
-        contract: '建立算圖任務 → 算圖任務',
+        contract:
+          '同租戶、同 key、同內容 → 原任務；不同內容或無法比對的舊請求 → 409 IDEMPOTENCY_CONFLICT（code、message、traceId）',
       },
       {
         method: 'GET',

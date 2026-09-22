@@ -22,7 +22,22 @@ function formatPts(seconds: number) {
 }
 
 export function CompositionShowcase() {
-  const { job, busy, error, run, pending, retry, discardPending } = useRenderJob('composition');
+  const {
+    job,
+    busy,
+    error,
+    run,
+    pending,
+    retry,
+    discardPending,
+    paused,
+    proof,
+    pauseProgress,
+    resumeProgress,
+    replay,
+    canReplay,
+  } = useRenderJob('composition');
+  const [loseResponse, setLoseResponse] = useState(false);
   const [source, setSource] = useState<MediaAsset | null>(null);
   const [watermarkMode, setWatermarkMode] = useState<MediaProcessing['watermarkMode']>('visible');
   const [previewSeconds, setPreviewSeconds] = useState(0);
@@ -63,33 +78,36 @@ export function CompositionShowcase() {
             disabled={!source || busy || pending}
             onClick={() =>
               source &&
-              run({
-                sourceAssetId: source.id,
-                template: 'landscape',
-                trimStartSeconds: 0,
-                durationSeconds: 5,
-                encoding: {
-                  codec: 'libx264',
-                  preset: 'fast',
-                  rateControl: 'crf',
-                  crf: 23,
-                  bitrateKbps: 4000,
-                  gop: 60,
-                  fps: 30,
+              run(
+                {
+                  sourceAssetId: source.id,
+                  template: 'landscape',
+                  trimStartSeconds: 0,
+                  durationSeconds: 5,
+                  encoding: {
+                    codec: 'libx264',
+                    preset: 'fast',
+                    rateControl: 'crf',
+                    crf: 23,
+                    bitrateKbps: 4000,
+                    gop: 60,
+                    fps: 30,
+                  },
+                  processing: {
+                    frameRateMode: 'cfr',
+                    audioSampleRate: 48000,
+                    audioSync: 'async-resample',
+                    subtitleMode: 'none',
+                    watermarkMode,
+                    adInsertion: 'none',
+                    fastStart: true,
+                    deliveryFormat: 'mp4',
+                    abrLadder: 'none',
+                    qualityMetric: 'none',
+                  },
                 },
-                processing: {
-                  frameRateMode: 'cfr',
-                  audioSampleRate: 48000,
-                  audioSync: 'async-resample',
-                  subtitleMode: 'none',
-                  watermarkMode,
-                  adInsertion: 'none',
-                  fastStart: true,
-                  deliveryFormat: 'mp4',
-                  abrLadder: 'none',
-                  qualityMetric: 'none',
-                },
-              })
+                { loseResponse },
+              )
             }
           >
             {busy ? '正在建立任務…' : '產生 FFmpeg 成品'}
@@ -131,6 +149,75 @@ export function CompositionShowcase() {
           ) : null}
         </div>
       </div>
+      <section className={styles.recovery} aria-label="故障恢復實驗">
+        <h3>故障恢復實驗</h3>
+        <p>
+          這裡操作真實後端任務。中斷只停止本頁進度連線，後端仍繼續轉檔；恢復時重新讀取後端狀態。
+        </p>
+        <label>
+          <input
+            type="checkbox"
+            checked={loseResponse}
+            disabled={busy || pending}
+            onChange={(event) => setLoseResponse(event.target.checked)}
+          />{' '}
+          故障注入：下次送出後刻意丟棄成功回應
+        </label>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            onClick={pauseProgress}
+            disabled={
+              !job || busy || pending || paused || job.status === 'ready' || job.status === 'failed'
+            }
+          >
+            中斷進度連線
+          </button>
+          <button type="button" onClick={() => void resumeProgress()} disabled={!paused || busy}>
+            恢復進度連線
+          </button>
+          <button
+            type="button"
+            onClick={() => void replay()}
+            disabled={!canReplay || busy || pending}
+          >
+            重送原操作（驗證去重）
+          </button>
+        </div>
+        <div role="status">
+          {paused ? '已手動中斷：畫面暫停更新，後端任務不受影響。' : '尚未中斷，或已恢復觀察。'}
+        </div>
+        <dl>
+          <dt>目前 job ID</dt>
+          <dd data-testid="current-job-id">{job?.id ?? '尚未取得'}</dd>
+          <dt>事件 sequence</dt>
+          <dd>{job?.sequence ?? '—'}</dd>
+        </dl>
+        {proof ? (
+          <div data-testid="recovery-proof">
+            <p>{proof.action === 'disconnect' ? '連線恢復證據' : '重送去重證據'}</p>
+            <dl>
+              <dt>操作前 job ID</dt>
+              <dd>{proof.before.id}</dd>
+              <dt>操作前 sequence</dt>
+              <dd>{proof.before.sequence}</dd>
+              <dt>恢復／重送後 job ID</dt>
+              <dd>{proof.after?.id ?? '等待操作'}</dd>
+              <dt>恢復／重送後 sequence</dt>
+              <dd>{proof.after?.sequence ?? '—'}</dd>
+            </dl>
+            {proof.after ? (
+              <strong>
+                {proof.before.id === proof.after.id
+                  ? proof.action === 'disconnect'
+                    ? '已確認：恢復同一筆任務'
+                    : '已確認：重送回傳相同 job ID，未建立另一筆任務'
+                  : '結果不一致：job ID 已改變'}
+              </strong>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
       {job?.status === 'ready' && job.artifactUrl ? (
         <div className={styles.artifact} data-tour="composition-result">
           <div>

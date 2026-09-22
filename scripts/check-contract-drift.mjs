@@ -52,4 +52,12 @@ for (const route of [
     console.error(`Reference drift: ${route}`);
     process.exit(1);
   }
+const conflictExample = readFileSync(
+  new URL('../bruno/render-jobs/idempotency-conflict.bru', import.meta.url),
+  'utf8',
+);
+if (![contract, docs, conflictExample].every((source) => source.includes('IDEMPOTENCY_CONFLICT'))) {
+  console.error('Contract drift: idempotency conflict response');
+  process.exit(1);
+}
 console.log('Contract gate: schema, API reference and Bruno aligned');

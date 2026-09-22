@@ -193,3 +193,43 @@ describe('render orchestration', () => {
     ).rejects.toThrow('TENANT_QUOTA_EXCEEDED');
   });
 });
+
+describe('idempotency intent integrity', () => {
+  const input = {
+    tenantId: 'tenant',
+    traceId: 'trace',
+    requestId: 'request',
+    quotaTokens: 50000,
+    command,
+  };
+  it.each([
+    { durationSeconds: 19 },
+    { narration: 'Different narration content!' },
+    { projectId: 'different-project' },
+    { sourceAssetId: '00000000-0000-4000-8000-000000000001' },
+    { encoding: { ...command.encoding, crf: 30 } },
+    { processing: { ...command.processing, watermarkMode: 'none' as const } },
+  ])('rejects changed intent without another event or job: %j', async (change) => {
+    const store = new InMemoryWorkflowStore();
+    const first = await store.create(input);
+    await expect(store.create({ ...input, command: { ...command, ...change } })).rejects.toThrow(
+      'IDEMPOTENCY_CONFLICT',
+    );
+    expect(await store.activeCount(input.tenantId)).toBe(1);
+    expect(await store.listEvents(input.tenantId, first.job.id, 0)).toHaveLength(1);
+  });
+  it('accepts reordered fields and changed trace context, isolates tenants and fresh keys', async () => {
+    const store = new InMemoryWorkflowStore();
+    const first = await store.create(input);
+    const reversed = Object.fromEntries(Object.entries(command.encoding).reverse());
+    const reordered = { ...command, encoding: reversed as typeof command.encoding };
+    expect(
+      await store.create({ ...input, command: reordered, traceId: 'another-trace' }),
+    ).toMatchObject({ created: false, job: { id: first.job.id } });
+    expect((await store.create({ ...input, tenantId: 'another-tenant' })).created).toBe(true);
+    expect(
+      (await store.create({ ...input, command: { ...command, idempotencyKey: 'new-operation' } }))
+        .created,
+    ).toBe(true);
+  });
+});

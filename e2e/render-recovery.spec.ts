@@ -364,3 +364,45 @@ test('native EventSource disconnect recovers by GET before replaying from the ne
   expect(cursors).toEqual(['1', '3']);
   expect(gets).toBe(1);
 });
+
+test('interactive disconnect shows before/after identity and ignores events while paused', async ({
+  page,
+}, testInfo) => {
+  await setup(page);
+  await start(page);
+  await emit(page, job('job-a', 2, 30, 'encoding'));
+  await page.getByRole('button', { name: '中斷進度連線', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.testStreams[0].closed)).toBe(true);
+  await emit(page, job('job-a', 3, 60, 'encoding'));
+  await expect(progress(page)).toContainText('30%');
+  await page.route('http://localhost:4000/v1/render-jobs/job-a', (route) =>
+    route.fulfill({ json: job('job-a', 4, 80, 'packaging') }),
+  );
+  await page.getByRole('button', { name: '恢復進度連線', exact: true }).click();
+  await expect(progress(page)).toContainText('80%');
+  await expect(page.getByTestId('recovery-proof')).toContainText('已確認：恢復同一筆任務');
+  await expect.poll(() => page.evaluate(() => window.testStreams[1]?.url)).toContain('after=4');
+  await page.screenshot({ path: testInfo.outputPath('recovery-proof.png'), fullPage: true });
+});
+
+test('benchmark shows persisted measurements and all three actual videos play on mobile', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setup(page);
+  const section = page.getByRole('region', { name: '編碼速度、檔案大小與畫面，一起比較' });
+  await expect(section).toContainText('已保存的本機測量');
+  await expect(section.locator('video')).toHaveCount(3);
+  await section.getByRole('button', { name: '三組成品從頭播放' }).click();
+  for (const video of await section.locator('video').all()) {
+    await expect
+      .poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime))
+      .toBeGreaterThan(0);
+  }
+  await section.locator('summary').click();
+  await expect(section).toContainText('SHA-256');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await section.screenshot({ path: testInfo.outputPath('encoding-comparison-mobile.png') });
+});

@@ -16,7 +16,9 @@
     "prepare": "husky",
     "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\" \"e2e/**/*.ts\" playwright.config.ts",
     "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\" \"e2e/**/*.ts\" playwright.config.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "benchmark": "pnpm --filter @media-lab/contracts build && node scripts/benchmark-encoding.mjs",
+    "benchmark:verify": "pnpm --filter @media-lab/contracts build && node scripts/benchmark-encoding.mjs --verify"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

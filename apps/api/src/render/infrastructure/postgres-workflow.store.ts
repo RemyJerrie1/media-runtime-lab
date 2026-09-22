@@ -1,3 +1,4 @@
+import { assertSameRequest, requestFingerprint } from '../domain/idempotency';
 import { Injectable } from '@nestjs/common';
 import type { RenderEvent, RenderJob, RenderStatus } from '@media-lab/contracts';
 import { Pool, type PoolClient } from 'pg';
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS render_jobs (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(tenant_id, idempotency_key)
 );
+ALTER TABLE render_jobs ADD COLUMN IF NOT EXISTS request_fingerprint text;
 CREATE INDEX IF NOT EXISTS render_jobs_tenant_status_idx ON render_jobs(tenant_id, status);
 
 CREATE TABLE IF NOT EXISTS render_events (
@@ -107,11 +109,17 @@ export class PostgresWorkflowStore implements WorkflowStore {
   async create({ tenantId, traceId, requestId, command, quotaTokens }: CreateWorkflow) {
     return this.transaction(async (client) => {
       await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [tenantId]);
-      const existing = await client.query<{ snapshot: RenderJob }>(
-        'SELECT snapshot FROM render_jobs WHERE tenant_id=$1 AND idempotency_key=$2',
+      const existing = await client.query<{
+        snapshot: RenderJob;
+        request_fingerprint: string | null;
+      }>(
+        'SELECT snapshot, request_fingerprint FROM render_jobs WHERE tenant_id=$1 AND idempotency_key=$2',
         [tenantId, command.idempotencyKey],
       );
-      if (existing.rowCount) return { job: existing.rows[0]!.snapshot, created: false };
+      if (existing.rowCount) {
+        assertSameRequest(existing.rows[0]!.request_fingerprint, requestFingerprint(command));
+        return { job: existing.rows[0]!.snapshot, created: false };
+      }
       const used = await client.query<{ used: string }>(
         "SELECT COALESCE(SUM(tokens),0)::text AS used FROM render_jobs WHERE tenant_id=$1 AND created_at>=date_trunc('day',now())",
         [tenantId],
@@ -149,14 +157,26 @@ export class PostgresWorkflowStore implements WorkflowStore {
         updatedAt: now,
       };
       const inserted = await client.query<{ snapshot: RenderJob }>(
-        'INSERT INTO render_jobs(id,tenant_id,idempotency_key,status,tokens,snapshot) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(tenant_id,idempotency_key) DO NOTHING RETURNING snapshot',
-        [id, tenantId, command.idempotencyKey, job.status, tokens, job],
+        'INSERT INTO render_jobs(id,tenant_id,idempotency_key,status,tokens,snapshot,request_fingerprint) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(tenant_id,idempotency_key) DO NOTHING RETURNING snapshot',
+        [
+          id,
+          tenantId,
+          command.idempotencyKey,
+          job.status,
+          tokens,
+          job,
+          requestFingerprint(command),
+        ],
       );
       if (!inserted.rowCount) {
-        const existing = await client.query<{ snapshot: RenderJob }>(
-          'SELECT snapshot FROM render_jobs WHERE tenant_id=$1 AND idempotency_key=$2',
+        const existing = await client.query<{
+          snapshot: RenderJob;
+          request_fingerprint: string | null;
+        }>(
+          'SELECT snapshot, request_fingerprint FROM render_jobs WHERE tenant_id=$1 AND idempotency_key=$2',
           [tenantId, command.idempotencyKey],
         );
+        assertSameRequest(existing.rows[0]!.request_fingerprint, requestFingerprint(command));
         return { job: existing.rows[0]!.snapshot, created: false };
       }
       const event: RenderEvent = {
