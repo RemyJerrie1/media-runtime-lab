@@ -15,7 +15,8 @@ test('saved scene exports a real silent MP4 matching preview frames, plays and d
   page,
   request,
 }, info) => {
-  test.setTimeout(120000);
+  // Wait for the production render deadline before judging browser completion.
+  test.setTimeout(180000);
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto('/hamster');
   await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
@@ -62,7 +63,7 @@ test('saved scene exports a real silent MP4 matching preview frames, plays and d
   const id = await page.getByTestId('scene-job-id').textContent();
   // Editing now must not change the already submitted immutable snapshot.
   await page.getByLabel('背景顏色', { exact: true }).fill('#123456');
-  await expect(page.getByLabel('倉鼠輸出影片')).toBeVisible({ timeout: 90000 });
+  await expect(page.getByLabel('倉鼠輸出影片')).toBeVisible({ timeout: 130000 });
   const result = await (
     await request.get(`http://localhost:4000/v1/scene-render-jobs/${id}`, { headers })
   ).json();

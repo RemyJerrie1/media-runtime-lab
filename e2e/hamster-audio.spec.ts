@@ -59,7 +59,8 @@ test('audio upload, persisted timeline, playback controls and real audible/muted
   page,
   request,
 }, info) => {
-  test.setTimeout(180000);
+  // Two exports each retain the production 120-second deadline, plus UI/decode time.
+  test.setTimeout(300000);
   const source = info.outputPath('tone.wav');
   await execute(ffmpeg, [
     '-v',
@@ -111,7 +112,7 @@ test('audio upload, persisted timeline, playback controls and real audible/muted
   await page.getByRole('button', { name: '暫停', exact: true }).click();
   await page.getByLabel('靜音音軌', { exact: true }).uncheck();
   await page.getByRole('button', { name: '匯出目前場景 MP4', exact: true }).click();
-  await expect(page.getByLabel('倉鼠輸出影片')).toBeVisible({ timeout: 90000 });
+  await expect(page.getByLabel('倉鼠輸出影片')).toBeVisible({ timeout: 130000 });
   const jobId = await page.getByTestId('scene-job-id').textContent();
   const job = await (
     await request.get(`http://localhost:4000/v1/scene-render-jobs/${jobId}`, { headers })
@@ -201,7 +202,7 @@ test('audio upload, persisted timeline, playback controls and real audible/muted
   await page.getByLabel('靜音音軌', { exact: true }).check();
   await page.getByRole('button', { name: '匯出目前場景 MP4', exact: true }).click();
   await expect(page.getByTestId('scene-job-id')).not.toHaveText(jobId!);
-  await expect(page.getByLabel('倉鼠輸出影片')).toBeVisible({ timeout: 90000 });
+  await expect(page.getByLabel('倉鼠輸出影片')).toBeVisible({ timeout: 130000 });
   const mutedId = await page.getByTestId('scene-job-id').textContent();
   const muted = await (
     await request.get(`http://localhost:4000/v1/scene-render-jobs/${mutedId}`, { headers })

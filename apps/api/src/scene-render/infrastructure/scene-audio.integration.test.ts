@@ -103,7 +103,7 @@ it.each(['delayed', 'muted', 'clipped'] as const)(
     const processor = new ChromiumSceneProcessor({
       root: movies,
       audioAssets: assets,
-      timeoutMs: 110000,
+      timeoutMs: 120000,
     });
     const receipt = await processor.render(newSceneJob(command), signal(), async () => {});
     expect(receipt.durationSeconds).toBeCloseTo(5, 2);
@@ -144,5 +144,5 @@ it.each(['delayed', 'muted', 'clipped'] as const)(
     await processor.discard(receipt);
     expect(await readdir(movies)).toEqual([]);
   },
-  120000,
+  130000,
 );

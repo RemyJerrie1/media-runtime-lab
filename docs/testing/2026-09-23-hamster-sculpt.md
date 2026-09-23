@@ -48,6 +48,11 @@ The pushed SHA's workflow result is recorded separately in issue #8.
 The first pushed run, 35846213631, timed out in the combined audio test: it executed
 three full exports within a single 120-second budget on Linux software rendering.
 Split delayed/gain, muted, and clipped-tail cases into independent tests, retaining
-every original decoded-audio assertion and the same 120-second per-test limit.
-Each processor gets a 110-second limit so browser/encoder cleanup precedes the test
-deadline. No production timeout, model quality or acceptance assertion was relaxed.
+every original decoded-audio assertion. Run 35847069383 passed all three cases,
+measuring 109.855, 96.769 and 96.523 seconds on Linux software rendering.
+The final test budgets follow the existing production 120-second render deadline:
+130 seconds for one processor test / browser completion wait, 180 seconds for a
+single-export E2E including interaction/decoding, and 300 seconds for two exports.
+This replaces the browser's earlier 90-second wait, which expired before a valid
+production render could finish. No production timeout, model quality or decoded
+media acceptance assertion was relaxed.
