@@ -4,6 +4,7 @@ import { PostgresSceneStore } from './postgres-scene.store';
 import { SceneWorker } from '../application/scene-worker';
 import { sceneCommand, testReceipt } from './scene-fixture';
 import { createSceneRenderSchema } from '@media-lab/contracts';
+import { sceneFingerprint } from '../domain/scene-workflow';
 const suite = process.env.DATABASE_URL ? describe : describe.skip;
 suite('durable scene rendering', () => {
   let admin: Pool;
@@ -43,6 +44,31 @@ suite('durable scene rendering', () => {
     await expect(store.create('a', command)).rejects.toThrow('IDEMPOTENCY_CONFLICT');
     expect(await store.get('b', jobs[0]!.id)).toBeUndefined();
     expect((await other.get('a', jobs[0]!.id))!.scene.transform.x).toBe(-1.2);
+  });
+  it('retries an existing hamster-2 operation after the renderer upgrade without a conflict', async () => {
+    const base = sceneCommand();
+    const command = createSceneRenderSchema.parse({
+      ...base,
+      scene: { ...base.scene, version: 4, audio: null },
+    });
+    const job = await store.create('a', command);
+    const previous = {
+      ...job,
+      rendererVersion: 'hamster-2',
+      sceneFingerprint: sceneFingerprint(command, 'hamster-2'),
+    };
+    await admin.query(
+      `UPDATE ${schema}.scene_render_jobs SET snapshot=$1, fingerprint=$2 WHERE id=$3`,
+      [previous, previous.sceneFingerprint, job.id],
+    );
+    expect(await other.create('a', command)).toEqual(previous);
+    const changed = createSceneRenderSchema.parse({
+      ...command,
+      scene: { ...command.scene, background: '#000000' },
+    });
+    await expect(other.create('a', changed)).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+    const fresh = await store.create('a', { ...command, idempotencyKey: crypto.randomUUID() });
+    expect(fresh.rendererVersion).toBe('hamster-3');
   });
   it('persists audio identity and settings in the immutable idempotent snapshot', async () => {
     const base = sceneCommand();
@@ -86,7 +112,7 @@ suite('durable scene rendering', () => {
     expect((await other.get('a', job.id))?.scene).toEqual(command.scene);
     const lease = (await store.claim('audio-worker', 10000))!;
     await store.update(lease, { status: 'encoding', frames: 120 });
-    const receipt = { ...testReceipt(job.sceneFingerprint), rendererVersion: 'hamster-2' as const };
+    const receipt = { ...testReceipt(job.sceneFingerprint), rendererVersion: 'hamster-3' as const };
     await expect(store.update(lease, { status: 'ready', frames: 120, receipt })).rejects.toThrow(
       'SCENE_RECEIPT_MISMATCH',
     );

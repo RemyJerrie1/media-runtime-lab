@@ -49,7 +49,7 @@ it('migrates legacy documents without changing old export commands or renderer i
   const { audio: unused, ...rest } = migrated;
   const legacy = hamsterSceneSchema.parse({ ...rest, version: 3 });
   expect(sceneRendererVersion(legacy)).toBe('hamster-1');
-  expect(sceneRendererVersion(migrated)).toBe('hamster-2');
+  expect(sceneRendererVersion(migrated)).toBe('hamster-3');
   expect(audibleSceneAudio({ ...migrated, audio })).toEqual(audio);
   expect(audibleSceneAudio({ ...migrated, audio: { ...audio, muted: true } })).toBeNull();
 });

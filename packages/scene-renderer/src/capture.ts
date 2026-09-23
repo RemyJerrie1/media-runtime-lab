@@ -15,7 +15,7 @@ output.width = 640;
 output.height = 360;
 document.body.append(output);
 const runtime = {
-  async init(value: unknown) {
+  async init(value: unknown, rendererVersion?: string) {
     scene = hamsterSceneSchema.parse(value);
     try {
       releaseFont = await loadCaptionFont();
@@ -23,7 +23,8 @@ const runtime = {
       throw new Error('SCENE_FONT_UNAVAILABLE');
     }
     try {
-      stage = createHamsterStage(webgl, { width: 640, height: 360 });
+      stage = createHamsterStage(webgl, { width: 640, height: 360 }, rendererVersion);
+      await stage.ready;
     } catch {
       throw new Error('SCENE_WEBGL_UNAVAILABLE');
     }

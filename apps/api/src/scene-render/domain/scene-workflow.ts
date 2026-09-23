@@ -35,14 +35,17 @@ export interface SceneProcessor {
   ): Promise<SceneReceipt>;
   discard(receipt: SceneReceipt): Promise<void>;
 }
-export function sceneFingerprint(command: CreateSceneRender) {
+export function sceneFingerprint(
+  command: CreateSceneRender,
+  rendererVersion = sceneRendererVersion(command.scene),
+) {
   // Zod parsed input fixes object key order; no transport/idempotency fields in content identity.
   return createHash('sha256')
     .update(
       JSON.stringify({
         version: command.version,
         kind: command.kind,
-        rendererVersion: sceneRendererVersion(command.scene),
+        rendererVersion,
         scene: command.scene,
       }),
     )

@@ -58,10 +58,12 @@ export function HamsterPreview({
         else releaseFont = release;
       }),
     ])
-      .then(([{ createHamsterStage }]) => {
+      .then(async ([{ createHamsterStage }]) => {
         if (cancelled) return;
         const stage = createHamsterStage(canvas);
         stageRef.current = stage;
+        await stage.ready;
+        if (cancelled) return;
         const redraw = () => {
           try {
             stage.render(currentScene.current, currentTime.current);

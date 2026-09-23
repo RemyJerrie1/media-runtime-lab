@@ -1,12 +1,19 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { HamsterScene } from '@media-lab/contracts';
+import { createLegacyHamsterStage } from './legacy-stage-renderer.js';
 import { evaluateScene } from './evaluate-scene.js';
 
-// Shared procedural scene, independent of React and persistence; render only on change.
+// Preview and capture share the asset, lighting and absolute-time pose.
 export function createHamsterStage(
   canvas: HTMLCanvasElement,
   fixedSize?: { width: number; height: number },
+  rendererVersion = 'hamster-3',
 ) {
+  if (rendererVersion === 'hamster-1' || rendererVersion === 'hamster-2')
+    return { ...createLegacyHamsterStage(canvas, fixedSize), ready: Promise.resolve() };
+  if (rendererVersion !== 'hamster-3') throw new Error('UNKNOWN_SCENE_RENDERER');
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -14,112 +21,85 @@ export function createHamsterStage(
   });
   renderer.setPixelRatio(fixedSize ? 1 : Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-4.6, 4.6, 2.5875, -2.5875, 0.1, 40);
   camera.position.set(4, 3.7, 8);
   camera.lookAt(0, 1.15, 0);
-  scene.add(new THREE.HemisphereLight(0xfff4e3, 0x66533f, 2.3));
-  const key = new THREE.DirectionalLight(0xfff5e5, 3.2);
-  key.position.set(-3, 7, 5);
+  const room = new RoomEnvironment();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const environment = pmrem.fromScene(room, 0.04);
+  room.dispose();
+  pmrem.dispose();
+  scene.environment = environment.texture;
+  scene.environmentIntensity = 0.45;
+  const key = new THREE.DirectionalLight(0xfff1df, 2);
+  key.position.set(-3, 5, 4);
   key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.normalBias = 0.02;
   Object.assign(key.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 });
-  key.shadow.normalBias = 0.03;
-  scene.add(key);
-  const rim = new THREE.DirectionalLight(0xe5eeff, 1.6);
-  rim.position.set(4, 3, -3);
-  scene.add(rim);
-  const materials = new Set<THREE.Material>();
-  const geometries = new Set<THREE.BufferGeometry>();
-  const material = (color: number, roughness = 0.8) => {
-    const value = new THREE.MeshStandardMaterial({ color, roughness });
-    materials.add(value);
-    return value;
-  };
-  const fur = material(0xc99050),
-    cream = material(0xffe8c5),
-    pink = material(0xde9b91);
-  const dark = material(0x251b19, 0.28),
-    white = material(0xffffff),
-    whisker = material(0x735746);
-  const sphere = new THREE.SphereGeometry(1, 32, 24);
-  geometries.add(sphere);
-  function part(
-    parent: THREE.Object3D,
-    name: string,
-    mat: THREE.Material,
-    pos: number[],
-    scale: number[],
-  ) {
-    const mesh = new THREE.Mesh(sphere, mat);
-    mesh.name = name;
-    mesh.position.set(pos[0]!, pos[1]!, pos[2]!);
-    mesh.scale.set(scale[0]!, scale[1]!, scale[2]!);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    parent.add(mesh);
-    return mesh;
-  }
-  const platformGeometry = new THREE.CylinderGeometry(3.25, 3.35, 0.12, 96);
-  geometries.add(platformGeometry);
-  const platform = new THREE.Mesh(platformGeometry, material(0xf3e9dc));
+  scene.add(key, new THREE.HemisphereLight(0xfff8ea, 0x8c8173, 0.6));
+  const platform = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.25, 3.35, 0.12, 96),
+    new THREE.MeshStandardMaterial({ color: 0xf3e9dc, roughness: 1 }),
+  );
   platform.receiveShadow = true;
   scene.add(platform);
   const hamster = new THREE.Group();
-  hamster.name = 'hamster';
   scene.add(hamster);
-  const upper = new THREE.Group();
-  hamster.add(upper);
-  part(upper, 'body', fur, [0, 0.95, 0], [0.78, 0.85, 0.6]);
-  part(upper, 'belly', cream, [0, 0.91, 0.43], [0.59, 0.66, 0.22]);
-  const head = new THREE.Group();
-  head.name = 'head';
-  head.position.set(0, 1.75, 0.15);
-  upper.add(head);
-  part(head, 'face', fur, [0, 0, 0], [0.77, 0.66, 0.59]);
-  for (const side of [-1, 1]) {
-    part(head, `ear-${side}`, fur, [side * 0.55, 0.5, -0.04], [0.25, 0.29, 0.15]);
-    part(head, `inner-ear-${side}`, pink, [side * 0.55, 0.51, 0.09], [0.16, 0.19, 0.045]);
-    part(head, `cheek-${side}`, cream, [side * 0.37, -0.21, 0.4], [0.39, 0.31, 0.26]);
-    part(head, `eye-${side}`, dark, [side * 0.31, 0.1, 0.54], [0.09, 0.11, 0.065]);
-    part(
-      head,
-      `eye-glint-${side}`,
-      white,
-      [side * 0.31 - 0.024, 0.14, 0.595],
-      [0.026, 0.032, 0.016],
-    );
-    const arm = part(upper, `arm-${side}`, fur, [side * 0.65, 1, 0.37], [0.2, 0.36, 0.22]);
-    arm.rotation.z = side * 0.35;
-    part(upper, `hand-${side}`, pink, [side * 0.55, 0.75, 0.56], [0.15, 0.13, 0.12]);
-    part(hamster, `foot-${side}`, pink, [side * 0.4, 0.13, 0.26], [0.25, 0.13, 0.32]);
-    for (const offset of [-1, 1]) {
-      const line = part(
-        head,
-        `whisker-${side}-${offset}`,
-        whisker,
-        [side * 0.64, -0.17 + offset * 0.07, 0.57],
-        [0.19, 0.012, 0.012],
-      );
-      line.rotation.z = side * offset * 0.16;
-    }
-    const mouth = part(
-      head,
-      `mouth-${side}`,
-      dark,
-      [side * 0.065, -0.27, 0.653],
-      [0.08, 0.014, 0.014],
-    );
-    mouth.rotation.z = side * 0.4;
-  }
-  part(head, 'nose', pink, [0, -0.14, 0.67], [0.105, 0.073, 0.055]);
-  part(upper, 'tail', cream, [0, 0.48, -0.64], [0.17, 0.16, 0.18]);
+  const controller = new AbortController();
   let disposed = false;
+  let loaded = false;
+  const feet: { mesh: THREE.Mesh; rest: THREE.Vector3; side: number }[] = [];
+  const release = (root: THREE.Object3D) => {
+    const materials = new Set<THREE.Material>();
+    root.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.geometry.dispose();
+      for (const material of Array.isArray(object.material) ? object.material : [object.material])
+        materials.add(material);
+    });
+    materials.forEach((material) => material.dispose());
+  };
+  const ready = (async () => {
+    const response = await fetch('/models/hamster-3.glb', { signal: controller.signal });
+    if (!response.ok) throw new Error('SCENE_MODEL_UNAVAILABLE');
+    const gltf = await new GLTFLoader().parseAsync(await response.arrayBuffer(), '');
+    if (disposed) {
+      release(gltf.scene);
+      return;
+    }
+    gltf.scene.updateMatrixWorld(true);
+    gltf.scene.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const groom = object.name.includes('groom');
+      object.castShadow = !groom;
+      object.receiveShadow = !groom;
+      if (object.name.startsWith('Eye')) {
+        for (const material of Array.isArray(object.material)
+          ? object.material
+          : [object.material]) {
+          if (material instanceof THREE.MeshStandardMaterial) material.envMapIntensity = 0.4;
+        }
+      }
+      if (object.name.startsWith('Hind_foot') || object.name.startsWith('Toe')) {
+        object.geometry.computeBoundingBox();
+        const center = object.geometry
+          .boundingBox!.getCenter(new THREE.Vector3())
+          .applyMatrix4(object.matrixWorld);
+        feet.push({ mesh: object, rest: object.position.clone(), side: center.x < 0 ? -1 : 1 });
+      }
+    });
+    hamster.add(gltf.scene);
+    loaded = true;
+  })();
   return {
+    ready,
     render(document: HamsterScene, timeSeconds = 0) {
       if (disposed) return;
+      if (!loaded) throw new Error('SCENE_MODEL_NOT_READY');
       if (renderer.getContext().isContextLost()) throw new Error('SCENE_WEBGL_LOST');
       const width = fixedSize?.width ?? Math.max(canvas.clientWidth, 1);
       if (canvas.width !== Math.floor(width * renderer.getPixelRatio()))
@@ -127,23 +107,30 @@ export function createHamsterStage(
       scene.background = new THREE.Color(document.background);
       const evaluated = evaluateScene(document, timeSeconds);
       const pose = evaluated.root;
-      upper.position.y = evaluated.bodyLift;
-      for (const side of [-1, 1]) {
-        const foot = side === -1 ? evaluated.leftFoot : evaluated.rightFoot;
-        hamster.getObjectByName('foot-' + side)!.position.set(foot.x, foot.y, foot.z);
-        upper.getObjectByName('arm-' + side)!.rotation.x = side * evaluated.armSwing;
-        upper.getObjectByName('hand-' + side)!.position.z = 0.56 + side * evaluated.armSwing;
-      }
-      hamster.position.set(pose.x, pose.y, pose.z);
+      hamster.position.set(pose.x, pose.y + evaluated.bodyLift, pose.z);
       hamster.rotation.y = pose.rotationY;
       hamster.scale.setScalar(pose.scale);
+      for (const { mesh, rest, side } of feet) {
+        const foot = side < 0 ? evaluated.leftFoot : evaluated.rightFoot;
+        // The exported GLB has already converted the sculpt to glTF's Y-up coordinates.
+        mesh.position
+          .copy(rest)
+          .add(
+            new THREE.Vector3(
+              foot.x - side * 0.4,
+              foot.y - 0.13 - evaluated.bodyLift,
+              foot.z - 0.26,
+            ),
+          );
+      }
       renderer.render(scene, camera);
     },
     dispose() {
       if (disposed) return;
       disposed = true;
-      geometries.forEach((value) => value.dispose());
-      materials.forEach((value) => value.dispose());
+      controller.abort();
+      release(scene);
+      environment.dispose();
       key.shadow.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

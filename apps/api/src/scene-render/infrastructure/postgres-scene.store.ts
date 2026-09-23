@@ -58,7 +58,13 @@ export class PostgresSceneStore implements SceneStore {
         [tenant, command.idempotencyKey],
       );
       if (old.rowCount) {
-        if (old.rows[0].fingerprint !== sceneFingerprint(command))
+        if (
+          old.rows[0].fingerprint !==
+          sceneFingerprint(
+            command,
+            sceneRenderJobSchema.parse(old.rows[0].snapshot).rendererVersion,
+          )
+        )
           throw new Error('IDEMPOTENCY_CONFLICT');
         return sceneRenderJobSchema.parse(old.rows[0].snapshot);
       }

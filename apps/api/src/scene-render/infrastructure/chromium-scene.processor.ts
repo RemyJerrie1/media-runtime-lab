@@ -26,7 +26,10 @@ type Options = {
   chromiumArgs?: string[];
   encoder?: string;
 };
-type Capture = { init(scene: unknown): Promise<void>; frame(index: number): string };
+type Capture = {
+  init(scene: unknown, rendererVersion: string): Promise<void>;
+  frame(index: number): string;
+};
 async function writeFrame(
   child: ChildProcessWithoutNullStreams,
   buffer: Buffer,
@@ -81,6 +84,10 @@ export class ChromiumSceneProcessor implements SceneProcessor {
         require.resolve('@media-lab/scene-renderer/capture.js'),
         'utf8',
       );
+      const model =
+        job.rendererVersion === 'hamster-3'
+          ? await readFile(require.resolve('@media-lab/scene-renderer/hamster.glb'))
+          : null;
       browser = await chromium.launch({
         headless: true,
         timeout: 20000,
@@ -104,14 +111,20 @@ export class ChromiumSceneProcessor implements SceneProcessor {
           });
         else if (url === 'http://scene-render.invalid/capture.js')
           await route.fulfill({ contentType: 'text/javascript', body: script });
+        else if (url === 'http://scene-render.invalid/models/hamster-3.glb' && model)
+          await route.fulfill({ contentType: 'model/gltf-binary', body: model });
         else if (url === 'http://scene-render.invalid/fonts/NotoSansTC.ttf')
           await route.fulfill({ contentType: 'font/ttf', body: font });
         else await route.abort();
       });
       await page.goto('http://scene-render.invalid/');
       await page.evaluate(
-        (scene) => (window as unknown as { sceneCapture: Capture }).sceneCapture.init(scene),
-        job.scene,
+        (input) =>
+          (window as unknown as { sceneCapture: Capture }).sceneCapture.init(
+            input.scene,
+            input.rendererVersion,
+          ),
+        { scene: job.scene, rendererVersion: job.rendererVersion },
       );
       const binary = this.options.encoder ?? process.env.FFMPEG_BINARY ?? ffmpeg!;
       encoder = startSceneProcess(

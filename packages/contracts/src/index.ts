@@ -379,8 +379,8 @@ export const hamsterSceneDocumentSchema = z
   });
 export const SCENE_RENDERER_VERSION = 'hamster-1';
 export const sceneRendererVersion = (scene: HamsterScene) =>
-  scene.version === 4 ? ('hamster-2' as const) : SCENE_RENDERER_VERSION;
-const rendererVersionSchema = z.enum(['hamster-1', 'hamster-2']);
+  scene.version === 4 ? ('hamster-3' as const) : SCENE_RENDERER_VERSION;
+const rendererVersionSchema = z.enum(['hamster-1', 'hamster-2', 'hamster-3']);
 export const createSceneRenderSchema = z
   .object({
     version: z.literal(1),
@@ -428,7 +428,10 @@ export const sceneRenderJobSchema = z
   })
   .strict()
   .refine(
-    (job) => job.rendererVersion === sceneRendererVersion(job.scene),
+    (job) =>
+      job.scene.version === 3
+        ? job.rendererVersion === 'hamster-1'
+        : job.rendererVersion !== 'hamster-1',
     'SCENE_RENDERER_VERSION_MISMATCH',
   )
   .refine(

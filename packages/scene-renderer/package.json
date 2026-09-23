@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./hamster.glb": "./assets/hamster-3/hamster.glb",
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
