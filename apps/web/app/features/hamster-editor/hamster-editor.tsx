@@ -7,6 +7,7 @@ import { loadScene, saveScene } from './scene-storage';
 import { HamsterPreview } from './hamster-preview';
 import { useScenePlayback } from './use-scene-playback';
 import { CaptionControls } from './caption-controls';
+import { SceneAudio } from './scene-audio';
 import { SceneExport } from './scene-export';
 import styles from './hamster-editor.module.css';
 
@@ -24,6 +25,7 @@ export function HamsterEditor() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [endpoint, setEndpoint] = useState<'start' | 'end'>('start');
+  const [audioBusy, setAudioBusy] = useState(false);
   const [captionDraft, setCaptionDraft] = useState(false);
   const playback = useScenePlayback();
   const edited =
@@ -40,7 +42,7 @@ export function HamsterEditor() {
       if (saved) {
         setScene(saved);
         setBaseline(serializeScene(saved));
-        setMessage('已載入本機場景；舊版場景保留原動畫並關閉字幕，保存時寫入第 3 版。');
+        setMessage('已載入本機場景；舊版場景保留原設定且不新增音軌，保存時寫入第 4 版。');
       } else setMessage('先擺好倉鼠，再保存你的第一個場景。');
     } catch {
       setError('無法讀取本機場景。原始資料未被覆寫，你仍可編輯與匯出 JSON。');
@@ -127,9 +129,9 @@ export function HamsterEditor() {
     <section className={styles.editor}>
       <header className={styles.header}>
         <div>
-          <p className="eyebrow">HAMSTER STUDIO · 04</p>
+          <p className="eyebrow">HAMSTER STUDIO · 05</p>
           <h1>給倉鼠一個小舞台</h1>
-          <p>讓倉鼠走過自己的五秒鐘，再加上一句想說的話。</p>
+          <p>讓倉鼠走過自己的五秒鐘，再配上一句字幕與一段聲音。</p>
         </div>
         <span className={styles.badge}>{dirty ? '尚未保存' : '沒有未保存變更'}</span>
       </header>
@@ -179,7 +181,7 @@ export function HamsterEditor() {
               </p>
             )}
           </div>
-          <SceneExport scene={scene} disabled={!loaded || captionDraft} />
+          <SceneExport scene={scene} disabled={!loaded || captionDraft || audioBusy} />
         </div>
         <fieldset className={styles.controls} disabled={!loaded}>
           <legend>場景設定</legend>
@@ -260,6 +262,18 @@ export function HamsterEditor() {
               onChange={(event) => change({ ...scene, background: event.target.value })}
             />
           </label>
+          <SceneAudio
+            scene={scene}
+            time={playback.time}
+            playing={playback.playing}
+            onPause={playback.pause}
+            onBusy={setAudioBusy}
+            onApply={(audio) => {
+              revision.current++;
+              setScene((current) => ({ ...current, version: 4, audio }));
+              setMessage('聲音已套用，保存場景可保留設定。');
+            }}
+          />
           <CaptionControls
             caption={scene.caption}
             onDraftChange={setCaptionDraft}
@@ -271,11 +285,16 @@ export function HamsterEditor() {
               playback.seek(caption.start);
             }}
           />
-          <button className={styles.primary} type="button" onClick={save} disabled={captionDraft}>
+          <button
+            className={styles.primary}
+            type="button"
+            onClick={save}
+            disabled={captionDraft || audioBusy}
+          >
             保存場景
           </button>
           <div className={styles.actions}>
-            <button type="button" onClick={exportScene} disabled={captionDraft}>
+            <button type="button" onClick={exportScene} disabled={captionDraft || audioBusy}>
               匯出 JSON
             </button>
             <label className={styles.import}>

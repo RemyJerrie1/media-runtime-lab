@@ -1,0 +1,23 @@
+meta {
+ name: Missing scene audio
+ type: http
+ seq: 4
+}
+post {
+ url: {{baseUrl}}/v1/scene-render-jobs
+ body: json
+ auth: none
+}
+headers {
+ x-tenant-id: {{tenantId}}
+ x-api-key: {{apiKey}}
+}
+body:json {
+ {"version":1,"kind":"hamster-scene","idempotencyKey":"{{audioKey}}","scene":{"version":4,"subject":"hamster","background":"#e8ddd0","transform":{"x":0,"z":0,"heading":0,"scale":1},"animation":{"durationSeconds":5,"end":{"x":0,"z":0,"heading":0}},"caption":{"enabled":false,"text":"Hello","start":1,"end":4,"fontSize":48,"color":"#ffffff","background":"#252525"},"audio":{"asset":{"id":"11111111-1111-4111-8111-111111111111","url":"/scene-audio/11111111-1111-4111-8111-111111111111.wav","checksum":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","durationSeconds":3,"sizeBytes":5000},"trimStart":0.5,"start":1,"volume":0.5,"muted":false}}}
+}
+script:pre-request {
+ bru.setVar("audioKey", require("uuid").v4());
+}
+tests {
+ test("missing audio is explicit and cannot create a fake ready job", function(){ expect(res.status).to.equal(400); expect(res.body.code).to.equal("SCENE_AUDIO_MISSING"); });
+}

@@ -14,17 +14,23 @@ import {
   Res,
   Query,
 } from '@nestjs/common';
-import { createSceneRenderSchema, retrySceneRenderSchema } from '@media-lab/contracts';
+import {
+  createSceneRenderSchema,
+  retrySceneRenderSchema,
+  audibleSceneAudio,
+} from '@media-lab/contracts';
 import type { Response } from 'express';
 import { SCENE_STORE, type SceneStore } from '../domain/scene-workflow';
 import { TenantPolicy } from '../../shared/tenant-policy';
 import { sceneArtifactRoot } from '../infrastructure/chromium-scene.processor';
 import { resolve } from 'node:path';
+import { FileSceneAudioAssets } from '../infrastructure/scene-audio-assets';
 import { stat } from 'node:fs/promises';
 
 @Controller()
 export class SceneController {
   constructor(
+    @Inject(FileSceneAudioAssets) private assets: FileSceneAudioAssets,
     @Inject(SCENE_STORE) private store: SceneStore,
     @Inject(TenantPolicy) private policy: TenantPolicy,
   ) {}
@@ -47,7 +53,7 @@ export class SceneController {
       throw error;
     }
   }
-  @Post('v1/scene-render-jobs') create(
+  @Post('v1/scene-render-jobs') async create(
     @Body() body: unknown,
     @Headers('x-tenant-id') tenant?: string,
     @Headers('x-api-key') key?: string,
@@ -60,6 +66,17 @@ export class SceneController {
         code: 'INVALID_SCENE_COMMAND',
         message: parsed.error.issues[0]?.message,
       });
+    const audio = audibleSceneAudio(parsed.data.scene);
+    if (audio) {
+      try {
+        await this.assets.resolve(audio.asset, owner);
+      } catch {
+        throw new BadRequestException({
+          code: 'SCENE_AUDIO_MISSING',
+          message: '音訊素材遺失或已變更，請重新上傳或移除音訊。',
+        });
+      }
+    }
     return this.run(() => this.store.create(owner, parsed.data));
   }
   @Get('v1/scene-render-jobs/:id') get(

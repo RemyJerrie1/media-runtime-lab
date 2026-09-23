@@ -291,3 +291,7 @@
     padding: 14px;
   }
 }
+
+.audioPanel { display: grid; gap: 0.9rem; min-width: 0; border-top: 1px solid var(--color-border); padding-top: 1.2rem; overflow-wrap: anywhere; }
+.audioPanel h2 { font-size: 1rem; }
+.audioPanel input[type="file"] { max-width: 100%; font-size: 0.8rem; }

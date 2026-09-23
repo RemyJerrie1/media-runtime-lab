@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  SCENE_RENDERER_VERSION,
+  sceneRendererVersion,
+  audibleSceneAudio,
   sceneReceiptSchema,
   type CreateSceneRender,
   type SceneReceipt,
@@ -41,7 +42,7 @@ export function sceneFingerprint(command: CreateSceneRender) {
       JSON.stringify({
         version: command.version,
         kind: command.kind,
-        rendererVersion: SCENE_RENDERER_VERSION,
+        rendererVersion: sceneRendererVersion(command.scene),
         scene: command.scene,
       }),
     )
@@ -54,7 +55,7 @@ export function newSceneJob(command: CreateSceneRender): SceneRenderJob {
     id: randomUUID(),
     scene: structuredClone(command.scene),
     sceneFingerprint: sceneFingerprint(command),
-    rendererVersion: SCENE_RENDERER_VERSION,
+    rendererVersion: sceneRendererVersion(command.scene),
     status: 'accepted',
     completedFrames: 0,
     attempt: 0,
@@ -83,7 +84,8 @@ export function advanceScene(job: SceneRenderJob, update: SceneUpdate): SceneRen
     receipt = sceneReceiptSchema.parse(update.receipt);
     if (
       receipt.sceneFingerprint !== job.sceneFingerprint ||
-      receipt.rendererVersion !== job.rendererVersion
+      receipt.rendererVersion !== job.rendererVersion ||
+      receipt.audioStreams !== (audibleSceneAudio(job.scene) ? 1 : 0)
     )
       throw new Error('SCENE_RECEIPT_MISMATCH');
   }

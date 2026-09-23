@@ -299,27 +299,88 @@ export const defaultHamsterCaption = (): HamsterCaption => ({
   color: '#ffffff',
   background: '#252525',
 });
-export const hamsterSceneSchema = hamsterSceneV2Schema.extend({
+export const hamsterSceneV3Schema = hamsterSceneV2Schema.extend({
   version: z.literal(3),
   caption: hamsterCaptionSchema,
 });
+export const SCENE_AUDIO_MAX_BYTES = 10 * 1024 * 1024;
+export const sceneAudioAssetSchema = z
+  .object({
+    id: z.string().uuid(),
+    checksum: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    durationSeconds: z.number().finite().positive().max(60),
+    sizeBytes: z.number().int().positive().max(12_000_000),
+    url: z.string().regex(/^\/scene-audio\/[a-f0-9-]{36}\.wav$/),
+  })
+  .strict()
+  .refine((asset) => asset.url === `/scene-audio/${asset.id}.wav`, 'INVALID_AUDIO_URL');
+export type SceneAudioAsset = z.infer<typeof sceneAudioAssetSchema>;
+export const hamsterAudioSchema = z
+  .object({
+    asset: sceneAudioAssetSchema,
+    trimStart: z.number().finite().min(0).max(60),
+    start: z.number().finite().min(0).max(4.99),
+    volume: z.number().finite().min(0).max(1),
+    muted: z.boolean(),
+  })
+  .strict()
+  .refine((audio) => audio.trimStart < audio.asset.durationSeconds, 'AUDIO_TRIM_OUT_OF_RANGE');
+export type HamsterAudio = z.infer<typeof hamsterAudioSchema>;
+export const hamsterSceneV4Schema = hamsterSceneV3Schema.extend({
+  version: z.literal(4),
+  audio: hamsterAudioSchema.nullable(),
+});
+// Old render commands and persisted receipts keep their original snapshot and fingerprint.
+export const hamsterSceneSchema = z.discriminatedUnion('version', [
+  hamsterSceneV3Schema,
+  hamsterSceneV4Schema,
+]);
 export type HamsterScene = z.infer<typeof hamsterSceneSchema>;
+export const sceneAudio = (scene: HamsterScene) => (scene.version === 4 ? scene.audio : null);
+export const audibleSceneAudio = (scene: HamsterScene) => {
+  const audio = sceneAudio(scene);
+  return audio && !audio.muted && audio.volume > 0 ? audio : null;
+};
+export function audioAtTime(audio: HamsterAudio, time: number) {
+  const elapsed = time - audio.start;
+  return {
+    active:
+      !audio.muted &&
+      audio.volume > 0 &&
+      elapsed >= 0 &&
+      time < 5 &&
+      elapsed < audio.asset.durationSeconds - audio.trimStart,
+    sourceTime: Math.min(
+      audio.asset.durationSeconds,
+      Math.max(audio.trimStart, audio.trimStart + elapsed),
+    ),
+  };
+}
 export const hamsterSceneDocumentSchema = z
-  .discriminatedUnion('version', [hamsterSceneV1Schema, hamsterSceneV2Schema, hamsterSceneSchema])
-  .transform((document): HamsterScene => {
-    if (document.version === 3) return document;
+  .discriminatedUnion('version', [
+    hamsterSceneV1Schema,
+    hamsterSceneV2Schema,
+    hamsterSceneV3Schema,
+    hamsterSceneV4Schema,
+  ])
+  .transform((document): z.infer<typeof hamsterSceneV4Schema> => {
+    if (document.version === 4) return document;
+    if (document.version === 3) return { ...document, version: 4, audio: null };
     if (document.version === 2)
-      return { ...document, version: 3, caption: defaultHamsterCaption() };
+      return { ...document, version: 4, caption: defaultHamsterCaption(), audio: null };
     const { x, z, heading } = document.transform;
     return {
       ...document,
-      version: 3,
+      version: 4,
       animation: { durationSeconds: 5, end: { x, z, heading } },
       caption: defaultHamsterCaption(),
+      audio: null,
     };
   });
-
 export const SCENE_RENDERER_VERSION = 'hamster-1';
+export const sceneRendererVersion = (scene: HamsterScene) =>
+  scene.version === 4 ? ('hamster-2' as const) : SCENE_RENDERER_VERSION;
+const rendererVersionSchema = z.enum(['hamster-1', 'hamster-2']);
 export const createSceneRenderSchema = z
   .object({
     version: z.literal(1),
@@ -332,7 +393,7 @@ export type CreateSceneRender = z.infer<typeof createSceneRenderSchema>;
 export const sceneReceiptSchema = z
   .object({
     version: z.literal(1),
-    rendererVersion: z.literal(SCENE_RENDERER_VERSION),
+    rendererVersion: rendererVersionSchema,
     sceneFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
     artifactUrl: z.string().regex(/^\/scene-artifacts\/[a-f0-9-]{36}\.mp4$/),
     width: z.literal(640),
@@ -343,7 +404,7 @@ export const sceneReceiptSchema = z
       .number()
       .min(5 - 1 / 24)
       .max(5 + 1 / 24),
-    audioStreams: z.literal(0),
+    audioStreams: z.union([z.literal(0), z.literal(1)]),
     sizeBytes: z.number().int().positive(),
     checksum: z.string().regex(/^sha256:[a-f0-9]{64}$/),
   })
@@ -356,7 +417,7 @@ export const sceneRenderJobSchema = z
     id: z.string().uuid(),
     scene: hamsterSceneSchema,
     sceneFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
-    rendererVersion: z.literal(SCENE_RENDERER_VERSION),
+    rendererVersion: rendererVersionSchema,
     status: z.enum(['accepted', 'rendering', 'encoding', 'ready', 'failed', 'cancelled']),
     completedFrames: z.number().int().min(0).max(120),
     sequence: z.number().int().positive(),
@@ -367,12 +428,17 @@ export const sceneRenderJobSchema = z
   })
   .strict()
   .refine(
+    (job) => job.rendererVersion === sceneRendererVersion(job.scene),
+    'SCENE_RENDERER_VERSION_MISMATCH',
+  )
+  .refine(
     (job) =>
       job.status === 'ready'
         ? job.completedFrames === 120 &&
           job.receipt !== null &&
           job.receipt.sceneFingerprint === job.sceneFingerprint &&
-          job.receipt.rendererVersion === job.rendererVersion
+          job.receipt.rendererVersion === job.rendererVersion &&
+          job.receipt.audioStreams === (audibleSceneAudio(job.scene) ? 1 : 0)
         : job.receipt === null,
     'SCENE_INCONSISTENT_RECEIPT',
   );

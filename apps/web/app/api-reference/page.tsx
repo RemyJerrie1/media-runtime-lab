@@ -2,8 +2,28 @@ const endpointGroups = [
   {
     name: '倉鼠場景逐幀輸出（Scene Render）',
     description:
-      '獨立於影片轉檔的持久化任務。POST 接受 version=1、kind=hamster-scene、scene（v3）及 UUID idempotencyKey；鎖定快照。固定 640×360、24 fps、120 幀、5 秒無聲 MP4。需 PostgreSQL、Playwright Chromium 與 FFmpeg。',
+      '獨立於影片轉檔的持久化任務。POST 接受 version=1、kind=hamster-scene、scene（v3／v4）及 UUID idempotencyKey；鎖定快照。固定 640×360、24 fps、120 幀、5 秒 MP4；v4 可選 audio（asset、trimStart、start、volume、muted）。需 PostgreSQL、Playwright Chromium 與 FFmpeg。',
     endpoints: [
+      {
+        method: 'POST',
+        path: '/v1/scene-audio',
+        purpose: '上傳單音軌素材',
+        contract:
+          'multipart file；MP3／WAV，10 MB／60 秒上限；驗證實際格式並轉為 48 kHz stereo PCM。回傳 id、checksum、durationSeconds、sizeBytes、url；不可變素材保存於 API 本機磁碟。',
+      },
+      {
+        method: 'GET',
+        path: '/v1/scene-audio/:id',
+        purpose: '取得音檔契約與存在狀態',
+        contract: '租戶驗證；不存在回 404。JSON 只含素材引用，不含音檔 bytes；遺失請重新上傳。',
+      },
+      {
+        method: 'GET',
+        path: '/scene-audio/:file',
+        purpose: '音訊預覽',
+        contract:
+          'UUID.wav；支援 Range。音檔先裁切 trimStart，再於 start 秒播放；volume 0–1，muted 或無音軌輸出無聲。尾端補靜音、截斷至 5 秒；有聲 MP4 為 AAC stereo 48 kHz。',
+      },
       {
         method: 'POST',
         path: '/v1/scene-render-jobs',

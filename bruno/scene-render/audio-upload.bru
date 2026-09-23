@@ -1,0 +1,23 @@
+meta {
+ name: Upload scene audio
+ type: http
+ seq: 6
+}
+post {
+ url: {{baseUrl}}/v1/scene-audio
+ body: multipartForm
+ auth: none
+}
+headers {
+ x-tenant-id: {{tenantId}}
+ x-api-key: {{apiKey}}
+}
+body:multipart-form {
+ file: @file(fixtures/scene-tone.wav)
+}
+script:post-response {
+ bru.setVar("sceneAudioId", res.body.id);
+}
+tests {
+ test("verified audio upload returns immutable identity", function(){ expect(res.status).to.equal(201); expect(res.body.checksum).to.match(/^sha256:[a-f0-9]{64}$/); expect(res.body.durationSeconds).to.equal(0.25); });
+}

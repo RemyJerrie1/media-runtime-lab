@@ -77,6 +77,17 @@ for (const route of [
   if (!docs.includes(route)) throw new Error(`Scene reference drift: ${route}`);
 }
 const webFont = readFileSync(new URL('../apps/web/public/fonts/NotoSansTC.ttf', import.meta.url));
+const audioExample = readFileSync(
+  new URL('../bruno/scene-render/audio-missing.bru', import.meta.url),
+  'utf8',
+);
+for (const field of ['audio', 'asset', 'trimStart', 'start', 'volume', 'muted']) {
+  if (![contract, docs, audioExample].every((source) => source.includes(field)))
+    throw new Error(`Audio contract drift: ${field}`);
+}
+for (const route of ['/v1/scene-audio', '/v1/scene-audio/:id', '/scene-audio/:file']) {
+  if (!docs.includes(route)) throw new Error(`Audio reference drift: ${route}`);
+}
 const runnerFont = readFileSync(
   new URL('../packages/scene-renderer/assets/NotoSansTC.ttf', import.meta.url),
 );

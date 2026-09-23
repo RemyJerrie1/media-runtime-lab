@@ -40,7 +40,7 @@ test('Chinese captions follow exact boundaries, playback, reload and import', as
   }
   await page.getByRole('button', { name: '保存場景', exact: true }).click();
   const saved = await page.evaluate((key) => localStorage.getItem(key)!, key);
-  expect(JSON.parse(saved).version).toBe(3);
+  expect(JSON.parse(saved).version).toBe(4);
   await page.reload();
   await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true');
   await expect.poll(() => pixels(page)).toBe(blank);

@@ -1,0 +1,17 @@
+meta {
+ name: Read uploaded scene audio
+ type: http
+ seq: 7
+}
+get {
+ url: {{baseUrl}}/v1/scene-audio/{{sceneAudioId}}
+ body: none
+ auth: none
+}
+headers {
+ x-tenant-id: {{tenantId}}
+ x-api-key: {{apiKey}}
+}
+tests {
+ test("uploaded audio persists across requests", function(){ expect(res.status).to.equal(200); expect(res.body.id).to.equal(bru.getVar("sceneAudioId")); });
+}

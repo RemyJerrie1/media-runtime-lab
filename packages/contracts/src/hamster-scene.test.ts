@@ -14,11 +14,12 @@ const legacy = {
   transform: { x: 1, z: -1, heading: 120, scale: 0.8 },
 };
 describe('versioned hamster documents', () => {
-  it('upgrades v1 to a stationary v3 without losing transform or color', () => {
+  it('upgrades v1 to a stationary v4 without losing transform or color', () => {
     const upgraded = hamsterSceneDocumentSchema.parse(legacy);
     expect(upgraded).toEqual({
       ...legacy,
-      version: 3,
+      version: 4,
+      audio: null,
       caption: defaultHamsterCaption(),
       background: '#abcdef',
       animation: { durationSeconds: 5, end: { x: 1, z: -1, heading: 120 } },

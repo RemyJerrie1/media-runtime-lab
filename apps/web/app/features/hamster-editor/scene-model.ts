@@ -9,7 +9,8 @@ import {
 export const SCENE_STORAGE_KEY = 'media-runtime-hamster-scene-v1';
 export function defaultScene(): HamsterScene {
   return {
-    version: 3,
+    version: 4,
+    audio: null,
     subject: 'hamster',
     background: '#e8ddd0',
     transform: { x: 0, z: 0, heading: 0, scale: 1 },
@@ -29,7 +30,7 @@ export function parseScene(text: string): HamsterScene {
   const result = hamsterSceneDocumentSchema.safeParse(value);
   if (!result.success)
     throw new Error(
-      `場景版本或設定不支援，請匯入第 1～3 版倉鼠場景。${result.error.issues[0]?.message ?? ''}`,
+      `場景版本或設定不支援，請匯入第 1～4 版倉鼠場景。${result.error.issues[0]?.message ?? ''}`,
     );
   return result.data;
 }

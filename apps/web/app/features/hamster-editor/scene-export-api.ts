@@ -15,6 +15,10 @@ export async function sceneRequest(path: string, signal: AbortSignal, body?: unk
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   if (response.status === 409) throw new Error('同一操作識別已綁定不同場景，請確認原任務。');
+  if (response.status === 400)
+    throw new Error(
+      '場景或音訊素材無法使用。請確認原 API 的素材仍存在，或清除本機輸出紀錄、重新上傳音檔後建立新輸出。',
+    );
   if (!response.ok)
     throw new Error(
       `無法取得輸出結果（${response.status}）。可重試原操作；需要啟動 API 與 PostgreSQL。`,

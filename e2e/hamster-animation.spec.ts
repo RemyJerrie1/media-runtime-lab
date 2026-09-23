@@ -63,7 +63,7 @@ test('absolute-time WebGL frames survive reverse seeking, save and reload', asyn
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test('legacy storage and JSON migrate to static v3 only on explicit save', async ({ page }) => {
+test('legacy storage and JSON migrate to static v4 only on explicit save', async ({ page }) => {
   const legacy = {
     version: 1,
     subject: 'hamster',
@@ -85,7 +85,8 @@ test('legacy storage and JSON migrate to static v3 only on explicit save', async
   await page.getByRole('button', { name: '保存場景', exact: true }).click();
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), key)).toEqual({
     ...legacy,
-    version: 3,
+    version: 4,
+    audio: null,
     caption: defaultHamsterCaption(),
     animation: { durationSeconds: 5, end: { x: 0.7, z: -0.4, heading: 50 } },
   });

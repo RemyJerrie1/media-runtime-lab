@@ -1,3 +1,5 @@
+import { SceneAudioController } from './scene-render/interfaces/scene-audio.controller';
+import { FileSceneAudioAssets } from './scene-render/infrastructure/scene-audio-assets';
 import { Module } from '@nestjs/common';
 import { RenderController } from './render/interfaces/render.controller';
 import { RenderOrchestrator } from './render/application/render-orchestrator';
@@ -32,9 +34,10 @@ export async function createWorkflowStore(
 }
 
 @Module({
-  controllers: [RenderController, MediaController, SceneController],
+  controllers: [RenderController, MediaController, SceneController, SceneAudioController],
   providers: [
     SceneWorker,
+    { provide: FileSceneAudioAssets, useFactory: () => new FileSceneAudioAssets() },
     { provide: SCENE_PROCESSOR, useFactory: () => new ChromiumSceneProcessor() },
     {
       provide: SCENE_STORE,

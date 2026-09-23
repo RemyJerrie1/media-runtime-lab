@@ -18,7 +18,7 @@ describe('versioned scene export contracts', () => {
     idempotencyKey: '11111111-1111-4111-8111-111111111111',
   };
   it('accepts only explicit scene input and bounded settings', () => {
-    expect(createSceneRenderSchema.parse(command).scene.version).toBe(3);
+    expect(createSceneRenderSchema.parse(command).scene.version).toBe(4);
     for (const change of [
       { version: 2 },
       { kind: 'media-render' },
@@ -35,7 +35,7 @@ describe('versioned scene export contracts', () => {
       id: command.idempotencyKey,
       scene,
       sceneFingerprint: 'a'.repeat(64),
-      rendererVersion: 'hamster-1',
+      rendererVersion: 'hamster-2',
       status: 'ready',
       completedFrames: 120,
       sequence: 1,

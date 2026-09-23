@@ -12,7 +12,8 @@ import { readFile } from 'node:fs/promises';
 
 const storageKey = 'media-runtime-hamster-scene-v1';
 const scene = {
-  version: 3,
+  version: 4,
+  audio: null,
   caption: defaultHamsterCaption(),
   subject: 'hamster',
   background: '#e8ddd0',

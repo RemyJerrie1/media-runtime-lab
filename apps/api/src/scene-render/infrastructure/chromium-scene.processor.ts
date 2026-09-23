@@ -1,52 +1,32 @@
 import { chromium, type Browser } from 'playwright';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, rename, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import ffmpeg from 'ffmpeg-static';
 import ffprobe from '@ffprobe-installer/ffprobe';
-import { sceneReceiptSchema, type SceneRenderJob, type SceneReceipt } from '@media-lab/contracts';
+import {
+  audibleSceneAudio,
+  sceneReceiptSchema,
+  type SceneRenderJob,
+  type SceneReceipt,
+} from '@media-lab/contracts';
 import type { SceneProcessor } from '../domain/scene-workflow';
+
+import { startSceneProcess } from './scene-process';
+import { FileSceneAudioAssets } from './scene-audio-assets';
+export { startSceneProcess } from './scene-process';
 
 export const sceneArtifactRoot = () => resolve(process.cwd(), '.runtime/scene-artifacts');
 type Options = {
   root?: string;
+  audioAssets?: FileSceneAudioAssets;
   fontPath?: string;
   timeoutMs?: number;
   chromiumArgs?: string[];
   encoder?: string;
 };
 type Capture = { init(scene: unknown): Promise<void>; frame(index: number): string };
-export function startSceneProcess(binary: string, args: string[], signal: AbortSignal) {
-  signal.throwIfAborted();
-  const child = spawn(binary, args, { stdio: 'pipe', windowsHide: true });
-  let errorText = '';
-  const chunks: Buffer[] = [];
-  child.stdout.on('data', (chunk: Buffer) => {
-    if (chunks.reduce((sum, item) => sum + item.length, 0) < 2_000_000) chunks.push(chunk);
-  });
-  child.stderr.on('data', (chunk: Buffer) => {
-    errorText = (errorText + chunk.toString()).slice(-2000);
-  });
-  // EPIPE is surfaced by close/write, never as an unhandled EventEmitter error.
-  child.stdin.on('error', () => {});
-  const abort = () => {
-    child.kill('SIGKILL');
-  };
-  signal.addEventListener('abort', abort, { once: true });
-  if (signal.aborted) abort();
-  const done = new Promise<Buffer>((resolve, reject) => {
-    child.once('error', reject);
-    child.once('close', (code) => {
-      signal.removeEventListener('abort', abort);
-      if (signal.aborted) reject(signal.reason);
-      else if (code !== 0) reject(new Error(`SCENE_PROCESS_FAILED:${errorText.slice(-300)}`));
-      else resolve(Buffer.concat(chunks));
-    });
-  });
-  void done.catch(() => {});
-  return { child, done };
-}
 async function writeFrame(
   child: ChildProcessWithoutNullStreams,
   buffer: Buffer,
@@ -73,7 +53,7 @@ export class ChromiumSceneProcessor implements SceneProcessor {
     const root = this.options.root ?? sceneArtifactRoot();
     await mkdir(root, { recursive: true });
     const directory = await mkdtemp(resolve(root, 'attempt-'));
-    const temporary = resolve(directory, 'output.mp4');
+    let temporary = resolve(directory, 'output.mp4');
     const controller = new AbortController();
     const timer = setTimeout(
       () => controller.abort(new Error('SCENE_RENDER_TIMEOUT')),
@@ -88,6 +68,10 @@ export class ChromiumSceneProcessor implements SceneProcessor {
     signal.addEventListener('abort', closeBrowser, { once: true });
     try {
       signal.throwIfAborted();
+      const audio = audibleSceneAudio(job.scene);
+      const audioPath = audio
+        ? await (this.options.audioAssets ?? new FileSceneAudioAssets()).resolve(audio.asset)
+        : null;
       const font = await readFile(
         this.options.fontPath ?? require.resolve('@media-lab/scene-renderer/font.ttf'),
       ).catch(() => {
@@ -177,6 +161,47 @@ export class ChromiumSceneProcessor implements SceneProcessor {
       await progress(120, true);
       await encoder.done;
       signal.throwIfAborted();
+      if (audio && audioPath) {
+        const mixed = resolve(directory, 'mixed.mp4');
+        // Rebase the FINAL samples too: AAC muxing can otherwise discard leading delay
+        // after trimming. Decoded-onset regression tests guard this across FFmpeg versions.
+        const filter = `atrim=start_sample=${Math.round(audio.trimStart * 48000)},asetpts=N/SR/TB,volume=${audio.volume},adelay=${Math.round(audio.start * 48000)}S:all=1,apad,atrim=end_sample=240000,asetpts=N/SR/TB`;
+        const mux = startSceneProcess(
+          binary,
+          [
+            '-v',
+            'error',
+            '-i',
+            temporary,
+            '-i',
+            audioPath,
+            '-map',
+            '0:v:0',
+            '-map',
+            '1:a:0',
+            '-c:v',
+            'copy',
+            '-af',
+            filter,
+            '-c:a',
+            'aac',
+            '-b:a',
+            '192k',
+            '-ar',
+            '48000',
+            '-ac',
+            '2',
+            '-t',
+            '5',
+            '-movflags',
+            '+faststart',
+            mixed,
+          ],
+          signal,
+        );
+        await mux.done;
+        temporary = mixed;
+      }
       const probe = startSceneProcess(
         process.env.FFPROBE_BINARY ?? ffprobe.path,
         ['-v', 'error', '-count_frames', '-show_streams', '-show_format', '-of', 'json', temporary],
@@ -190,12 +215,18 @@ export class ChromiumSceneProcessor implements SceneProcessor {
           height: number;
           avg_frame_rate: string;
           nb_read_frames: string;
+          sample_rate: string;
+          channels: number;
         }>;
         format: { duration: string };
       };
       const stream = metadata.streams[0];
       if (
-        metadata.streams.length !== 1 ||
+        metadata.streams.length !== (audio ? 2 : 1) ||
+        (audio !== null &&
+          (metadata.streams[1]?.codec_name !== 'aac' ||
+            metadata.streams[1]?.sample_rate !== '48000' ||
+            metadata.streams[1]?.channels !== 2)) ||
         stream?.codec_type !== 'video' ||
         stream.codec_name !== 'h264' ||
         stream.width !== 640 ||
@@ -221,7 +252,7 @@ export class ChromiumSceneProcessor implements SceneProcessor {
         fps: 24,
         frameCount: 120,
         durationSeconds: Number(metadata.format.duration),
-        audioStreams: 0,
+        audioStreams: audio ? 1 : 0,
         sizeBytes: (await stat(temporary)).size,
         checksum: `sha256:${createHash('sha256')
           .update(await readFile(temporary))

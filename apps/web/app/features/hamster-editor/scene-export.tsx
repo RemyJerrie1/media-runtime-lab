@@ -1,5 +1,5 @@
 'use client';
-import type { HamsterScene } from '@media-lab/contracts';
+import { audibleSceneAudio, type HamsterScene } from '@media-lab/contracts';
 import { useSceneExport } from './use-scene-export';
 import { sceneVideoUrl } from './scene-export-api';
 import styles from './hamster-editor.module.css';
@@ -19,12 +19,13 @@ export function SceneExport({ scene, disabled }: { scene: HamsterScene; disabled
     <section className={styles.exportPanel} aria-label="影片輸出">
       <h2>把五秒鐘帶走</h2>
       <p className={styles.note}>
-        640 × 360 · 24 fps · 5 秒 · 無聲 MP4。輸出送出當下的場景；之後編輯不會改動這筆任務。
+        640 × 360 · 24 fps · 5 秒 · {audibleSceneAudio(scene) ? '有聲' : '無聲'}{' '}
+        MP4。輸出送出當下的場景；之後編輯不會改動這筆任務。
       </p>
       <button type="button" disabled={disabled || !flow.canStart} onClick={() => flow.start(scene)}>
         匯出目前場景 MP4
       </button>
-      {disabled && <p className={styles.note}>先套用字幕草稿，再輸出影片。</p>}
+      {disabled && <p className={styles.note}>請先完成字幕套用或音檔上傳，再輸出影片。</p>}
       {flow.hasIntent && !job && !flow.error && <p role="status">正在找回或建立原輸出任務…</p>}
       {job && (
         <>
@@ -61,7 +62,7 @@ export function SceneExport({ scene, disabled }: { scene: HamsterScene; disabled
                 <p>
                   640 × 360 · {job.receipt.fps} fps · {job.receipt.frameCount} 幀 ·{' '}
                   {job.receipt.durationSeconds.toFixed(3)} 秒 · {job.receipt.sizeBytes} bytes ·
-                  無音軌
+                  {job.receipt.audioStreams ? 'AAC 音軌' : '無音軌'}
                 </p>
                 <p>場景指紋：{job.receipt.sceneFingerprint}</p>
                 <p>渲染版本：{job.receipt.rendererVersion}</p>

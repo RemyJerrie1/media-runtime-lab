@@ -3,6 +3,7 @@ import { Pool } from 'pg';
 import { PostgresSceneStore } from './postgres-scene.store';
 import { SceneWorker } from '../application/scene-worker';
 import { sceneCommand, testReceipt } from './scene-fixture';
+import { createSceneRenderSchema } from '@media-lab/contracts';
 const suite = process.env.DATABASE_URL ? describe : describe.skip;
 suite('durable scene rendering', () => {
   let admin: Pool;
@@ -42,6 +43,61 @@ suite('durable scene rendering', () => {
     await expect(store.create('a', command)).rejects.toThrow('IDEMPOTENCY_CONFLICT');
     expect(await store.get('b', jobs[0]!.id)).toBeUndefined();
     expect((await other.get('a', jobs[0]!.id))!.scene.transform.x).toBe(-1.2);
+  });
+  it('persists audio identity and settings in the immutable idempotent snapshot', async () => {
+    const base = sceneCommand();
+    const id = crypto.randomUUID();
+    const command = createSceneRenderSchema.parse({
+      ...base,
+      scene: {
+        ...base.scene,
+        version: 4,
+        audio: {
+          asset: {
+            id,
+            url: `/scene-audio/${id}.wav`,
+            checksum: `sha256:${'a'.repeat(64)}`,
+            sizeBytes: 5000,
+            durationSeconds: 3,
+          },
+          trimStart: 0.5,
+          start: 1,
+          volume: 0.5,
+          muted: false,
+        },
+      },
+    });
+    const job = await store.create('a', command);
+    expect((await other.create('a', command)).id).toBe(job.id);
+    if (command.scene.version !== 4 || !command.scene.audio) throw new Error('fixture');
+    for (const patch of [
+      { volume: 0.3 },
+      { start: 2 },
+      { trimStart: 1 },
+      { muted: true },
+      { asset: { ...command.scene.audio.asset, checksum: `sha256:${'b'.repeat(64)}` } },
+    ]) {
+      const changed = createSceneRenderSchema.parse({
+        ...command,
+        scene: { ...command.scene, audio: { ...command.scene.audio, ...patch } },
+      });
+      await expect(other.create('a', changed)).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+    }
+    expect((await other.get('a', job.id))?.scene).toEqual(command.scene);
+    const lease = (await store.claim('audio-worker', 10000))!;
+    await store.update(lease, { status: 'encoding', frames: 120 });
+    const receipt = { ...testReceipt(job.sceneFingerprint), rendererVersion: 'hamster-2' as const };
+    await expect(store.update(lease, { status: 'ready', frames: 120, receipt })).rejects.toThrow(
+      'SCENE_RECEIPT_MISMATCH',
+    );
+    expect(
+      await store.update(lease, {
+        status: 'ready',
+        frames: 120,
+        receipt: { ...receipt, audioStreams: 1 },
+      }),
+    ).toBe(true);
+    expect((await other.get('a', job.id))?.receipt?.audioStreams).toBe(1);
   });
   it('fences expired workers, serializes slots and keeps a ready receipt immutable', async () => {
     const job = await store.create('a', sceneCommand());
