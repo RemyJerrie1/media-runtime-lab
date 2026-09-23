@@ -20,7 +20,8 @@ Windows, Node 22.23.2, pnpm 11.16.0, Playwright 1.63.0 Chromium. Dedicated Postg
 on 127.0.0.1:55441; integration tests use random isolated schemas.
 
 - `pnpm verify`: governance 22/22; contracts 12/12, web 71/71, API 51/51.
-  No skipped tests. Typecheck and production build passed.
+  No skipped tests. Typecheck and production build passed. The CI follow-up splits
+  the three audio-export scenarios into independent tests (API total becomes 53).
 - `pnpm test:e2e`: 35/35 passed, including model failure/retry and navigation while loading.
 - Real audible/muted MP4 export, decoded duration/audio measurements, browser playback,
   preview-to-export pixel comparison, seek/reload determinism and caption boundaries passed.
@@ -41,3 +42,12 @@ No claim of photorealistic equivalence to the concept image. Blender is needed o
 regenerate the asset, not to build or run the app.
 Local results do not prove remote CI success or automatic Codex hook dispatch.
 The pushed SHA's workflow result is recorded separately in issue #8.
+
+## CI follow-up
+
+The first pushed run, 35846213631, timed out in the combined audio test: it executed
+three full exports within a single 120-second budget on Linux software rendering.
+Split delayed/gain, muted, and clipped-tail cases into independent tests, retaining
+every original decoded-audio assertion and the same 120-second per-test limit.
+Each processor gets a 110-second limit so browser/encoder cleanup precedes the test
+deadline. No production timeout, model quality or acceptance assertion was relaxed.

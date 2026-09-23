@@ -78,75 +78,71 @@ it('rejects invalid, oversized, overlong and non-audio uploads without leaving u
     (await readdir(resolve(root, 'assets'))).filter((name) => name.startsWith('upload-')),
   ).toEqual([]);
 }, 30000);
-it('renders trimmed/delayed audio with measured gain and silent tail, and muted scenes remain silent', async () => {
-  const asset = await assets.save(wave(), 'a');
-  const base = sceneCommand();
-  const command = createSceneRenderSchema.parse({
-    ...base,
-    scene: {
-      ...base.scene,
-      version: 4,
-      audio: { asset, trimStart: 0.5, start: 1, volume: 0.5, muted: false },
-    },
-  });
-  const processor = new ChromiumSceneProcessor({
-    root: resolve(root, 'movies'),
-    audioAssets: assets,
-  });
-  const receipt = await processor.render(newSceneJob(command), signal(), async () => {});
-  expect(receipt.audioStreams).toBe(1);
-  expect(receipt.durationSeconds).toBeCloseTo(5, 2);
-  const decode = async (path: string) =>
-    await startSceneProcess(
-      binary,
-      ['-v', 'error', '-i', path, '-vn', '-ac', '1', '-ar', '48000', '-f', 'f32le', 'pipe:1'],
-      signal(),
-    ).done;
-  const pcm = await decode(resolve(root, 'movies', receipt.artifactUrl.split('/').at(-1)!));
-  const source = await decode(await assets.resolve(asset));
-  function rms(bytes: Buffer, start: number, end: number) {
-    let sum = 0;
-    for (let i = Math.floor(start * 48000); i < Math.floor(end * 48000); i++)
-      sum += bytes.readFloatLE(i * 4) ** 2;
-    return Math.sqrt(sum / ((end - start) * 48000));
-  }
-  expect(rms(pcm, 0.1, 0.9)).toBeLessThan(0.001);
-  expect(rms(pcm, 3.7, 4.9)).toBeLessThan(0.001);
-  expect(rms(pcm, 1.2, 2.2) / rms(source, 1, 2)).toBeCloseTo(0.5, 1);
-  let onset = 0;
-  for (let i = 0; i < pcm.length / 4; i++)
-    if (Math.abs(pcm.readFloatLE(i * 4)) > 0.01) {
-      onset = i / 48000;
-      break;
+// Each case renders one complete movie. A software-rendered CI host must not
+// squeeze three independent exports into one job's 120-second budget.
+it.each(['delayed', 'muted', 'clipped'] as const)(
+  'renders and decodes the %s audio case within one export budget',
+  async (mode) => {
+    const asset = await assets.save(wave(), 'a');
+    const base = sceneCommand();
+    const command = createSceneRenderSchema.parse({
+      ...base,
+      scene: {
+        ...base.scene,
+        version: 4,
+        audio: {
+          asset,
+          trimStart: 0.5,
+          start: mode === 'clipped' ? 4 : 1,
+          volume: 0.5,
+          muted: mode === 'muted',
+        },
+      },
+    });
+    const movies = resolve(root, 'movies-' + mode);
+    const processor = new ChromiumSceneProcessor({
+      root: movies,
+      audioAssets: assets,
+      timeoutMs: 110000,
+    });
+    const receipt = await processor.render(newSceneJob(command), signal(), async () => {});
+    expect(receipt.durationSeconds).toBeCloseTo(5, 2);
+    expect(receipt.audioStreams).toBe(mode === 'muted' ? 0 : 1);
+    const decode = async (path: string) =>
+      await startSceneProcess(
+        binary,
+        ['-v', 'error', '-i', path, '-vn', '-ac', '1', '-ar', '48000', '-f', 'f32le', 'pipe:1'],
+        signal(),
+      ).done;
+    function rms(bytes: Buffer, start: number, end: number) {
+      let sum = 0;
+      for (let i = Math.floor(start * 48000); i < Math.floor(end * 48000); i++)
+        sum += bytes.readFloatLE(i * 4) ** 2;
+      return Math.sqrt(sum / ((end - start) * 48000));
     }
-  expect(Math.abs(onset - 1)).toBeLessThan(1 / 24);
-  await processor.discard(receipt);
-  const muted = createSceneRenderSchema.parse({
-    ...command,
-    scene: {
-      ...command.scene,
-      audio: { ...('audio' in command.scene ? command.scene.audio : null), muted: true },
-    },
-  });
-  const silent = await processor.render(newSceneJob(muted), signal(), async () => {});
-  expect(silent.audioStreams).toBe(0);
-  await processor.discard(silent);
-  const clipped = createSceneRenderSchema.parse({
-    ...command,
-    scene: {
-      ...command.scene,
-      audio: { asset, trimStart: 0.5, start: 4, volume: 0.5, muted: false },
-    },
-  });
-  const clippedReceipt = await processor.render(newSceneJob(clipped), signal(), async () => {});
-  expect(clippedReceipt.durationSeconds).toBeCloseTo(5, 2);
-  const clippedPcm = await decode(
-    resolve(root, 'movies', clippedReceipt.artifactUrl.split('/').at(-1)!),
-  );
-  expect(rms(clippedPcm, 0.1, 3.8)).toBeLessThan(0.001);
-  expect(rms(clippedPcm, 4.2, 4.9)).toBeGreaterThan(0.1);
-  // AAC may pad its final packet, but must not extend the timeline by a video frame.
-  expect(clippedPcm.length / 4 / 48000).toBeLessThan(5 + 1 / 24);
-  await processor.discard(clippedReceipt);
-  expect(await readdir(resolve(root, 'movies'))).toEqual([]);
-}, 120000);
+    if (mode !== 'muted') {
+      const pcm = await decode(resolve(movies, receipt.artifactUrl.split('/').at(-1)!));
+      if (mode === 'delayed') {
+        const source = await decode(await assets.resolve(asset));
+        expect(rms(pcm, 0.1, 0.9)).toBeLessThan(0.001);
+        expect(rms(pcm, 3.7, 4.9)).toBeLessThan(0.001);
+        expect(rms(pcm, 1.2, 2.2) / rms(source, 1, 2)).toBeCloseTo(0.5, 1);
+        let onset = 0;
+        for (let i = 0; i < pcm.length / 4; i++)
+          if (Math.abs(pcm.readFloatLE(i * 4)) > 0.01) {
+            onset = i / 48000;
+            break;
+          }
+        expect(Math.abs(onset - 1)).toBeLessThan(1 / 24);
+      } else {
+        expect(rms(pcm, 0.1, 3.8)).toBeLessThan(0.001);
+        expect(rms(pcm, 4.2, 4.9)).toBeGreaterThan(0.1);
+        // AAC packet padding must not extend the timeline by a video frame.
+        expect(pcm.length / 4 / 48000).toBeLessThan(5 + 1 / 24);
+      }
+    }
+    await processor.discard(receipt);
+    expect(await readdir(movies)).toEqual([]);
+  },
+  120000,
+);
