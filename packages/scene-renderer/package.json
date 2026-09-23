@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./studio-env.bin": "./assets/hamster-3/studio-env.bin",
     "./hamster.glb": "./assets/hamster-3/hamster.glb",
     ".": {
       "types": "./dist/index.d.ts",

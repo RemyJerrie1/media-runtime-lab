@@ -36,9 +36,14 @@ test('denied browser audio pauses the timeline and user retry recovers without d
       return original.call(this);
     };
   });
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.goto('/hamster');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   await page.getByLabel('上傳音檔', { exact: true }).setInputFiles(source);
   await expect(page.getByText('音訊已就緒', { exact: false })).toBeVisible();
+  await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
   await page.getByRole('button', { name: '播放', exact: true }).click();
   await expect(page.getByRole('alert', { name: '音訊錯誤' })).toContainText('瀏覽器未能播放音訊');
   await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible();
@@ -74,7 +79,11 @@ test('audio upload, persisted timeline, playback controls and real audible/muted
     source,
   ]);
   await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.goto('/hamster');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   await page.getByLabel('上傳音檔', { exact: true }).setInputFiles(source);
   await expect(page.getByText('音訊已就緒', { exact: false })).toBeVisible();
   const id = await page.getByTestId('scene-audio-id').textContent();
@@ -87,6 +96,10 @@ test('audio upload, persisted timeline, playback controls and real audible/muted
   await expect(page.getByText('音訊已就緒', { exact: false })).toBeVisible();
   const audio = page.getByLabel('場景音訊預覽', { exact: true });
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.paused)).toBe(true);
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
+  await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
   await page.getByLabel('預覽時間', { exact: true }).fill('2');
   await expect
     .poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime))
@@ -101,6 +114,7 @@ test('audio upload, persisted timeline, playback controls and real audible/muted
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.paused)).toBe(true);
   await page.getByLabel('預覽時間', { exact: true }).fill('5');
   await page.getByRole('button', { name: '重播', exact: true }).click();
+  await page.clock.fastForward(1100);
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.paused)).toBe(false);
   await page.getByRole('button', { name: '暫停', exact: true }).click();
   await page.getByLabel('靜音音軌', { exact: true }).check();
@@ -111,6 +125,7 @@ test('audio upload, persisted timeline, playback controls and real audible/muted
     .toBe(true);
   await page.getByRole('button', { name: '暫停', exact: true }).click();
   await page.getByLabel('靜音音軌', { exact: true }).uncheck();
+  await page.clock.resume();
   await page.getByRole('button', { name: '匯出目前場景 MP4', exact: true }).click();
   await expect(page.getByLabel('倉鼠輸出影片')).toBeVisible({ timeout: 130000 });
   const jobId = await page.getByTestId('scene-job-id').textContent();

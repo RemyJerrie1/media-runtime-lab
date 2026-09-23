@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { HamsterScene } from '@media-lab/contracts';
 import { createLegacyHamsterStage } from './legacy-stage-renderer.js';
 import { evaluateScene } from './evaluate-scene.js';
@@ -27,12 +26,7 @@ export function createHamsterStage(
   const camera = new THREE.OrthographicCamera(-4.6, 4.6, 2.5875, -2.5875, 0.1, 40);
   camera.position.set(4, 3.7, 8);
   camera.lookAt(0, 1.15, 0);
-  const room = new RoomEnvironment();
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const environment = pmrem.fromScene(room, 0.04);
-  room.dispose();
-  pmrem.dispose();
-  scene.environment = environment.texture;
+  let environment: THREE.DataTexture | undefined;
   scene.environmentIntensity = 0.45;
   const key = new THREE.DirectionalLight(0xfff1df, 2);
   key.position.set(-3, 5, 4);
@@ -64,13 +58,35 @@ export function createHamsterStage(
     materials.forEach((material) => material.dispose());
   };
   const ready = (async () => {
-    const response = await fetch('/models/hamster-3.glb', { signal: controller.signal });
-    if (!response.ok) throw new Error('SCENE_MODEL_UNAVAILABLE');
-    const gltf = await new GLTFLoader().parseAsync(await response.arrayBuffer(), '');
+    const asset = async (url: string) => {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error('SCENE_MODEL_UNAVAILABLE');
+      return response.arrayBuffer();
+    };
+    const [model, lighting] = await Promise.all([
+      asset('/models/hamster-3.glb'),
+      asset('/models/hamster-3-studio.bin'),
+    ]);
+    if (lighting.byteLength !== 768 * 1024 * 8) throw new Error('SCENE_ENVIRONMENT_INVALID');
+    if (disposed) return;
+    const gltf = await new GLTFLoader().parseAsync(model, '');
     if (disposed) {
       release(gltf.scene);
       return;
     }
+    // Baked from the same RoomEnvironment PMREM; avoid regenerating it on every mount.
+    environment = new THREE.DataTexture(
+      new Uint16Array(lighting),
+      768,
+      1024,
+      THREE.RGBAFormat,
+      THREE.HalfFloatType,
+    );
+    environment.mapping = THREE.CubeUVReflectionMapping;
+    environment.colorSpace = THREE.LinearSRGBColorSpace;
+    environment.minFilter = environment.magFilter = THREE.LinearFilter;
+    environment.needsUpdate = true;
+    scene.environment = environment;
     gltf.scene.updateMatrixWorld(true);
     gltf.scene.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
@@ -130,7 +146,7 @@ export function createHamsterStage(
       disposed = true;
       controller.abort();
       release(scene);
-      environment.dispose();
+      environment?.dispose();
       key.shadow.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

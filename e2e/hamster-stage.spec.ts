@@ -24,7 +24,9 @@ const scene = {
 async function ready(page: Page) {
   await page.goto('/hamster');
   await expect(page.getByRole('button', { name: '保存場景', exact: true })).toBeEnabled();
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
 }
 async function slider(page: Page, name: string, value: string) {
   await page.getByRole('slider', { name, exact: true }).fill(value);
@@ -59,7 +61,9 @@ test('real WebGL controls, saved reload and JSON round trip', async ({ page }, t
     transform: { x: 0.8, z: -0.6, heading: 75, scale: 1.25 },
   });
   await page.reload();
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   await expect(page.getByRole('slider', { name: '朝向', exact: true })).toHaveValue('75');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '匯出 JSON' }).click();
@@ -135,7 +139,9 @@ test('context loss can retry and navigation disposes the old WebGL context', asy
   });
   await expect(page.getByText(/3D 預覽暫時無法顯示/)).toBeVisible();
   await page.getByRole('button', { name: '重新載入預覽' }).click();
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   await page.evaluate(() => {
     (window as unknown as { oldContext: WebGL2RenderingContext }).oldContext = document
       .querySelector('canvas')!
@@ -157,7 +163,9 @@ test('context loss can retry and navigation disposes the old WebGL context', asy
     .toBe(true);
   await expect(page.getByLabel('3D 倉鼠場景')).toHaveCount(0);
   await page.getByRole('tab', { name: /倉鼠小舞台/ }).click();
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
 });
 
 test('WebGL and storage unavailable still allow a visible recovery path', async ({ page }) => {

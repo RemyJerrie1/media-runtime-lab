@@ -13,7 +13,9 @@ const defaultHamsterCaption = () => ({
 const key = 'media-runtime-hamster-scene-v1';
 async function open(page: Page) {
   await page.goto('/hamster');
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
 }
 async function seek(page: Page, seconds: number) {
   await page.getByRole('slider', { name: '預覽時間', exact: true }).fill(String(seconds));
@@ -46,7 +48,9 @@ test('absolute-time WebGL frames survive reverse seeking, save and reload', asyn
   }
   await page.getByRole('button', { name: '保存場景', exact: true }).click();
   await page.reload();
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   await seek(page, 2.5);
   await expect.poll(() => image(page)).toBe(frames.get(2.5));
   await expect(page.getByText('沒有未保存變更', { exact: true })).toBeVisible();
@@ -104,10 +108,13 @@ test('legacy storage and JSON migrate to static v4 only on explicit save', async
 test('play, pause, resume, endpoint stop and replay use elapsed time; hidden tabs pause', async ({
   page,
 }) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await open(page);
+  await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
   await demo(page);
   await page.getByRole('button', { name: '保存場景', exact: true }).click();
   await page.getByRole('button', { name: '播放', exact: true }).click();
+  await page.clock.fastForward(300);
   await expect
     .poll(async () =>
       Number(await page.getByRole('slider', { name: '預覽時間', exact: true }).inputValue()),
@@ -120,6 +127,7 @@ test('play, pause, resume, endpoint stop and replay use elapsed time; hidden tab
   await expect(page.getByText('沒有未保存變更', { exact: true })).toBeVisible();
   await expect.poll(() => image(page)).toBe(pausedFrame);
   await page.getByRole('button', { name: '播放', exact: true }).click();
+  await page.clock.fastForward(300);
   await expect
     .poll(async () =>
       Number(await page.getByRole('slider', { name: '預覽時間', exact: true }).inputValue()),
@@ -138,6 +146,7 @@ test('play, pause, resume, endpoint stop and replay use elapsed time; hidden tab
   await expect(page.getByRole('slider', { name: '預覽時間', exact: true })).toHaveValue(hiddenTime);
   await seek(page, 4.8);
   await page.getByRole('button', { name: '播放', exact: true }).click();
+  await page.clock.fastForward(300);
   await expect(page.getByRole('button', { name: '重播', exact: true })).toBeVisible();
   await expect(page.getByLabel('目前時間')).toHaveText('5.00 / 5.00 秒');
   await page.getByRole('button', { name: '重播', exact: true }).click();
@@ -152,6 +161,7 @@ test('play, pause, resume, endpoint stop and replay use elapsed time; hidden tab
 });
 
 test('unmount cancels animation callbacks and a new workspace starts paused', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.addInitScript(() => {
     const request = window.requestAnimationFrame.bind(window),
       cancel = window.cancelAnimationFrame.bind(window);
@@ -171,6 +181,7 @@ test('unmount cancels animation callbacks and a new workspace starts paused', as
     };
   });
   await open(page);
+  await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
   await page.getByRole('button', { name: '播放', exact: true }).click();
   await expect(page.getByRole('button', { name: '暫停', exact: true })).toBeVisible();
   await page.getByRole('tab', { name: /平台概覽/ }).click();

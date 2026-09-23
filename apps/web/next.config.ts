@@ -3,6 +3,9 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@media-lab/contracts'],
   devIndicators: false,
   outputFileTracingIncludes: {
+    '/models/hamster-3-studio.bin': [
+      '../../packages/scene-renderer/assets/hamster-3/studio-env.bin',
+    ],
     '/models/hamster-3.glb': ['../../packages/scene-renderer/assets/hamster-3/hamster.glb'],
   },
 };

@@ -56,3 +56,20 @@ single-export E2E including interaction/decoding, and 300 seconds for two export
 This replaces the browser's earlier 90-second wait, which expired before a valid
 production render could finish. No production timeout, model quality or decoded
 media acceptance assertion was relaxed.
+
+Run 35848171457 exposed two additional browser assumptions: its implicit five-second
+assertion deadline expired during 3D startup (no failed-load state), and real wall
+time could finish the five-second animation before the test clicked pause. Asset
+readiness now has an explicit 30-second deadline. Playback-control tests use
+Playwright's clock to advance animation time deliberately, while retaining real
+HTML audio playback, UI actions, WebGL frames, and decoded MP4 assertions.
+The production animation duration and export deadline remain unchanged.
+
+The fixed RoomEnvironment PMREM is precomputed and loaded with the GLB. A real
+Chromium 640×360 RGBA readback before/after found zero differing channels. Local
+startup measurements (2.801 vs 3.188 seconds) do not establish a speedup. Missing
+and malformed lighting exercise the same retry path as unavailable model data.
+
+Local follow-up passed: full 35-test browser suite, then all eight animation/model
+recovery cases including the two new lighting failures. The suite now contains 37
+cases. Full governance/typecheck/136 application tests/build passed with PostgreSQL.

@@ -19,7 +19,9 @@ test('saved scene exports a real silent MP4 matching preview frames, plays and d
   test.setTimeout(180000);
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto('/hamster');
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '套用走路示範', exact: true }).click();
   await page.getByLabel('顯示字幕', { exact: true }).check();
@@ -27,7 +29,9 @@ test('saved scene exports a real silent MP4 matching preview frames, plays and d
   await page.getByRole('button', { name: '套用字幕', exact: true }).click();
   await page.getByRole('button', { name: '保存場景', exact: true }).click();
   await page.reload();
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   const references = new Map<number, string>();
   for (const frame of [0, 23, 24, 60, 95, 96]) {
     await page

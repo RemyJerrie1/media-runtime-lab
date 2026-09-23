@@ -3,8 +3,12 @@ import { test, expect, type Page } from '@playwright/test';
 const key = 'media-runtime-hamster-scene-v1';
 async function open(page: Page) {
   await page.goto('/hamster');
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
-  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
+  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
 }
 async function seek(page: Page, time: number) {
   await page.getByRole('slider', { name: '預覽時間', exact: true }).fill(String(time));
@@ -16,6 +20,7 @@ async function pixels(page: Page) {
 test('Chinese captions follow exact boundaries, playback, reload and import', async ({
   page,
 }, info) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await open(page);
   const blank = await pixels(page);
   await page.getByLabel('顯示字幕', { exact: true }).check();
@@ -42,17 +47,22 @@ test('Chinese captions follow exact boundaries, playback, reload and import', as
   const saved = await page.evaluate((key) => localStorage.getItem(key)!, key);
   expect(JSON.parse(saved).version).toBe(4);
   await page.reload();
-  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   await expect.poll(() => pixels(page)).toBe(blank);
   await seek(page, 1);
   await expect.poll(() => pixels(page)).toBe(chinese);
+  await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
   await seek(page, 3.9);
   await page.getByRole('button', { name: '播放', exact: true }).click();
+  await page.clock.fastForward(200);
   await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-visible', 'false');
   await page.getByRole('button', { name: '暫停', exact: true }).click();
   await expect.poll(() => pixels(page)).toBe(blank);
   await seek(page, 5);
   await page.getByRole('button', { name: '重播', exact: true }).click();
+  await page.clock.fastForward(1100);
   await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-visible', 'true');
   await page.getByRole('button', { name: '暫停', exact: true }).click();
   await expect.poll(() => pixels(page)).toBe(chinese);
@@ -127,7 +137,9 @@ test('maximum two lines use identical reference pixels on narrow screens and sty
   await page.screenshot({ path: info.outputPath('caption-mobile.png'), fullPage: true });
   await page.getByRole('button', { name: '保存場景', exact: true }).click();
   await page.reload();
-  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
   await seek(page, 1);
   await expect.poll(() => pixels(page)).toBe(desktop);
 });
@@ -139,6 +151,10 @@ test('font failure never reports capture ready and retry recovers', async ({ pag
   await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'false');
   await page.unroute('**/fonts/NotoSansTC.ttf');
   await page.getByRole('button', { name: '重新載入預覽' }).click();
-  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true');
-  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
+  await expect(page.getByLabel('字幕畫面')).toHaveAttribute('data-ready', 'true', {
+    timeout: 30_000,
+  });
 });

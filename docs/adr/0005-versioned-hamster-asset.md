@@ -12,6 +12,13 @@ capture await model readiness and use the same renderer. Keep Blender outside th
 runtime and CI dependency graph. The model route serves the asset from the monorepo;
 run the web app through its package scripts with apps/web as the working directory.
 
+The fixed studio lighting is also baked once as a half-float CubeUV texture, rather
+than constructing and filtering RoomEnvironment for each browser mount. This adds
+6 MiB of local asset data and removes synchronous PMREM work from startup. An actual
+640×360 Chromium readback matched the previous generated environment pixel-for-pixel.
+There is no measured local startup speedup; CI software-rendering timings remain
+separate from this visual-equivalence evidence.
+
 New v4 scene jobs use hamster-3. Existing hamster-1 and hamster-2 jobs keep the
 unchanged legacy renderer. Idempotency comparisons use the stored renderer version,
 so upgrading does not invalidate a retry whose content is unchanged.

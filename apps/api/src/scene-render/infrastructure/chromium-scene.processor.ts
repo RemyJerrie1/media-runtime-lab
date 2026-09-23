@@ -88,6 +88,9 @@ export class ChromiumSceneProcessor implements SceneProcessor {
         job.rendererVersion === 'hamster-3'
           ? await readFile(require.resolve('@media-lab/scene-renderer/hamster.glb'))
           : null;
+      const environment = model
+        ? await readFile(require.resolve('@media-lab/scene-renderer/studio-env.bin'))
+        : null;
       browser = await chromium.launch({
         headless: true,
         timeout: 20000,
@@ -113,6 +116,8 @@ export class ChromiumSceneProcessor implements SceneProcessor {
           await route.fulfill({ contentType: 'text/javascript', body: script });
         else if (url === 'http://scene-render.invalid/models/hamster-3.glb' && model)
           await route.fulfill({ contentType: 'model/gltf-binary', body: model });
+        else if (url === 'http://scene-render.invalid/models/hamster-3-studio.bin' && environment)
+          await route.fulfill({ contentType: 'application/octet-stream', body: environment });
         else if (url === 'http://scene-render.invalid/fonts/NotoSansTC.ttf')
           await route.fulfill({ contentType: 'font/ttf', body: font });
         else await route.abort();
