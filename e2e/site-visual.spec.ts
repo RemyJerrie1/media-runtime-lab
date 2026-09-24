@@ -3,7 +3,7 @@ import { workspaceSections } from '../apps/web/app/workspace-sections';
 
 for (const width of [390, 1280]) {
   for (const section of workspaceSections) {
-    test(`${section} reviewed layout ${width}px @visual`, async ({ page }) => {
+    test(`${section} reviewed layout ${width}px @visual`, async ({ page, browserName }) => {
       await page.setViewportSize({ width, height: 900 });
       // A deterministic offline API state makes every recovery entry visible and reproducible.
       await page.route('**/v1/**', (route) => route.abort('failed'));
@@ -36,12 +36,30 @@ for (const width of [390, 1280]) {
           page.getByText('無法連線取得素材，請確認網路與 API 已啟動後重試。'),
         ).toBeVisible();
       await expect(page.getByRole('tabpanel')).toBeVisible();
-      // GPU pixels have separate real WebGL assertions; this baseline owns UI layout and controls.
-      await expect(page).toHaveScreenshot(`${section}-${width}.png`, {
-        fullPage: true,
-        animations: 'disabled',
-        mask: [page.locator('canvas'), page.locator('video')],
-      });
+      expect(
+        await page.evaluate(() => ({
+          loaded: [...document.fonts].some(
+            (font) => font.family === 'VisualEvidence' && font.status === 'loaded',
+          ),
+          usable: document.fonts.check('16px VisualEvidence', '倉鼠測試 ABC 123'),
+        })),
+      ).toEqual({ loaded: true, usable: true });
+      const previousFontWait = process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY;
+      // Windows WebKit can leave fonts.ready pending despite the loaded/usable face above.
+      // Replace only that redundant wait; retain pixel comparison and screenshot stability checks.
+      if (browserName === 'webkit' && section === 'render')
+        process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = '1';
+      try {
+        // GPU pixels have separate real WebGL assertions; this baseline owns UI layout and controls.
+        await expect(page).toHaveScreenshot(`${section}-${width}.png`, {
+          fullPage: true,
+          animations: 'disabled',
+          mask: [page.locator('canvas'), page.locator('video')],
+        });
+      } finally {
+        if (previousFontWait === undefined) delete process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY;
+        else process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = previousFontWait;
+      }
     });
   }
 }
