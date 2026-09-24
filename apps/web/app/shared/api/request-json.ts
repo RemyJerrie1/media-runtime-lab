@@ -1,4 +1,6 @@
+// Interactive JSON operations should release the UI within 15 seconds, retaining uncertain intent.
 export const API_TIMEOUT_MS = 15_000;
+// Multipart uploads need a larger transfer window than small JSON commands.
 export const UPLOAD_TIMEOUT_MS = 60_000;
 
 export class ApiTimeoutError extends Error {

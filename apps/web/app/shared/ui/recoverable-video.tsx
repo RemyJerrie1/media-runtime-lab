@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type VideoHTMLAttributes } from 'react';
 
 type Props = VideoHTMLAttributes<HTMLVideoElement> & { src: string; 'aria-label': string };
+// Allow artifact metadata to arrive over a slow connection, then expose an explicit retry.
+const VIDEO_METADATA_TIMEOUT_MS = 30_000;
 
 export function RecoverableVideo(props: Props) {
   return <VideoAttempt key={props.src} {...props} />;
@@ -18,7 +20,7 @@ function VideoAttempt(props: Props) {
     const timer = setTimeout(() => {
       setReason('影片載入逾時，請檢查連線或確認原 API 已啟動。');
       setStatus('failed');
-    }, 30_000);
+    }, VIDEO_METADATA_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [attempt, status]);
   return (

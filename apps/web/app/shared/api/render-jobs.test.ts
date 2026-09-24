@@ -9,6 +9,7 @@ import {
   parseRenderJobEvent,
   playbackPath,
   RenderConflictError,
+  mediaFailureMessage,
 } from './render-jobs';
 
 const job: RenderJob = {
@@ -102,6 +103,17 @@ function response(value: unknown, status = 200) {
 }
 
 describe('API response contracts', () => {
+  it('keeps malformed media diagnostics out of user-facing copy', async () => {
+    response({ id: 42 });
+    await expect(getDemoMedia()).rejects.toThrow('素材回應格式不正確');
+    expect(mediaFailureMessage(new SyntaxError('unexpected token'))).toBe(
+      '素材回應不完整或格式不正確，請重試。',
+    );
+    expect(mediaFailureMessage(new TypeError('Failed to fetch'))).toContain('無法連線取得素材');
+    expect(mediaFailureMessage(new DOMException('Invalid JSON', 'SyntaxError'))).toContain(
+      '素材回應不完整',
+    );
+  });
   for (const endpoint of endpoints) {
     it(`${endpoint.name} accepts a valid response`, async () => {
       response(endpoint.value);

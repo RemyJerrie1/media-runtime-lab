@@ -3,13 +3,19 @@
 import { RecoverableVideo } from '../../shared/ui/recoverable-video';
 
 import type { FfmpegEncoding, MediaAsset, MediaProcessing } from '@media-lab/contracts';
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Button } from '../../design-system/button';
 import { MetricCard } from '../../design-system/metric-card';
 import { ProgressBar } from '../../design-system/progress-bar';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
 import { PendingRenderOperation } from '../../shared/ui/pending-render-operation';
-import { artifactUrl, getDemoMedia, playbackPath, uploadMedia } from '../../shared/api/render-jobs';
+import {
+  artifactUrl,
+  getDemoMedia,
+  mediaFailureMessage,
+  playbackPath,
+  uploadMedia,
+} from '../../shared/api/render-jobs';
 import { EncodingDecision } from './encoding-decision';
 
 const pipeline = ['檢測', '剪輯', '編碼', '封裝', '驗證', '儲存', '交付', '播放'];
@@ -42,7 +48,7 @@ export function RenderLab() {
   const [processing, setProcessing] = useState<MediaProcessing>(defaults);
   const [sourceAsset, setSourceAsset] = useState<MediaAsset | null>(null);
   const [usingDemo, setUsingDemo] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(true);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [playbackRendition, setPlaybackRendition] = useState('720p');
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -63,23 +69,32 @@ export function RenderLab() {
     const timer = window.setInterval(updateElapsed, 1000);
     return () => window.clearInterval(timer);
   }, [job?.status, startedAt]);
-  useEffect(() => {
-    let active = true;
+  const sourceRequest = useRef<AbortController | null>(null);
+  const loadSource = useCallback(async (file?: File) => {
+    sourceRequest.current?.abort();
+    const controller = new AbortController();
+    sourceRequest.current = controller;
     setUploading(true);
-    getDemoMedia()
-      .then((asset) => {
-        if (active) setSourceAsset(asset);
-      })
-      .catch((cause) => {
-        if (active) setUploadError(cause instanceof Error ? cause.message : '示範素材準備失敗');
-      })
-      .finally(() => {
-        if (active) setUploading(false);
-      });
-    return () => {
-      active = false;
-    };
+    setUploadError(null);
+    try {
+      const asset = file
+        ? await uploadMedia(file, controller.signal)
+        : await getDemoMedia(controller.signal);
+      if (!controller.signal.aborted) {
+        setSourceAsset(asset);
+        setUsingDemo(!file);
+      }
+    } catch (cause) {
+      if (!controller.signal.aborted) setUploadError(mediaFailureMessage(cause));
+    } finally {
+      if (!controller.signal.aborted) setUploading(false);
+    }
   }, []);
+  useEffect(() => {
+    // A replayed input event during hydration may already own a source request.
+    if (!sourceRequest.current || sourceRequest.current.signal.aborted) void loadSource();
+    return () => sourceRequest.current?.abort();
+  }, [loadSource]);
   const encode =
     (field: keyof Omit<FfmpegEncoding, 'codec'>) =>
     (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -143,25 +158,12 @@ export function RenderLab() {
               <p>
                 {sourceAsset
                   ? `${(sourceAsset.sizeBytes / 1024 / 1024).toFixed(2)} MB · 已就緒`
-                  : '可先預覽，素材準備中…'}
+                  : uploading
+                    ? '可先預覽，素材準備中…'
+                    : '素材尚未就緒，請重試或上傳影片。'}
               </p>
               <div className="source-actions" data-tour="choose-source">
-                <Button
-                  type="button"
-                  disabled={uploading}
-                  onClick={async () => {
-                    setUploading(true);
-                    setUploadError(null);
-                    try {
-                      setSourceAsset(await getDemoMedia());
-                      setUsingDemo(true);
-                    } catch (cause) {
-                      setUploadError(cause instanceof Error ? cause.message : '示範素材準備失敗');
-                    } finally {
-                      setUploading(false);
-                    }
-                  }}
-                >
+                <Button type="button" disabled={uploading} onClick={() => void loadSource()}>
                   使用示範影片
                 </Button>
                 <label className="source-file-button">
@@ -169,19 +171,10 @@ export function RenderLab() {
                   <input
                     type="file"
                     accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
-                    onChange={async (event) => {
+                    onChange={(event) => {
                       const file = event.target.files?.[0];
-                      if (!file) return;
-                      setUploading(true);
-                      setUploadError(null);
-                      try {
-                        setSourceAsset(await uploadMedia(file));
-                        setUsingDemo(false);
-                      } catch (cause) {
-                        setUploadError(cause instanceof Error ? cause.message : '素材上傳失敗');
-                      } finally {
-                        setUploading(false);
-                      }
+                      if (file) void loadSource(file);
+                      event.target.value = '';
                     }}
                   />
                 </label>

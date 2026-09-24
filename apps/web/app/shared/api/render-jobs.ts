@@ -38,16 +38,30 @@ export type RenderEditorCommand = Pick<
   'sourceAssetId' | 'template' | 'trimStartSeconds' | 'durationSeconds' | 'encoding' | 'processing'
 >;
 
-export async function uploadMedia(file: File): Promise<MediaAsset> {
+function parseMediaAsset(value: unknown): MediaAsset {
+  const result = mediaAssetSchema.safeParse(value);
+  if (!result.success) throw new Error('素材回應格式不正確，請重試；若持續失敗，請確認 API 版本。');
+  return result.data;
+}
+
+export function mediaFailureMessage(cause: unknown): string {
+  // WebKit can report JSON parsing as a DOMException named SyntaxError.
+  if (cause instanceof Error && cause.name === 'SyntaxError')
+    return '素材回應不完整或格式不正確，請重試。';
+  if (cause instanceof TypeError) return '無法連線取得素材，請確認網路與 API 已啟動後重試。';
+  return cause instanceof Error ? cause.message : '素材載入失敗，請重試。';
+}
+
+export async function uploadMedia(file: File, signal?: AbortSignal): Promise<MediaAsset> {
   const body = new FormData();
   body.append('file', file);
   const response = await requestJson(
     `${API}/v1/media`,
-    { method: 'POST', headers: tenantHeaders, body },
+    { method: 'POST', headers: tenantHeaders, body, signal: signal ?? null },
     UPLOAD_TIMEOUT_MS,
   );
   if (!response.ok) throw new Error(`素材上傳失敗（${response.status}）`);
-  return mediaAssetSchema.parse(response.data);
+  return parseMediaAsset(response.data);
 }
 
 export async function getDemoMedia(signal?: AbortSignal): Promise<MediaAsset> {
@@ -57,7 +71,7 @@ export async function getDemoMedia(signal?: AbortSignal): Promise<MediaAsset> {
     signal: signal ?? null,
   });
   if (!response.ok) throw new Error(`示範素材準備失敗（${response.status}）`);
-  return mediaAssetSchema.parse(response.data);
+  return parseMediaAsset(response.data);
 }
 
 export function artifactUrl(path: string) {

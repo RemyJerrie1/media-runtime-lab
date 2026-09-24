@@ -14,9 +14,10 @@
     "verify": "pnpm governance && pnpm typecheck && pnpm test && pnpm build",
     "bruno": "node scripts/run-bruno.mjs",
     "prepare": "husky",
-    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\" \"e2e/**/*.ts\" playwright.config.ts",
-    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\" \"e2e/**/*.ts\" playwright.config.ts",
+    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\" \"e2e/**/*.ts\" \"playwright*.config.ts\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"scripts/*.mjs\" \"e2e/**/*.ts\" \"playwright*.config.ts\"",
     "test:e2e": "playwright test",
+    "test:recovery": "playwright test --config playwright.recovery.config.ts",
     "benchmark": "pnpm --filter @media-lab/contracts build && node scripts/benchmark-encoding.mjs",
     "benchmark:verify": "pnpm --filter @media-lab/contracts build && node scripts/benchmark-encoding.mjs --verify"
   },

@@ -6,7 +6,7 @@ import {
   type MediaProcessing,
 } from '@media-lab/contracts';
 import { useEffect, useState } from 'react';
-import { artifactUrl, getDemoMedia } from '../../shared/api/render-jobs';
+import { artifactUrl, getDemoMedia, mediaFailureMessage } from '../../shared/api/render-jobs';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
 import { PendingRenderOperation } from '../../shared/ui/pending-render-operation';
 import { SectionHeading } from '../../shared/ui/section-heading';
@@ -53,8 +53,7 @@ export function CompositionShowcase() {
         if (!controller.signal.aborted) setSource(value);
       })
       .catch((cause) => {
-        if (!controller.signal.aborted)
-          setSourceError(cause instanceof Error ? cause.message : '示範素材載入失敗');
+        if (!controller.signal.aborted) setSourceError(mediaFailureMessage(cause));
       });
     return () => controller.abort();
   }, [sourceAttempt]);
@@ -134,7 +133,10 @@ export function CompositionShowcase() {
             </p>
           ) : null}
         </div>
-        <div className={styles.stage} data-tour="composition-preview">
+        <div
+          className={`${styles.stage} ${sourceError ? styles.failedStage : ''}`}
+          data-tour="composition-preview"
+        >
           {source ? (
             <video
               className={styles.canvas}
@@ -146,8 +148,8 @@ export function CompositionShowcase() {
               onTimeUpdate={(event) => setPreviewSeconds(event.currentTarget.currentTime)}
             />
           ) : sourceError ? (
-            <div className={styles.loading} role="alert" aria-label="示範素材錯誤">
-              <p>{sourceError}。請確認 API 已啟動。</p>
+            <div className={styles.sourceError} role="alert" aria-label="示範素材錯誤">
+              <p>{sourceError}</p>
               <button type="button" onClick={() => setSourceAttempt((value) => value + 1)}>
                 重試示範素材
               </button>
@@ -157,7 +159,7 @@ export function CompositionShowcase() {
               正在準備電影感示範素材…
             </p>
           )}
-          {watermarkMode !== 'none' ? (
+          {source && watermarkMode !== 'none' ? (
             <div
               className={`${styles.watermarkPreview} ${watermarkMode === 'dynamic' ? styles.dynamicWatermark : styles.fixedWatermark}`}
               role="status"

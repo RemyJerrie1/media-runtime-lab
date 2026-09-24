@@ -43,6 +43,11 @@
   object-fit: cover;
 }
 .loading { display: grid; min-height: 100%; place-items: center; color: #fff; }
+.failedStage { aspect-ratio: auto; min-height: 180px; overflow: visible; }
+.sourceError { display: grid; gap: 16px; padding: 24px; color: #fff; overflow-wrap: anywhere; }
+.sourceError p { margin: 0; }
+.sourceError button { justify-self: start; min-height: 44px; padding: 10px 16px; border: 1px solid #fff; border-radius: 8px; background: #fff; color: #0c1522; font: inherit; cursor: pointer; }
+.sourceError button:focus-visible { outline: 3px solid #67e8f9; outline-offset: 4px; }
 .orb {
   position: absolute;
   width: 94px;

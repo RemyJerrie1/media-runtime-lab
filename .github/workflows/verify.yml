@@ -7,6 +7,28 @@ concurrency:
   group: verify-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  recovery:
+    # Keep visual baselines on the same OS used to review them. Both engines are required.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with: { version: 11.16.0 }
+      - uses: actions/setup-node@v6
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install chromium webkit
+      - run: pnpm exec turbo build --filter=@media-lab/web
+      - run: pnpm test:recovery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recovery-browser-evidence
+          path: |
+            .runtime/recovery-report
+            .runtime/recovery-results
+          retention-days: 7
+          include-hidden-files: true
   quality:
     runs-on: ubuntu-latest
     services:
