@@ -1,5 +1,7 @@
+import { MAX_RECEIPT_BYTES } from '../../shared/disk-receipt';
+import { mediaProbeSchema } from '../../shared/media-probe';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, writeFile, rename, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, realpath, writeFile, rename, rm, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import ffmpeg from 'ffmpeg-static';
 import ffprobe from '@ffprobe-installer/ffprobe';
@@ -9,6 +11,9 @@ import {
   type SceneAudioAsset,
 } from '@media-lab/contracts';
 import { startSceneProcess } from './scene-process';
+import { z } from 'zod';
+
+const audioReceiptSchema = z.object({ tenant: z.string().min(1), asset: sceneAudioAssetSchema });
 
 export class FileSceneAudioAssets {
   constructor(private root = resolve(process.cwd(), '.runtime/scene-audio')) {}
@@ -19,7 +24,9 @@ export class FileSceneAudioAssets {
   }
   async get(id: string, tenant?: string): Promise<SceneAudioAsset> {
     try {
-      const record = JSON.parse(await readFile(resolve(this.directory(id), 'asset.json'), 'utf8'));
+      const record = audioReceiptSchema.parse(
+        JSON.parse(await readFile(await this.receiptPath(id), 'utf8')),
+      );
       if (tenant !== undefined && record.tenant !== tenant) throw new Error('SCENE_AUDIO_MISSING');
       const asset = sceneAudioAssetSchema.parse(record.asset);
       if (
@@ -31,6 +38,20 @@ export class FileSceneAudioAssets {
     } catch {
       throw new Error('SCENE_AUDIO_MISSING');
     }
+  }
+  private async receiptPath(id: string) {
+    const directory = this.directory(id);
+    const root = await realpath(this.root);
+    const receipt = resolve(directory, 'asset.json');
+    // Receipts and normalized audio must stay in this asset's own directory, including symlinks.
+    if (
+      (await realpath(directory)) !== resolve(root, id) ||
+      (await realpath(receipt)) !== resolve(root, id, 'asset.json') ||
+      (await realpath(resolve(directory, 'audio.wav'))) !== resolve(root, id, 'audio.wav') ||
+      (await stat(receipt)).size > MAX_RECEIPT_BYTES
+    )
+      throw new Error('SCENE_AUDIO_MISSING');
+    return receipt;
   }
   async resolve(asset: SceneAudioAsset, tenant?: string) {
     const stored = await this.get(asset.id, tenant);
@@ -59,12 +80,12 @@ export class FileSceneAudioAssets {
         ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', source],
         controller.signal,
       );
-      const metadata = JSON.parse((await probe.done).toString());
+      const metadata = mediaProbeSchema.parse(JSON.parse((await probe.done).toString()));
       const duration = Number(metadata.format?.duration);
       if (
-        !['mp3', 'wav'].includes(metadata.format?.format_name) ||
+        !['mp3', 'wav'].includes(metadata.format.format_name ?? '') ||
         metadata.streams?.length !== 1 ||
-        metadata.streams[0].codec_type !== 'audio' ||
+        metadata.streams[0]?.codec_type !== 'audio' ||
         !Number.isFinite(duration) ||
         duration <= 0 ||
         duration > 60
@@ -103,7 +124,7 @@ export class FileSceneAudioAssets {
         ['-v', 'error', '-show_format', '-of', 'json', output],
         controller.signal,
       );
-      const measured = JSON.parse((await normalized.done).toString());
+      const measured = mediaProbeSchema.parse(JSON.parse((await normalized.done).toString()));
       const id = randomUUID();
       const asset = sceneAudioAssetSchema.parse({
         id,

@@ -61,6 +61,25 @@ it('persists verified WAV and MP3 across instances, scopes ownership and rejects
   await writeFile(source, Buffer.alloc(asset.sizeBytes));
   await expect(reopened.resolve(asset)).rejects.toThrow('SCENE_AUDIO_CHANGED');
 }, 30000);
+it('rejects corrupt audio receipts and permits replacement without trusting unknown fields', async () => {
+  const asset = await assets.save(wave(), 'receipt-tenant');
+  const path = resolve(root, 'assets', asset.id, 'asset.json');
+  const receipt = await readFile(path, 'utf8');
+  for (const invalid of [
+    '{',
+    'null',
+    JSON.stringify({ tenant: 42, asset }),
+    JSON.stringify({ tenant: 'receipt-tenant', asset: { ...asset, sizeBytes: '1' } }),
+    ' '.repeat(65537),
+  ]) {
+    await writeFile(path, invalid);
+    await expect(assets.get(asset.id)).rejects.toThrow('SCENE_AUDIO_MISSING');
+  }
+  await writeFile(path, receipt);
+  expect(await assets.get(asset.id, 'receipt-tenant')).toEqual(asset);
+  await expect(assets.get('../secret')).rejects.toThrow('SCENE_AUDIO_MISSING');
+}, 30000);
+
 it('rejects invalid, oversized, overlong and non-audio uploads without leaving upload directories', async () => {
   await expect(assets.save(Buffer.from('not audio'), 'a')).rejects.toThrow();
   await expect(assets.save(Buffer.alloc(10 * 1024 * 1024 + 1), 'a')).rejects.toThrow(

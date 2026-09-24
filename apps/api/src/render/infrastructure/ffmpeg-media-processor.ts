@@ -1,3 +1,4 @@
+import { mediaProbeSchema, vmafReportSchema } from '../../shared/media-probe';
 import { Inject, Injectable } from '@nestjs/common';
 import type { RenderJob } from '@media-lab/contracts';
 import ffprobe from '@ffprobe-installer/ffprobe';
@@ -235,9 +236,7 @@ export class FfmpegMediaProcessor implements MediaProcessor {
       dirname(report),
       signal,
     );
-    const result = JSON.parse(await readFile(report, 'utf8')) as {
-      pooled_metrics?: { vmaf?: { mean?: number } };
-    };
+    const result = vmafReportSchema.parse(JSON.parse(await readFile(report, 'utf8')));
     const score = result.pooled_metrics?.vmaf?.mean;
     return typeof score === 'number' ? Number(score.toFixed(1)) : null;
   }
@@ -251,17 +250,7 @@ export class FfmpegMediaProcessor implements MediaProcessor {
       undefined,
       signal,
     );
-    const metadata = JSON.parse(output) as {
-      streams?: Array<{
-        codec_type?: string;
-        codec_name?: string;
-        width?: number;
-        height?: number;
-        avg_frame_rate?: string;
-        duration?: string;
-      }>;
-      format?: { duration?: string; bit_rate?: string };
-    };
+    const metadata = mediaProbeSchema.parse(JSON.parse(output));
     if (!metadata.streams?.length || !metadata.format) throw new Error('FFPROBE_INVALID_MEDIA');
     const video = metadata.streams.find((stream) => stream.codec_type === 'video');
     const audio = metadata.streams.find((stream) => stream.codec_type === 'audio');

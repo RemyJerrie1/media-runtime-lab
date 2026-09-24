@@ -26,6 +26,7 @@ function VideoAttempt(props: Props) {
   return (
     <>
       <video
+        preload="metadata"
         {...props}
         ref={video}
         onLoadedMetadata={(event) => {

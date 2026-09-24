@@ -19,7 +19,12 @@
     "test:e2e": "playwright test",
     "test:recovery": "playwright test --config playwright.recovery.config.ts",
     "benchmark": "pnpm --filter @media-lab/contracts build && node scripts/benchmark-encoding.mjs",
-    "benchmark:verify": "pnpm --filter @media-lab/contracts build && node scripts/benchmark-encoding.mjs --verify"
+    "benchmark:verify": "pnpm --filter @media-lab/contracts build && node scripts/benchmark-encoding.mjs --verify",
+    "test:ci": "node scripts/test-ci.mjs",
+    "test:rwd": "playwright test --grep @rwd",
+    "test:visual": "playwright test --config playwright.recovery.config.ts",
+    "test:server": "pnpm --filter @media-lab/api test",
+    "benchmark:web": "node scripts/benchmark-web.mjs --verify"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

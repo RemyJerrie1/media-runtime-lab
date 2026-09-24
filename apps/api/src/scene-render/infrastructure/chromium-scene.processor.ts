@@ -1,3 +1,4 @@
+import { mediaProbeSchema } from '../../shared/media-probe';
 import { chromium, type Browser } from 'playwright';
 import { type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -225,19 +226,7 @@ export class ChromiumSceneProcessor implements SceneProcessor {
         ['-v', 'error', '-count_frames', '-show_streams', '-show_format', '-of', 'json', temporary],
         signal,
       );
-      const metadata = JSON.parse((await probe.done).toString()) as {
-        streams: Array<{
-          codec_type: string;
-          codec_name: string;
-          width: number;
-          height: number;
-          avg_frame_rate: string;
-          nb_read_frames: string;
-          sample_rate: string;
-          channels: number;
-        }>;
-        format: { duration: string };
-      };
+      const metadata = mediaProbeSchema.parse(JSON.parse((await probe.done).toString()));
       const stream = metadata.streams[0];
       if (
         metadata.streams.length !== (audio ? 2 : 1) ||

@@ -162,6 +162,33 @@ suite('PostgreSQL workflow integration', () => {
     const { job } = await store.create(input);
     return { store, job, input };
   }
+  it('keeps tenant isolation and deduplication with 100x persisted jobs', async () => {
+    const { store, job, input } = await seed();
+    const samples = [];
+    for (const count of [10, 1000]) {
+      const before = await store.activeCount(input.tenantId);
+      for (let i = before; i < count; i++) {
+        await store.create({
+          ...input,
+          quotaTokens: 1_000_000,
+          command: { ...input.command, idempotencyKey: `scale-job-${i}` },
+        });
+      }
+      const start = performance.now();
+      expect(await store.activeCount(input.tenantId)).toBe(count);
+      expect(await store.findById('another-tenant', job.id)).toBeUndefined();
+      expect(await store.create(input)).toMatchObject({ created: false, job: { id: job.id } });
+      const latencyMs = performance.now() - start;
+      samples.push({ count, latencyMs, heapBytes: process.memoryUsage().heapUsed });
+      // Three indexed operations must finish well below the pool's 5-second statement deadline.
+      expect(latencyMs).toBeLessThan(1000);
+    }
+    const counts = await admin.query(
+      `SELECT (SELECT count(*) FROM ${schema}.render_jobs) AS jobs, (SELECT count(*) FROM ${schema}.render_events) AS events, (SELECT count(*) FROM ${schema}.render_outbox) AS work`,
+    );
+    expect(counts.rows[0]).toEqual({ jobs: '1000', events: '1000', work: '1000' });
+    console.info('workflow-scale-evidence', JSON.stringify(samples));
+  }, 30_000);
   it('persists fingerprints across restart and rejects unverifiable legacy replays', async () => {
     const { job, input } = await seed();
     const restarted = createStore();

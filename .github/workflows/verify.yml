@@ -10,6 +10,7 @@ jobs:
   recovery:
     # Keep visual baselines on the same OS used to review them. Both engines are required.
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -31,6 +32,7 @@ jobs:
           include-hidden-files: true
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
@@ -68,17 +70,63 @@ jobs:
       - run: pnpm governance
       - run: pnpm typecheck
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test
+      - run: pnpm test:ci
       - run: pnpm build
       - run: pnpm benchmark:verify
-      - run: pnpm test:e2e
+      - run: pnpm benchmark:web
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: browser-test-evidence
+          name: quality-evidence
           path: |
             .runtime/playwright-report
             .runtime/playwright-results
+            .runtime/web-benchmark.json
           retention-days: 7
           include-hidden-files: true
       - run: pnpm audit --audit-level high
+  browser:
+    # Each shard has its own VM, database, media directory and evidence artifact.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        shard: [1, 2]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: media
+          POSTGRES_PASSWORD: media
+          POSTGRES_DB: media_runtime
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U media -d media_runtime"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://media:media@localhost:5432/media_runtime
+      FFMPEG_BINARY: /usr/bin/ffmpeg
+      FFPROBE_BINARY: /usr/bin/ffprobe
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with: { version: 11.16.0 }
+      - uses: actions/setup-node@v6
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: sudo apt-get update && sudo apt-get install --yes ffmpeg fonts-dejavu-core
+      # The real API renders scenes with Chromium even when the client is WebKit.
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm build
+      - run: pnpm test:e2e --project=${{ matrix.engine }} --shard=${{ matrix.shard }}/2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-${{ matrix.engine }}-${{ matrix.shard }}
+          path: |
+            .runtime/playwright-report
+            .runtime/playwright-results
+          include-hidden-files: true
+          retention-days: 7

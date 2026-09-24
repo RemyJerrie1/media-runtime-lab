@@ -1,7 +1,9 @@
+import { MAX_RECEIPT_BYTES } from '../../shared/disk-receipt';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { MediaAsset } from '@media-lab/contracts';
+import { mediaAssetSchema, type MediaAsset } from '@media-lab/contracts';
+import { z } from 'zod';
 import { createHash } from 'node:crypto';
-import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -11,6 +13,7 @@ const ALLOWED = new Map([
   ['video/webm', '.webm'],
   ['video/x-matroska', '.mkv'],
 ]);
+const storedMediaSchema = mediaAssetSchema.extend({ storedName: z.string() });
 
 @Injectable()
 export class MediaFilesService {
@@ -68,10 +71,7 @@ export class MediaFilesService {
   }
 
   async source(id: string) {
-    const path = await this.sourcePath(id);
-    const metadata = JSON.parse(
-      await readFile(resolve(this.uploads, `${id}.json`), 'utf8'),
-    ) as MediaAsset;
+    const { path, metadata } = await this.sourceRecord(id);
     const details = await stat(path);
     return {
       path,
@@ -89,12 +89,37 @@ export class MediaFilesService {
   }
 
   async sourcePath(id: string) {
-    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new NotFoundException('ASSET_NOT_FOUND');
-    const metadataText = await readFile(resolve(this.uploads, `${id}.json`), 'utf8').catch(() => {
+    return (await this.sourceRecord(id)).path;
+  }
+
+  private async sourceRecord(id: string) {
+    try {
+      z.string().uuid().parse(id);
+      const root = await realpath(this.uploads);
+      const receipt = resolve(root, `${id}.json`);
+      if ((await realpath(receipt)) !== receipt || (await stat(receipt)).size > MAX_RECEIPT_BYTES)
+        throw new Error('INVALID_RECEIPT');
+      const metadata = storedMediaSchema.parse(JSON.parse(await readFile(receipt, 'utf8')));
+      const extension = ALLOWED.get(metadata.mimeType);
+      if (
+        !extension ||
+        metadata.id !== id ||
+        metadata.url !== `/media/${id}` ||
+        metadata.storedName !== `${id}${extension}`
+      )
+        throw new Error('INVALID_RECEIPT');
+      const path = resolve(root, metadata.storedName);
+      const details = await stat(path);
+      if (
+        (await realpath(path)) !== path ||
+        !details.isFile() ||
+        details.size !== metadata.sizeBytes
+      )
+        throw new Error('INVALID_FILE');
+      return { path, metadata };
+    } catch {
       throw new NotFoundException('ASSET_NOT_FOUND');
-    });
-    const metadata = JSON.parse(metadataText) as { storedName: string };
-    return resolve(this.uploads, metadata.storedName);
+    }
   }
 
   artifactPath(jobId: string) {
@@ -110,7 +135,10 @@ export class MediaFilesService {
   }
 
   async streamAsset(jobId: string, filename: string) {
-    if (!/^[0-9a-f-]{36}$/i.test(jobId) || !/^[a-zA-Z0-9._-]+$/.test(filename))
+    if (
+      !z.string().uuid().safeParse(jobId).success ||
+      !/^[a-zA-Z0-9_-][a-zA-Z0-9._-]*$/.test(filename)
+    )
       throw new NotFoundException('STREAM_ASSET_NOT_FOUND');
     const directory = resolve(this.artifacts, jobId);
     const path = resolve(directory, filename);

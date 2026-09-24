@@ -432,40 +432,36 @@ test('benchmark shows persisted measurements and all three actual videos play on
 });
 
 for (const failure of ['missing', 'corrupt', 'timeout'] as const) {
-  test(`output video ${failure} can reload without another render command`, async ({ page }) => {
+  test(`output video ${failure} can reload without another render command`, async ({
+    page,
+    request,
+  }) => {
     await page.clock.install();
     await setup(page);
+    const fixtureId = crypto.randomUUID();
+    const control = `http://localhost:4000/__test-media/${fixtureId}`;
+    await request.post(control, { data: { mode: failure } });
     let commands = 0;
     await page.route('http://localhost:4000/v1/render-jobs', (route) => {
       commands++;
       return route.fulfill({
         json: {
           ...job('completed-video', 2, 100, 'ready'),
-          artifactUrl: '/artifacts/recovery.mp4',
+          artifactUrl: `/artifacts/fault-${fixtureId}.mp4`,
           artifactChecksum: 'sha256:checked',
         },
       });
     });
-    let recovered = false;
-    let reads = 0;
-    const movie = await readFile('apps/web/public/media/product-demo.mp4');
-    await page.route('**/artifacts/recovery.mp4', (route) => {
-      reads++;
-      if (recovered) return route.fulfill({ contentType: 'video/mp4', body: movie });
-      if (failure === 'timeout') return;
-      return route.fulfill({
-        status: failure === 'missing' ? 404 : 200,
-        contentType: 'video/mp4',
-        body: 'broken',
-      });
-    });
     await page.getByRole('button', { name: '產生 FFmpeg 成品', exact: true }).click();
-    await expect.poll(() => reads).toBeGreaterThan(0);
+    await page.getByLabel('合成輸出影片', { exact: true }).scrollIntoViewIfNeeded();
+    await expect
+      .poll(async () => (await (await request.get(control)).json()).reads)
+      .toBeGreaterThan(0);
     if (failure === 'timeout') await page.clock.fastForward(30001);
     const error = page.getByRole('alert', { name: '合成輸出影片錯誤' });
     await expect(error).toBeVisible();
     if (failure === 'timeout') await expect(error).toContainText('逾時');
-    recovered = true;
+    await request.post(control, { data: { mode: 'ready' } });
     await error.getByRole('button', { name: '重新載入影片' }).click();
     await expect(error).toHaveCount(0);
     const video = page.getByLabel('合成輸出影片', { exact: true });
@@ -475,5 +471,6 @@ for (const failure of ['missing', 'corrupt', 'timeout'] as const) {
     expect(commands).toBe(1);
     await expect(page.getByTestId('current-job-id')).toHaveText('completed-video');
     await expect(page.getByText('正在載入合成輸出影片…')).toHaveCount(0);
+    await request.delete(control);
   });
 }

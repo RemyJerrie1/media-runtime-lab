@@ -2,10 +2,14 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: 'recovery-quality.spec.ts',
+  testIgnore: ['recovery-quality.spec.ts', 'site-visual.spec.ts'],
   fullyParallel: false,
   workers: 1,
   retries: 0,
+  projects: [
+    { name: 'chromium', use: { browserName: 'chromium' } },
+    { name: 'webkit', use: { browserName: 'webkit' } },
+  ],
   timeout: 60_000,
   outputDir: '.runtime/playwright-results',
   reporter: [['list'], ['html', { outputFolder: '.runtime/playwright-report', open: 'never' }]],
@@ -23,13 +27,19 @@ export default defineConfig({
     },
     {
       command: 'pnpm --filter @media-lab/api start',
-      url: 'http://localhost:4000/v1/operations',
+      url: 'http://localhost:4001/v1/operations',
       reuseExistingServer: false,
       env: {
         NODE_ENV: 'development',
         MEDIA_RUNTIME_API_KEY: 'local-demo-key',
         DISABLE_RENDER_WORKER: 'false',
+        PORT: '4001',
       },
+    },
+    {
+      command: 'node scripts/e2e-media-proxy.mjs',
+      url: 'http://localhost:4000/v1/operations',
+      reuseExistingServer: false,
     },
   ],
 });
