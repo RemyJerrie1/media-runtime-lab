@@ -72,10 +72,18 @@ test('saved scene exports a real silent MP4 matching preview frames, plays and d
     await request.get(`http://localhost:4000/v1/scene-render-jobs/${id}`, { headers })
   ).json();
   expect(result.scene.background).toBe('#e8ddd0');
-  expect((await request.get(`http://localhost:4000${result.receipt.artifactUrl}`)).ok()).toBe(true);
+  const preview = await request.get(`http://localhost:4000${result.receipt.artifactUrl}`);
+  expect(preview.ok()).toBe(true);
+  expect(preview.headers()['content-type']).toContain('video/mp4');
+  const attachment = await request.get(
+    `http://localhost:4000${result.receipt.artifactUrl}?download=1`,
+  );
+  expect(attachment.headers()['content-type']).toContain('application/octet-stream');
+  expect(attachment.headers()['content-disposition']).toBe('attachment; filename="hamster.mp4"');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('link', { name: '下載倉鼠 MP4' }).click();
   const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('hamster.mp4');
   const movie = info.outputPath('hamster.mp4');
   await download.saveAs(movie);
   const bytes = await readFile(movie);

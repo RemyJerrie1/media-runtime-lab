@@ -49,3 +49,13 @@ Browser CI uses four independent jobs: Chromium/WebKit × shards 1/2 and 2/2. Ea
 Local `pnpm verify` passed 22 governance checks and 146 application tests (12 contracts, 77 web, 57 API), with PostgreSQL configured and no skipped integration tests. Type checking and production builds passed. The complete browser suite passed 128/128 (64 per engine) in 5.6 minutes, including Bruno's 14 requests / 16 assertions per engine.
 
 The normal snapshot comparison passed 48/48 in 45.5 seconds without updating baselines. `pnpm test:ci` passed all 146 tests across six package/shard runs (6 + 18 + 28 + 6 + 59 + 29), with no skips. Both before/after performance runs were isolated from the browser regression runs. Git's enabled pre-commit hook reruns `pnpm verify`; the exact pushed SHA's CI result is recorded in issue #11. Detailed local logs are kept under ignored `.runtime/issue11-*.log`.
+
+## CI portability follow-up
+
+The first remote run on `dadf369` exposed failures that the local Windows run did not: partial font fallback in the new Windows WebKit snapshots, Linux WebKit navigating to a video document instead of downloading it, and a mobile playback assertion inspecting an offscreen second card. The quality job and three browser shards passed; that run was not accepted as delivery.
+
+The new layout fixture now pins the bundled variable font on every descendant, including native controls and monospace declarations, and waits for font readiness. The affected baselines were regenerated for that explicit fixture change and reviewed at both widths in both engines; normal comparison then passed 48/48 in 45.1 seconds. Product font styles and the original recovery-card baselines are unchanged.
+
+Scene download responses now use `application/octet-stream`, attachment disposition and `nosniff`; preview responses retain `video/mp4`. The real download test checks response headers, suggested filename, downloaded bytes against the receipt checksum, and decoding. The mobile comparison test scrolls each actual video into view before checking its clock, matching how the stacked cards are inspected without requiring offscreen playback. It retains all three playback assertions and does not replace media with mocks or add retries.
+
+The focused post-fix Windows run passed 8/8 in 2.2 minutes across Chromium and WebKit, including audible/muted export, preview-frame equivalence, real downloads and all three comparison videos. Remote Linux results are recorded on the issue after the final SHA completes.

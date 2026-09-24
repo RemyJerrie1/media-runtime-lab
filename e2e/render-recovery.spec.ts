@@ -419,6 +419,8 @@ test('benchmark shows persisted measurements and all three actual videos play on
   await expect(section.locator('video')).toHaveCount(3);
   await section.getByRole('button', { name: '三組成品從頭播放' }).click();
   for (const video of await section.locator('video').all()) {
+    // On mobile, inspect each card as a user scrolls; WebKit may suspend offscreen media.
+    await video.scrollIntoViewIfNeeded();
     await expect
       .poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime))
       .toBeGreaterThan(0);

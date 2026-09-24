@@ -116,8 +116,12 @@ export class SceneController {
     const path = resolve(sceneArtifactRoot(), file);
     if (!(await stat(path).catch(() => undefined))) throw new NotFoundException();
     response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    if (download === '1')
+    if (download === '1') {
       response.setHeader('Content-Disposition', 'attachment; filename="hamster.mp4"');
+      // A download must not enter WebKit's native video-document navigation path.
+      response.setHeader('Content-Type', 'application/octet-stream');
+      response.setHeader('X-Content-Type-Options', 'nosniff');
+    }
     // Only this validated UUID filename may be served from the managed .runtime directory.
     response.sendFile(path, { dotfiles: 'allow' });
   }

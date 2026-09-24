@@ -9,11 +9,14 @@ for (const width of [390, 1280]) {
       await page.route('**/v1/**', (route) => route.abort('failed'));
       await page.goto(`/${section}`, { waitUntil: 'domcontentloaded' });
       await page.addStyleTag({
-        content: `@font-face { font-family: VisualEvidence; src: url('/fonts/NotoSansTC.ttf'); }
+        content: `@font-face { font-family: VisualEvidence; src: url('/fonts/NotoSansTC.ttf'); font-weight: 100 900; }
         :root { --font-sans: VisualEvidence, sans-serif; --font-mono: VisualEvidence, monospace; }
-        body { font-family: VisualEvidence, sans-serif; }`,
+        body, body * { font-family: VisualEvidence, sans-serif !important; }`,
       });
-      await page.evaluate(() => document.fonts.load('16px VisualEvidence'));
+      await page.evaluate(async () => {
+        await document.fonts.load('16px VisualEvidence');
+        await document.fonts.ready;
+      });
       if (section === 'hamster')
         await expect(page.getByLabel('3D 倉鼠場景')).toHaveAttribute('data-ready', 'true', {
           timeout: 30_000,

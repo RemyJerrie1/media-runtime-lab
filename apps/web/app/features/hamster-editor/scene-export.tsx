@@ -58,7 +58,12 @@ export function SceneExport({ scene, disabled }: { scene: HamsterScene; disabled
                 preload="metadata"
                 src={sceneVideoUrl(job.receipt.artifactUrl)}
               />
-              <a href={`${sceneVideoUrl(job.receipt.artifactUrl)}?download=1`}>下載倉鼠 MP4</a>
+              <a
+                href={`${sceneVideoUrl(job.receipt.artifactUrl)}?download=1`}
+                download="hamster.mp4"
+              >
+                下載倉鼠 MP4
+              </a>
               <details>
                 <summary>影片檢查結果</summary>
                 <p>
