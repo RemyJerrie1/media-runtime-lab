@@ -13,7 +13,9 @@ Scope: [#10](https://github.com/RemyJerrie1/media-runtime-lab/issues/10), follow
 
 ## Visual baseline policy
 
-The four initial error-card PNGs were reviewed after the layout/copy correction. Screenshots cover widths 1280 and 390 in both engines. Tests load the existing bundled NotoSansTC font for the card to eliminate host language-pack differences; therefore this checks layout, wrapping, colors and controls with a pinned font, not every system-font fallback.
+The four initial error-card PNGs were reviewed after the layout/copy correction. Screenshots cover widths 1280 and 390 in both engines. Tests load the existing bundled NotoSansTC font for the page, including the card's ancestors, to eliminate host language-pack differences; therefore this checks layout, wrapping, colors and controls with a pinned font, not every system-font fallback.
+
+The first Windows CI run exposed two test-environment assumptions: deliberately held requests can prevent WebKit's `load` event, and ancestor system-font metrics can shift a centered card's rasterization. Held-request tests now wait for DOMContentLoaded and assert their specific readiness state; the pinned font also covers ancestors. Baselines were reviewed again without increasing screenshot tolerances or adding retries.
 
 The separate Windows CI job matches the local baseline OS and installs both browsers. It compares committed images with `updateSnapshots: 'none'`; no CI step updates baselines. Intentional baseline changes require local `pnpm test:recovery --update-snapshots`, image review, and an explicit reason in the commit. Failure traces/screenshots are uploaded separately from Linux media evidence.
 

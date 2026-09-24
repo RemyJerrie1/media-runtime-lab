@@ -22,10 +22,12 @@ for (const width of [1280, 390]) {
     await page.route('**/media/recovered.mp4', (route) => route.fulfill({ status: 204 }));
     await page.goto('/composition');
     // Pin the existing bundled font so Windows runner language packs cannot change glyphs.
+    // Pin ancestors too: their fallback-font metrics affect the centered card's subpixel position.
     // Geometry, colors, wrapping and controls still use the production component styles.
     await page.addStyleTag({
       content: `@font-face { font-family: RecoveryEvidence; src: url('/fonts/NotoSansTC.ttf'); }
-      [aria-label="示範素材錯誤"] { font-family: RecoveryEvidence, sans-serif; }`,
+      :root { --font-sans: RecoveryEvidence, sans-serif; }
+      body { font-family: RecoveryEvidence, sans-serif; }`,
     });
     await page.evaluate(() => document.fonts.load('16px RecoveryEvidence'));
     const card = page.getByRole('alert', { name: '示範素材錯誤' });
@@ -117,7 +119,8 @@ test('a superseded source cannot replace the upload even if its transport ignore
         : fetcher(input, init);
   }, asset);
   await page.route('**/v1/media', (route) => route.fulfill({ json: asset }));
-  await page.goto('/render');
+  // Held requests intentionally never finish; readiness is asserted below, not via window.load.
+  await page.goto('/render', { waitUntil: 'domcontentloaded' });
   await expect
     .poll(() =>
       page.evaluate(
@@ -178,7 +181,9 @@ for (const scenario of ['composition', 'render', 'upload', 'retry']) {
       scenario === 'upload' || scenario === 'retry' ? route.fulfill({ json: asset }) : undefined,
     );
     await page.route('**/v1/media', () => {});
-    await page.goto(scenario === 'composition' ? '/composition' : '/render');
+    await page.goto(scenario === 'composition' ? '/composition' : '/render', {
+      waitUntil: 'domcontentloaded',
+    });
     if (scenario === 'upload' || scenario === 'retry') {
       await expect(page.getByText('0.00 MB · 已就緒', { exact: true })).toBeVisible();
       await expect(page.getByRole('button', { name: '使用示範影片', exact: true })).toBeEnabled();
