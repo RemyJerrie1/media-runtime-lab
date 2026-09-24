@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 
 const activeKey = 'media-runtime-active-job-v1:composition';
@@ -289,6 +290,29 @@ test('ambiguous submission survives reload, retries identical payload, explicit 
   expect(jobs.size).toBe(2);
 });
 
+test('a timed-out submission preserves its payload and key across reload', async ({ page }) => {
+  await page.clock.install();
+  await setup(page);
+  const requests: Record<string, unknown>[] = [];
+  await page.route('http://localhost:4000/v1/render-jobs', async (route) => {
+    requests.push(route.request().postDataJSON());
+    if (requests.length > 1) await route.fulfill({ json: job('same-operation') });
+    // Deliberately leave the first response pending until the client deadline aborts it.
+  });
+  await page.getByRole('button', { name: '產生 FFmpeg 成品', exact: true }).click();
+  await expect.poll(() => requests.length).toBe(1);
+  await page.clock.fastForward(15001);
+  await expect(page.locator('#composition').getByRole('alert')).toContainText('尚未確認');
+  const saved = await page.evaluate((key) => localStorage.getItem(key), pendingKey);
+  expect(saved).toBeTruthy();
+  await page.reload();
+  await page.getByRole('button', { name: '重試原操作', exact: true }).click();
+  await expect(progress(page)).toContainText('accepted');
+  expect(requests).toHaveLength(2);
+  expect(requests[1]).toEqual(requests[0]);
+  expect(await page.evaluate((key) => localStorage.getItem(key), pendingKey)).toBeNull();
+});
+
 test('explicit discard after ambiguous response creates a fresh intent', async ({ page }) => {
   await setup(page);
   const keys: string[] = [];
@@ -406,3 +430,50 @@ test('benchmark shows persisted measurements and all three actual videos play on
   );
   await section.screenshot({ path: testInfo.outputPath('encoding-comparison-mobile.png') });
 });
+
+for (const failure of ['missing', 'corrupt', 'timeout'] as const) {
+  test(`output video ${failure} can reload without another render command`, async ({ page }) => {
+    await page.clock.install();
+    await setup(page);
+    let commands = 0;
+    await page.route('http://localhost:4000/v1/render-jobs', (route) => {
+      commands++;
+      return route.fulfill({
+        json: {
+          ...job('completed-video', 2, 100, 'ready'),
+          artifactUrl: '/artifacts/recovery.mp4',
+          artifactChecksum: 'sha256:checked',
+        },
+      });
+    });
+    let recovered = false;
+    let reads = 0;
+    const movie = await readFile('apps/web/public/media/product-demo.mp4');
+    await page.route('**/artifacts/recovery.mp4', (route) => {
+      reads++;
+      if (recovered) return route.fulfill({ contentType: 'video/mp4', body: movie });
+      if (failure === 'timeout') return;
+      return route.fulfill({
+        status: failure === 'missing' ? 404 : 200,
+        contentType: 'video/mp4',
+        body: 'broken',
+      });
+    });
+    await page.getByRole('button', { name: '產生 FFmpeg 成品', exact: true }).click();
+    await expect.poll(() => reads).toBeGreaterThan(0);
+    if (failure === 'timeout') await page.clock.fastForward(30001);
+    const error = page.getByRole('alert', { name: '合成輸出影片錯誤' });
+    await expect(error).toBeVisible();
+    if (failure === 'timeout') await expect(error).toContainText('逾時');
+    recovered = true;
+    await error.getByRole('button', { name: '重新載入影片' }).click();
+    await expect(error).toHaveCount(0);
+    const video = page.getByLabel('合成輸出影片', { exact: true });
+    await expect
+      .poll(() => video.evaluate((el: HTMLVideoElement) => el.readyState))
+      .toBeGreaterThanOrEqual(1);
+    expect(commands).toBe(1);
+    await expect(page.getByTestId('current-job-id')).toHaveText('completed-video');
+    await expect(page.getByText('正在載入合成輸出影片…')).toHaveCount(0);
+  });
+}

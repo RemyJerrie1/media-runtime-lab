@@ -10,6 +10,7 @@ import { artifactUrl, getDemoMedia } from '../../shared/api/render-jobs';
 import { useRenderJob } from '../../shared/hooks/use-render-job';
 import { PendingRenderOperation } from '../../shared/ui/pending-render-operation';
 import { SectionHeading } from '../../shared/ui/section-heading';
+import { RecoverableVideo } from '../../shared/ui/recoverable-video';
 import styles from './composition-showcase.module.css';
 
 function formatPts(seconds: number) {
@@ -39,13 +40,24 @@ export function CompositionShowcase() {
   } = useRenderJob('composition');
   const [loseResponse, setLoseResponse] = useState(false);
   const [source, setSource] = useState<MediaAsset | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+  const [sourceAttempt, setSourceAttempt] = useState(0);
   const [watermarkMode, setWatermarkMode] = useState<MediaProcessing['watermarkMode']>('visible');
   const [previewSeconds, setPreviewSeconds] = useState(0);
   useEffect(() => {
-    getDemoMedia()
-      .then(setSource)
-      .catch(() => setSource(null));
-  }, []);
+    const controller = new AbortController();
+    setSourceError(null);
+    setSource(null);
+    getDemoMedia(controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setSource(value);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted)
+          setSourceError(cause instanceof Error ? cause.message : '示範素材載入失敗');
+      });
+    return () => controller.abort();
+  }, [sourceAttempt]);
 
   return (
     <section id="composition" className={styles.section}>
@@ -133,8 +145,17 @@ export function CompositionShowcase() {
               src={artifactUrl(source.url)}
               onTimeUpdate={(event) => setPreviewSeconds(event.currentTarget.currentTime)}
             />
+          ) : sourceError ? (
+            <div className={styles.loading} role="alert" aria-label="示範素材錯誤">
+              <p>{sourceError}。請確認 API 已啟動。</p>
+              <button type="button" onClick={() => setSourceAttempt((value) => value + 1)}>
+                重試示範素材
+              </button>
+            </div>
           ) : (
-            <p className={styles.loading}>正在準備電影感示範素材…</p>
+            <p role="status" className={styles.loading}>
+              正在準備電影感示範素材…
+            </p>
           )}
           {watermarkMode !== 'none' ? (
             <div
@@ -224,7 +245,15 @@ export function CompositionShowcase() {
             <strong>FFmpeg 實際成品</strong>
             <span>已完成、可播放、可下載</span>
           </div>
-          <video controls autoPlay muted loop playsInline src={artifactUrl(job.artifactUrl)} />
+          <RecoverableVideo
+            aria-label="合成輸出影片"
+            controls
+            autoPlay
+            muted
+            loop
+            playsInline
+            src={artifactUrl(job.artifactUrl)}
+          />
         </div>
       ) : null}
     </section>

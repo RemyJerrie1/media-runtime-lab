@@ -1,5 +1,7 @@
 'use client';
 
+import { RecoverableVideo } from '../../shared/ui/recoverable-video';
+
 import type { FfmpegEncoding, MediaAsset, MediaProcessing } from '@media-lab/contracts';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { Button } from '../../design-system/button';
@@ -493,7 +495,8 @@ export function RenderLab() {
                   </select>
                 </label>
               ) : null}
-              <video
+              <RecoverableVideo
+                aria-label="轉檔輸出影片"
                 key={`${job.id}-${selectedRenditionId}`}
                 controls
                 autoPlay
@@ -504,7 +507,7 @@ export function RenderLab() {
                 src={artifactUrl(playbackPath(job, selectedRenditionId) ?? job.artifactUrl)}
               >
                 您的瀏覽器不支援影片播放。
-              </video>
+              </RecoverableVideo>
               {selectedRendition ? (
                 <dl className="rendition-receipt" aria-label="目前畫質的交付證據">
                   <div>

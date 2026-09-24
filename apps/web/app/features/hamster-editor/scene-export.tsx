@@ -1,4 +1,6 @@
 'use client';
+
+import { RecoverableVideo } from '../../shared/ui/recoverable-video';
 import { audibleSceneAudio, type HamsterScene } from '@media-lab/contracts';
 import { useSceneExport } from './use-scene-export';
 import { sceneVideoUrl } from './scene-export-api';
@@ -49,7 +51,7 @@ export function SceneExport({ scene, disabled }: { scene: HamsterScene; disabled
           )}
           {job.receipt && (
             <>
-              <video
+              <RecoverableVideo
                 aria-label="倉鼠輸出影片"
                 controls
                 playsInline

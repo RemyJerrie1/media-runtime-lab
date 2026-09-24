@@ -1,3 +1,4 @@
+import { requestJson, UPLOAD_TIMEOUT_MS } from './request-json';
 import {
   mediaAssetSchema,
   renderJobSchema,
@@ -40,15 +41,23 @@ export type RenderEditorCommand = Pick<
 export async function uploadMedia(file: File): Promise<MediaAsset> {
   const body = new FormData();
   body.append('file', file);
-  const response = await fetch(`${API}/v1/media`, { method: 'POST', headers: tenantHeaders, body });
+  const response = await requestJson(
+    `${API}/v1/media`,
+    { method: 'POST', headers: tenantHeaders, body },
+    UPLOAD_TIMEOUT_MS,
+  );
   if (!response.ok) throw new Error(`素材上傳失敗（${response.status}）`);
-  return mediaAssetSchema.parse(await response.json());
+  return mediaAssetSchema.parse(response.data);
 }
 
-export async function getDemoMedia(): Promise<MediaAsset> {
-  const response = await fetch(`${API}/v1/media/demo`, { method: 'POST', headers: tenantHeaders });
+export async function getDemoMedia(signal?: AbortSignal): Promise<MediaAsset> {
+  const response = await requestJson(`${API}/v1/media/demo`, {
+    method: 'POST',
+    headers: tenantHeaders,
+    signal: signal ?? null,
+  });
   if (!response.ok) throw new Error(`示範素材準備失敗（${response.status}）`);
-  return mediaAssetSchema.parse(await response.json());
+  return mediaAssetSchema.parse(response.data);
 }
 
 export function artifactUrl(path: string) {
@@ -69,7 +78,7 @@ export async function createRenderJob(
 ): Promise<RenderJob> {
   const traceId = crypto.randomUUID().replaceAll('-', '');
   const spanId = crypto.randomUUID().replaceAll('-', '').slice(0, 16);
-  const response = await fetch(`${API}/v1/render-jobs`, {
+  const response = await requestJson(`${API}/v1/render-jobs`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -85,20 +94,20 @@ export async function createRenderJob(
     }),
   });
   if (response.status === 409) {
-    idempotencyConflictSchema.parse(await response.json());
+    idempotencyConflictSchema.parse(response.data);
     throw new RenderConflictError();
   }
   if (!response.ok) throw new Error(`Render command rejected (${response.status})`);
-  return normalizeRenderJob(await response.json());
+  return normalizeRenderJob(response.data);
 }
 
 export async function getRenderJob(id: string): Promise<RenderJob> {
-  const response = await fetch(`${API}/v1/render-jobs/${id}`, {
+  const response = await requestJson(`${API}/v1/render-jobs/${id}`, {
     cache: 'no-store',
     headers: tenantHeaders,
   });
   if (!response.ok) throw new Error(`Unable to recover render state (${response.status})`);
-  return normalizeRenderJob(await response.json());
+  return normalizeRenderJob(response.data);
 }
 
 export function parseRenderJobEvent(value: string): RenderJob {
@@ -115,10 +124,10 @@ export function renderJobEvents(id: string, after = 0) {
 }
 
 export async function getOperations(): Promise<OperationsSnapshot> {
-  const response = await fetch(`${API}/v1/operations`, {
+  const response = await requestJson(`${API}/v1/operations`, {
     cache: 'no-store',
     headers: tenantHeaders,
   });
   if (!response.ok) throw new Error(`維運快照讀取失敗（${response.status}）`);
-  return operationsSnapshotSchema.parse(await response.json());
+  return operationsSnapshotSchema.parse(response.data);
 }
